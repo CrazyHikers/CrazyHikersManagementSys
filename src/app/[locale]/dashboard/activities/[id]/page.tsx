@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { ActivityActions } from "@/components/dashboard/activity-actions";
+import { EditButton } from "@/components/dashboard/activity-detail-client";
 
 export default async function ActivityDetailPage({
   params,
@@ -51,7 +52,20 @@ export default async function ActivityDetailPage({
           </Badge>
         </div>
         {["open", "closed"].includes(activity.status) && (
-          <ActivityActions activityId={activity.id} status={activity.status} />
+          <div className="flex gap-2 flex-wrap items-start">
+            <EditButton
+              activity={{
+                id: activity.id,
+                title: activity.title,
+                description: activity.description,
+                deadline: activity.deadline.toISOString(),
+                date: activity.date.toISOString(),
+                capacity: activity.capacity,
+                maximumRegistration: activity.maximumRegistration,
+              }}
+            />
+            <ActivityActions activityId={activity.id} status={activity.status} />
+          </div>
         )}
       </div>
 
