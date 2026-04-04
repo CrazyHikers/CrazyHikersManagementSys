@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { hasRole } from "@/lib/auth-utils";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -38,9 +39,10 @@ export default async function UserDetailPage({
   params: Promise<{ email: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || !hasRole(session, "admin")) {
+  if (!session?.user || !hasRole(session, "manager")) {
     redirect("/dashboard");
   }
+  const isAdmin = hasRole(session, "admin");
 
   const { email } = await params;
   const decodedEmail = decodeURIComponent(email);
@@ -163,7 +165,11 @@ export default async function UserDetailPage({
               <TableBody>
                 {user.registrations.map((r) => (
                   <TableRow key={r.activityId}>
-                    <TableCell className="font-medium">{r.activity.title}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/dashboard/activity-view/${r.activityId}`} className="hover:underline text-green-700">
+                        {r.activity.title}
+                      </Link>
+                    </TableCell>
                     <TableCell>{r.activity.date.toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Badge className={

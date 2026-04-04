@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { hasRole } from "@/lib/auth-utils";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -56,7 +57,7 @@ export default async function AllActivitiesPage() {
           return (
             <div key={a.id} className="bg-white rounded-lg border p-4">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-medium">{a.title}</h3>
+                <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
                 <Badge className={statusColors[a.status]}>{a.status}</Badge>
               </div>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
@@ -93,7 +94,9 @@ export default async function AllActivitiesPage() {
               const comanagers = a.activityManagers.filter((am) => am.role === "comanager");
               return (
                 <TableRow key={a.id}>
-                  <TableCell className="font-medium">{a.title}</TableCell>
+                  <TableCell>
+                    <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
+                  </TableCell>
                   <TableCell>
                     <Badge className={statusColors[a.status]}>{a.status}</Badge>
                   </TableCell>
