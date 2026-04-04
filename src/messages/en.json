@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "Crazy Hiker",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "back": "Back",
+    "search": "Search",
+    "noResults": "No results found",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "email": "Email",
+    "name": "Name",
+    "submit": "Submit",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "nav": {
+    "home": "Home",
+    "activities": "Activities",
+    "members": "Members",
+    "managers": "Managers",
+    "waivers": "Waivers",
+    "dashboard": "Dashboard",
+    "admin": "Admin Panel"
+  },
+  "home": {
+    "title": "Upcoming Activities",
+    "subtitle": "Join us on our next adventure!",
+    "noActivities": "No activities available at the moment. Check back soon!",
+    "register": "Register",
+    "deadline": "Registration deadline",
+    "activityDate": "Activity date",
+    "spotsLeft": "{count} spots left",
+    "spotsFull": "Registration full",
+    "managers": "Led by"
+  },
+  "activity": {
+    "detail": "Activity Details",
+    "description": "Description",
+    "registrationForm": "Registration Form",
+    "yourEmail": "Your email address",
+    "yourName": "Your name",
+    "notes": "Notes (optional)",
+    "registerButton": "Register for this activity",
+    "registrationSuccess": "Registration submitted successfully!",
+    "registrationClosed": "Registration is closed",
+    "alreadyRegistered": "You are already registered",
+    "capacity": "Capacity",
+    "registered": "Registered",
+    "deadline": "Deadline",
+    "date": "Date"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Dashboard",
+      "openActivities": "Open Activities",
+      "totalMembers": "Total Members",
+      "totalManagers": "Total Managers",
+      "pendingWaivers": "Pending Waivers"
+    },
+    "activities": {
+      "title": "Activities",
+      "create": "Create Activity",
+      "activityTitle": "Title",
+      "description": "Description",
+      "coverImage": "Cover Image",
+      "deadline": "Registration Deadline",
+      "activityDate": "Activity Date",
+      "capacity": "Capacity",
+      "maxRegistration": "Max Registration",
+      "manager": "Manager",
+      "comanagers": "Co-managers",
+      "qrCode": "Group Chat QR Code",
+      "finishActivity": "Finish Activity",
+      "cancelActivity": "Cancel Activity",
+      "registrations": "Registrations",
+      "confirmRegistration": "Confirm Registration",
+      "markAttended": "Mark Attended",
+      "markAbsent": "Mark Absent",
+      "deregister": "Remove Registration"
+    },
+    "members": {
+      "title": "Members",
+      "totalAttended": "Total Attended",
+      "totalAbsent": "Total Absent",
+      "waiverStatus": "Waiver Status",
+      "submitWaiver": "Submit Waiver",
+      "approveWaiver": "Approve",
+      "declineWaiver": "Decline",
+      "pendingApproval": "Pending Approval"
+    },
+    "managers": {
+      "title": "Managers",
+      "intern": "Intern",
+      "qualified": "Qualified",
+      "kpi": "KPI",
+      "promote": "Promote",
+      "promotionVoting": "Promotion Voting",
+      "tag": "Tag",
+      "currentActivities": "Current Activities"
+    }
+  },
+  "auth": {
+    "signInTitle": "Manager Sign In",
+    "signInDescription": "Enter your email to receive a magic link",
+    "emailPlaceholder": "manager@example.com",
+    "sendMagicLink": "Send Magic Link",
+    "checkEmail": "Check your email for a sign-in link!",
+    "invalidEmail": "This email is not registered as a manager"
+  }
+}

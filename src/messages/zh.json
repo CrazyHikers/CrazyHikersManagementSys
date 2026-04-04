@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "Crazy Hiker",
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "confirm": "确认",
+    "back": "返回",
+    "search": "搜索",
+    "noResults": "没有找到结果",
+    "actions": "操作",
+    "status": "状态",
+    "date": "日期",
+    "email": "邮箱",
+    "name": "姓名",
+    "submit": "提交",
+    "signIn": "登录",
+    "signOut": "退出"
+  },
+  "nav": {
+    "home": "首页",
+    "activities": "活动",
+    "members": "成员",
+    "managers": "领队",
+    "waivers": "免责声明",
+    "dashboard": "控制面板",
+    "admin": "管理后台"
+  },
+  "home": {
+    "title": "即将开始的活动",
+    "subtitle": "加入我们的下一次冒险！",
+    "noActivities": "暂时没有可报名的活动，请稍后再来看看！",
+    "register": "报名",
+    "deadline": "报名截止时间",
+    "activityDate": "活动日期",
+    "spotsLeft": "剩余 {count} 个名额",
+    "spotsFull": "名额已满",
+    "managers": "领队"
+  },
+  "activity": {
+    "detail": "活动详情",
+    "description": "活动描述",
+    "registrationForm": "报名表",
+    "yourEmail": "你的邮箱地址",
+    "yourName": "你的姓名",
+    "notes": "备注（可选）",
+    "registerButton": "报名参加",
+    "registrationSuccess": "报名提交成功！",
+    "registrationClosed": "报名已截止",
+    "alreadyRegistered": "你已经报名了",
+    "capacity": "容量",
+    "registered": "已报名",
+    "deadline": "截止时间",
+    "date": "活动日期"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "控制面板",
+      "openActivities": "进行中的活动",
+      "totalMembers": "总成员数",
+      "totalManagers": "总领队数",
+      "pendingWaivers": "待审核免责声明"
+    },
+    "activities": {
+      "title": "活动管理",
+      "create": "创建活动",
+      "activityTitle": "活动标题",
+      "description": "活动描述",
+      "coverImage": "封面图片",
+      "deadline": "报名截止时间",
+      "activityDate": "活动日期",
+      "capacity": "活动容量",
+      "maxRegistration": "报名人数上限",
+      "manager": "领队",
+      "comanagers": "副领队",
+      "qrCode": "群聊二维码",
+      "finishActivity": "结束活动",
+      "cancelActivity": "取消活动",
+      "registrations": "报名管理",
+      "confirmRegistration": "确认报名",
+      "markAttended": "标记出席",
+      "markAbsent": "标记缺席",
+      "deregister": "取消报名"
+    },
+    "members": {
+      "title": "成员管理",
+      "totalAttended": "总出席次数",
+      "totalAbsent": "总缺席次数",
+      "waiverStatus": "免责声明状态",
+      "submitWaiver": "提交免责声明",
+      "approveWaiver": "批准",
+      "declineWaiver": "拒绝",
+      "pendingApproval": "待审核"
+    },
+    "managers": {
+      "title": "领队管理",
+      "intern": "见习领队",
+      "qualified": "正式领队",
+      "kpi": "KPI",
+      "promote": "申请转正",
+      "promotionVoting": "转正投票",
+      "tag": "标签",
+      "currentActivities": "当前活动"
+    }
+  },
+  "auth": {
+    "signInTitle": "领队登录",
+    "signInDescription": "输入你的邮箱以接收登录链接",
+    "emailPlaceholder": "manager@example.com",
+    "sendMagicLink": "发送登录链接",
+    "checkEmail": "请查看你的邮箱以获取登录链接！",
+    "invalidEmail": "该邮箱未注册为领队"
+  }
+}

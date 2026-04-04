@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Auth.js tables for magic link verification
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Manager {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  tag       String   @unique @db.VarChar(255)
+  intern    Boolean  @default(true)
+  kpi       Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  activityManagers ActivityManager[]
+  activityUpdates  ActivityUpdate[]
+
+  @@index([email])
+  @@index([tag])
+  @@map("managers")
+}
+
+model Member {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  waivers       MemberWaiver[]
+  registrations Registration[]
+  flags         MemberFlag[]
+
+  @@index([email])
+  @@map("members")
+}
+
+model MemberFlag {
+  id         String       @id @default(uuid())
+  memberId   String       @map("member_id") @db.VarChar(255)
+  activityId String       @map("activity_id") @db.VarChar(255)
+  flagType   FlagType     @map("flag_type")
+  reason     String?      @db.Text
+  banUntil   DateTime     @map("ban_until")
+  expiresAt  DateTime     @map("expires_at")  // when the flag itself expires (6 months default)
+  issuedBy   String       @map("issued_by") @db.VarChar(255)
+  issuedAt   DateTime     @default(now()) @map("issued_at")
+
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([banUntil])
+  @@index([expiresAt])
+  @@map("member_flags")
+}
+
+enum FlagType {
+  yellow
+  red
+}
+
+model MemberWaiver {
+  fileId   String             @id @map("file_id") @db.VarChar(255)
+  memberId String             @map("member_id") @db.VarChar(255)
+  signedAt DateTime           @default(now()) @map("signed_at")
+  status   MemberWaiverStatus @default(pending_approval)
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("member_waivers")
+}
+
+enum MemberWaiverStatus {
+  pending_approval
+  approved
+  rejected
+  expiring
+  expired
+}
+
+model Activity {
+  id                  String         @id @default(uuid())
+  title               String         @db.VarChar(500)
+  description         String         @db.Text
+  coverImgId          String         @map("cover_img_id") @db.VarChar(255)
+  deadline            DateTime
+  date                DateTime
+  capacity            Int
+  maximumRegistration Int?           @map("maximum_registration")
+  status              ActivityStatus @default(open)
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  activityManagers ActivityManager[]
+  registrations    Registration[]
+  updates          ActivityUpdate[]
+  flags            MemberFlag[]
+
+  @@index([status])
+  @@index([deadline])
+  @@index([date])
+  @@map("activities")
+}
+
+enum ActivityStatus {
+  open
+  closed
+  completed
+  cancelled
+}
+
+model ActivityManager {
+  activityId  String                @map("activity_id") @db.VarChar(255)
+  managerId   String                @map("manager_id") @db.VarChar(255)
+  role        ActivityManagerRole
+  status      ActivityManagerStatus @default(confirmed)
+  invitedAt   DateTime              @default(now()) @map("invited_at")
+  respondedAt DateTime?             @map("responded_at")
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  manager  Manager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, managerId])
+  @@index([activityId])
+  @@index([managerId])
+  @@index([role])
+  @@index([status])
+  @@map("activity_managers")
+}
+
+enum ActivityManagerRole {
+  manager
+  comanager
+}
+
+enum ActivityManagerStatus {
+  invited
+  confirmed
+  declined
+}
+
+model Registration {
+  activityId   String             @map("activity_id") @db.VarChar(255)
+  memberId     String             @map("member_id") @db.VarChar(255)
+  status       RegistrationStatus @default(registered)
+  registeredAt DateTime           @default(now()) @map("registered_at")
+  confirmedAt  DateTime?          @map("confirmed_at")
+  notes        String?            @db.Text
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([activityId, memberId])
+  @@index([activityId])
+  @@index([memberId])
+  @@index([status])
+  @@map("registrations")
+}
+
+enum RegistrationStatus {
+  registered
+  registration_confirmed
+  attended
+  absent
+}
+
+model ActivityUpdate {
+  id         String   @id @default(uuid())
+  activityId String   @map("activity_id") @db.VarChar(255)
+  title      String   @db.VarChar(500)
+  content    String?  @db.Text
+  postedBy   String   @map("posted_by") @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  manager  Manager  @relation(fields: [postedBy], references: [id])
+
+  @@index([activityId])
+  @@index([createdAt])
+  @@map("activity_updates")
+}
+
+model AuditLog {
+  id          String          @id @default(uuid())
+  entityType  AuditEntityType @map("entity_type")
+  entityId    String          @map("entity_id") @db.VarChar(255)
+  action      AuditAction
+  performedBy String?         @map("performed_by") @db.VarChar(255)
+  oldValues   Json?           @map("old_values")
+  newValues   Json?           @map("new_values")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+enum AuditEntityType {
+  manager
+  member
+  activity
+  registration
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  status_change
+}
+
+model AppSettings {
+  key   String @id @db.VarChar(255)
+  value String @db.Text
+
+  @@map("app_settings")
+}

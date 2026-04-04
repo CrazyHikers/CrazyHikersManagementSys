@@ -1,0 +1,117 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+
+export async function GET() {
+  const activities = await db.activity.findMany({
+    include: {
+      activityManagers: {
+        where: { status: "confirmed" },
+        include: { manager: true },
+      },
+      _count: {
+        select: {
+          registrations: {
+            where: { status: { in: ["registered", "registration_confirmed"] } },
+          },
+        },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  return NextResponse.json(activities);
+}
+
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      title,
+      description,
+      coverImgId,
+      deadline,
+      date,
+      capacity = 0,
+      maximumRegistration = 0,
+      managerId,
+      comanagerIds = [],
+    } = body;
+
+    if (!title || !deadline || !date || !managerId) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate deadline is in the future
+    const deadlineDate = new Date(deadline + "T23:59:59");
+    const activityDate = new Date(date + "T06:00:00");
+    const now = new Date();
+
+    if (deadlineDate <= now) {
+      return NextResponse.json(
+        { error: "Deadline must be in the future" },
+        { status: 400 }
+      );
+    }
+
+    if (activityDate <= deadlineDate) {
+      return NextResponse.json(
+        { error: "Activity date must be after the deadline" },
+        { status: 400 }
+      );
+    }
+
+    // Check intern rule: intern managers need at least one qualified comanager
+    const manager = await db.manager.findUnique({ where: { id: managerId } });
+    if (manager?.intern && comanagerIds.length > 0) {
+      const qualifiedComanagers = await db.manager.findMany({
+        where: { id: { in: comanagerIds }, intern: false },
+      });
+      if (qualifiedComanagers.length === 0) {
+        return NextResponse.json(
+          { error: "Intern managers must have at least one qualified co-manager" },
+          { status: 400 }
+        );
+      }
+    }
+
+    const activity = await db.activity.create({
+      data: {
+        title,
+        description: description || "",
+        coverImgId: coverImgId || "",
+        deadline: deadlineDate,
+        date: activityDate,
+        capacity,
+        maximumRegistration,
+        status: "open",
+        activityManagers: {
+          create: [
+            { managerId, role: "manager", status: "confirmed" },
+            ...comanagerIds.map((id: string) => ({
+              managerId: id,
+              role: "comanager" as const,
+              status: "invited" as const,
+            })),
+          ],
+        },
+      },
+    });
+
+    return NextResponse.json({ id: activity.id });
+  } catch (error) {
+    console.error("Create activity error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
