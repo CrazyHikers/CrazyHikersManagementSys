@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const expiredCutoff = new Date(now);
     expiredCutoff.setDate(expiredCutoff.getDate() - WAIVER_VALIDITY_DAYS);
 
-    await db.memberWaiver.updateMany({
+    await db.userWaiver.updateMany({
       where: {
         signedAt: { lt: expiredCutoff },
         status: "approved",
@@ -26,13 +26,13 @@ export async function POST(request: NextRequest) {
       data: { status: "expired" },
     });
 
-    // 2. Notify members with waivers expiring in 7 days
+    // 2. Notify users with waivers expiring in 7 days
     const expiringCutoff = new Date(now);
     expiringCutoff.setDate(expiringCutoff.getDate() + 7);
     const notifyCutoff = new Date(expiringCutoff);
     notifyCutoff.setDate(notifyCutoff.getDate() - WAIVER_VALIDITY_DAYS);
 
-    const expiringWaivers = await db.memberWaiver.findMany({
+    const expiringWaivers = await db.userWaiver.findMany({
       where: {
         signedAt: {
           gte: new Date(
@@ -48,22 +48,22 @@ export async function POST(request: NextRequest) {
         },
         status: "approved",
       },
-      include: { member: true },
+      include: { user: true },
     });
 
     // Send notifications
     const waiverFormUrl = `${process.env.AUTH_URL}/waiver/submit`;
     for (const waiver of expiringWaivers) {
       await sendWaiverExpiryNotification(
-        waiver.member.email,
-        waiver.member.name,
+        waiver.user.email,
+        waiver.user.name,
         waiverFormUrl
       ).catch(console.error);
     }
 
     // Mark as expiring
     if (expiringWaivers.length > 0) {
-      await db.memberWaiver.updateMany({
+      await db.userWaiver.updateMany({
         where: {
           fileId: { in: expiringWaivers.map((w) => w.fileId) },
         },

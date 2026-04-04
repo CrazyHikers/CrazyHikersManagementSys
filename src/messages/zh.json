@@ -22,12 +22,18 @@
   },
   "nav": {
     "home": "首页",
-    "activities": "活动",
-    "members": "成员",
-    "managers": "领队",
-    "waivers": "免责声明",
     "dashboard": "控制面板",
-    "admin": "管理后台"
+    "myActivities": "我的活动",
+    "myWaivers": "我的免责声明",
+    "myProfile": "个人资料",
+    "activities": "活动管理",
+    "members": "成员管理",
+    "managers": "领队管理",
+    "waivers": "免责声明",
+    "allActivities": "所有活动",
+    "settings": "系统设置",
+    "signIn": "登录",
+    "signUp": "注册"
   },
   "home": {
     "title": "即将开始的活动",
@@ -56,14 +62,14 @@
     "deadline": "截止时间",
     "date": "活动日期"
   },
-  "admin": {
-    "dashboard": {
-      "title": "控制面板",
-      "openActivities": "进行中的活动",
-      "totalMembers": "总成员数",
-      "totalManagers": "总领队数",
-      "pendingWaivers": "待审核免责声明"
-    },
+  "dashboard": {
+    "title": "控制面板",
+    "upcomingActivities": "即将参加的活动",
+    "waiverStatus": "免责声明状态",
+    "openActivities": "进行中的活动",
+    "totalMembers": "总成员数",
+    "totalManagers": "总领队数",
+    "pendingWaivers": "待审核免责声明",
     "activities": {
       "title": "活动管理",
       "create": "创建活动",
@@ -76,10 +82,13 @@
       "maxRegistration": "报名人数上限",
       "manager": "领队",
       "comanagers": "副领队",
+      "invited": "已邀请",
       "qrCode": "群聊二维码",
       "finishActivity": "结束活动",
       "cancelActivity": "取消活动",
       "registrations": "报名管理",
+      "allActivities": "所有活动（只读）",
+      "closeRegistration": "关闭报名",
       "confirmRegistration": "确认报名",
       "markAttended": "标记出席",
       "markAbsent": "标记缺席",
@@ -103,15 +112,78 @@
       "promote": "申请转正",
       "promotionVoting": "转正投票",
       "tag": "标签",
-      "currentActivities": "当前活动"
+      "currentActivities": "当前活动",
+      "createManager": "创建领队",
+      "enterEmail": "领队邮箱地址",
+      "upgradeOrCreate": "将升级现有成员或创建新领队"
+    },
+    "myActivities": {
+      "title": "我的活动",
+      "upcoming": "即将开始",
+      "past": "已结束",
+      "noActivities": "你还没有报名任何活动"
+    },
+    "myWaivers": {
+      "title": "我的免责声明",
+      "uploadWaiver": "上传免责声明",
+      "selectFile": "选择文件",
+      "submit": "提交",
+      "uploadSuccess": "免责声明提交成功",
+      "submittedOn": "提交于",
+      "noWaivers": "暂未提交免责声明"
+    },
+    "myProfile": {
+      "title": "个人资料",
+      "profileDetails": "个人信息",
+      "name": "姓名",
+      "role": "角色",
+      "save": "保存",
+      "saved": "资料已更新",
+      "updateName": "更新姓名"
+    },
+    "settings": {
+      "title": "系统设置",
+      "appSettings": "应用设置",
+      "noSettings": "暂无已配置的设置项",
+      "save": "保存",
+      "saved": "设置已保存",
+      "ban_duration_red": "红旗禁止时长（天）",
+      "ban_duration_yellow": "黄旗禁止时长（天）",
+      "flag_expiry_days": "标记记录保留期限（天）",
+      "yellow_to_red_threshold": "黄旗自动升级为红旗的次数（次）",
+      "waiver_validity_days": "免责声明有效期（天）",
+      "waiver_expiry_warning_days": "免责声明到期提醒（提前天数）",
+      "promotion_vote_duration_hours": "转正投票时限（小时）",
+      "promotion_vote_approval_ratio": "转正投票通过比例（%）",
+      "promotion_min_attended_activities": "申请见习领队最低跟队次数（次）",
+      "promotion_min_distinct_managers": "申请见习领队最低不同主领队数（人）",
+      "promotion_min_managed_activities": "申请正式领队最低主领次数（次）",
+      "promotion_min_comanaged_activities": "申请正式领队最低副领次数（次）",
+      "promotion_referral_count": "申请见习领队推荐人数（人）",
+      "kpi_manager_points": "主领队每次活动KPI积分（分）",
+      "kpi_comanager_points": "副领队每次活动KPI积分（分）",
+      "kpi_season_start_month": "徒步季开始月份（1-12）",
+      "intern_max_seasons": "见习领队最长期限（徒步季）"
     }
   },
   "auth": {
-    "signInTitle": "领队登录",
+    "signInTitle": "登录",
     "signInDescription": "输入你的邮箱以接收登录链接",
-    "emailPlaceholder": "manager@example.com",
+    "emailPlaceholder": "you@example.com",
     "sendMagicLink": "发送登录链接",
     "checkEmail": "请查看你的邮箱以获取登录链接！",
-    "invalidEmail": "该邮箱未注册为领队"
+    "invalidEmail": "该邮箱未注册",
+    "signUpTitle": "创建账号",
+    "signUpDescription": "加入 Crazy Hiker 来报名参加活动",
+    "namePlaceholder": "你的姓名",
+    "createAccount": "创建账号",
+    "signUpButton": "创建账号",
+    "accountCreated": "账号创建成功！请查看邮箱以登录。",
+    "goToSignIn": "前往登录",
+    "alreadyHaveAccount": "已有账号？",
+    "hasAccount": "已有账号？",
+    "noAccount": "还没有账号？",
+    "signIn": "登录",
+    "signUp": "注册"
   }
 }

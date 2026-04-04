@@ -8,7 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export function RegistrationForm({ activityId }: { activityId: string }) {
+type SessionUser = {
+  name?: string | null;
+  email?: string | null;
+} | null;
+
+export function RegistrationForm({
+  activityId,
+  session,
+}: {
+  activityId: string;
+  session?: SessionUser;
+}) {
   const t = useTranslations("activity");
   const [loading, setLoading] = useState(false);
 
@@ -18,8 +29,8 @@ export function RegistrationForm({ activityId }: { activityId: string }) {
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      email: formData.get("email") as string,
-      name: formData.get("name") as string,
+      email: (formData.get("email") as string) || session?.email || "",
+      name: (formData.get("name") as string) || session?.name || "",
       notes: formData.get("notes") as string,
     };
 
@@ -54,11 +65,20 @@ export function RegistrationForm({ activityId }: { activityId: string }) {
           type="email"
           required
           placeholder="you@example.com"
+          defaultValue={session?.email || ""}
+          readOnly={!!session?.email}
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="name">{t("yourName")}</Label>
-        <Input id="name" name="name" type="text" required />
+        <Input
+          id="name"
+          name="name"
+          type="text"
+          required
+          defaultValue={session?.name || ""}
+          readOnly={!!session?.name}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">{t("notes")}</Label>

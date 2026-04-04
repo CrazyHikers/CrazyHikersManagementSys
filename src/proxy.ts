@@ -16,12 +16,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check auth for admin routes
-  const isAdminRoute =
-    pathname.includes("/admin") || pathname.match(/^\/(en|zh)\/admin/);
+  // Check auth for dashboard routes
+  const isDashboardRoute =
+    pathname.includes("/dashboard") || pathname.match(/^\/(en|zh)\/dashboard/);
 
-  if (isAdminRoute) {
-    // Auth check will be handled by the admin layout server component
+  if (isDashboardRoute) {
+    // Auth check will be handled by the dashboard layout server component
     // The proxy just handles locale routing
   }
 

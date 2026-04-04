@@ -2,43 +2,33 @@ import NextAuth from "next-auth";
 import EmailProvider from "next-auth/providers/email";
 import { sendMagicLinkEmail } from "./email";
 import { db } from "./db";
+import { rateLimit } from "./rate-limit";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
 
-// Minimal adapter: only handles verification tokens and user lookup via managers table
-const managerAdapter: Adapter = {
+// Adapter: maps Auth.js user operations to our unified User table (email PK)
+const userAdapter: Adapter = {
   async createUser(user) {
-    // We don't create users — managers already exist in the DB
-    const manager = await db.manager.findUnique({
-      where: { email: user.email! },
-    });
-    if (!manager) throw new Error("Manager not found");
+    // Don't auto-create — users must self-register via /signup
+    if (!user.email) throw new Error("Email required");
+    const existing = await db.user.findUnique({ where: { email: user.email } });
+    if (!existing) throw new Error("User not found. Please sign up first.");
     return {
-      id: manager.id,
-      email: manager.email,
-      name: manager.name,
+      id: existing.email,
+      email: existing.email,
+      name: existing.name,
       emailVerified: null,
     };
   },
   async getUser(id) {
-    const manager = await db.manager.findUnique({ where: { id } });
-    if (!manager) return null;
-    return {
-      id: manager.id,
-      email: manager.email,
-      name: manager.name,
-      emailVerified: null,
-    };
+    const user = await db.user.findUnique({ where: { email: id } });
+    if (!user) return null;
+    return { id: user.email, email: user.email, name: user.name, emailVerified: null };
   },
   async getUserByEmail(email) {
-    const manager = await db.manager.findUnique({ where: { email } });
-    if (!manager) return null;
-    return {
-      id: manager.id,
-      email: manager.email,
-      name: manager.name,
-      emailVerified: null,
-    };
+    const user = await db.user.findUnique({ where: { email } });
+    if (!user) return null;
+    return { id: user.email, email: user.email, name: user.name, emailVerified: null };
   },
   async getUserByAccount() {
     return null;
@@ -50,7 +40,6 @@ const managerAdapter: Adapter = {
     return undefined;
   },
   async createSession() {
-    // JWT strategy — no DB sessions
     return { sessionToken: "", userId: "", expires: new Date() };
   },
   async getSessionAndUser() {
@@ -62,76 +51,107 @@ const managerAdapter: Adapter = {
   async deleteSession() {},
   async createVerificationToken(data) {
     await db.verificationToken.create({
-      data: {
-        identifier: data.identifier,
-        token: data.token,
-        expires: data.expires,
-      },
+      data: { identifier: data.identifier, token: data.token, expires: data.expires },
     });
     return data;
   },
   async useVerificationToken({ identifier, token }) {
+    console.log("[AUTH] useVerificationToken:", { identifier, token: token.substring(0, 10) + "..." });
     try {
       const existing = await db.verificationToken.findUnique({
         where: { identifier_token: { identifier, token } },
       });
+      console.log("[AUTH] token found:", !!existing);
       if (!existing) return null;
       await db.verificationToken.delete({
         where: { identifier_token: { identifier, token } },
       });
       return existing;
-    } catch {
+    } catch (err) {
+      console.error("[AUTH] useVerificationToken error:", err);
       return null;
     }
   },
 };
 
 export const authConfig: NextAuthConfig = {
-  adapter: managerAdapter,
+  adapter: userAdapter,
   providers: [
     EmailProvider({
       server: { host: "smtp.placeholder.com", port: 587, auth: { user: "", pass: "" } },
       from: "noreply@crazyhiker.com",
       sendVerificationRequest: async ({ identifier: email, url }) => {
-        await sendMagicLinkEmail(email, url);
+        // Rate limit: max 3 magic links per email per 15 minutes
+        const { allowed } = rateLimit(`signin:${email}`, { maxAttempts: 3, windowMs: 15 * 60 * 1000 });
+        if (!allowed) {
+          console.warn(`[AUTH] Rate limited magic link for ${email}`);
+          throw new Error("Too many sign-in attempts. Please try again later.");
+        }
+        console.log(`[AUTH] Magic link for ${email}: ${url}`);
+        await sendMagicLinkEmail(email, url).catch((err) => {
+          console.error("[AUTH] Email send failed:", err);
+        });
       },
     }),
   ],
   callbacks: {
     async signIn({ user }) {
+      console.log("[AUTH] signIn callback for:", user.email);
       if (!user.email) return false;
-      const manager = await db.manager.findUnique({
-        where: { email: user.email },
-      });
-      return !!manager;
+      const dbUser = await db.user.findUnique({ where: { email: user.email } });
+      console.log("[AUTH] signIn user found:", !!dbUser);
+      return !!dbUser;
     },
     async jwt({ token, user }) {
-      if (user?.email) {
-        const manager = await db.manager.findUnique({
-          where: { email: user.email },
-        });
-        if (manager) {
-          token.managerId = manager.id;
-          token.managerName = manager.name;
-          token.isIntern = manager.intern;
+      // On first sign-in, `user` is present. On subsequent requests, only `token` is.
+      // Always refresh role from DB to pick up role changes.
+      const email = user?.email || (token.email as string) || (token.sub as string);
+      console.log("[AUTH] jwt callback - email:", email, "token.role:", token.role);
+      if (email) {
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { email },
+            include: { managerProfile: true },
+          });
+          console.log("[AUTH] jwt db lookup result:", dbUser ? { email: dbUser.email, role: dbUser.role } : "NOT FOUND");
+          if (dbUser) {
+            token.email = dbUser.email;
+            token.name = dbUser.name;
+            token.role = dbUser.role;
+            token.tag = dbUser.managerProfile?.tag;
+            token.isIntern = dbUser.managerProfile?.intern;
+            console.log("[AUTH] jwt token.role set to:", token.role);
+          }
+        } catch (err) {
+          console.error("[AUTH] jwt db error:", err);
         }
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const user = session.user as any;
-        user.managerId = token.managerId;
-        user.managerName = token.managerName;
-        user.isIntern = token.isIntern;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = session.user as any;
+      const email = token?.email || token?.sub || session.user?.email;
+      if (email) {
+        // Always read role from DB since JWT token doesn't persist custom fields with adapter
+        const dbUser = await db.user.findUnique({
+          where: { email: email as string },
+          include: { managerProfile: true },
+        });
+        if (dbUser) {
+          user.email = dbUser.email;
+          user.name = dbUser.name;
+          user.role = dbUser.role;
+          user.tag = dbUser.managerProfile?.tag;
+          user.isIntern = dbUser.managerProfile?.intern;
+        }
       }
       return session;
     },
   },
   pages: {
-    signIn: "/admin/signin",
-    verifyRequest: "/admin/verify",
+    signIn: "/signin",
+    verifyRequest: "/verify",
   },
   session: {
     strategy: "jwt",

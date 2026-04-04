@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
+import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { ActivityCard } from "@/components/activity-card";
 
@@ -14,7 +15,7 @@ async function getOpenActivities() {
     include: {
       activityManagers: {
         where: { status: "confirmed" },
-        include: { manager: true },
+        include: { user: true },
       },
       _count: {
         select: {
@@ -38,11 +39,12 @@ async function getOpenActivities() {
 
 export default async function HomePage() {
   const t = await getTranslations("home");
+  const session = await auth();
   const activities = await getOpenActivities();
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={session?.user ?? null} />
       <main className="flex-1 bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="mb-8">
@@ -59,11 +61,11 @@ export default async function HomePage() {
               {activities.map((activity) => {
                 const managerNames = activity.activityManagers
                   .filter((am) => am.role === "manager")
-                  .map((am) => am.manager.name)
+                  .map((am) => am.user.name)
                   .join(", ");
                 const comanagerNames = activity.activityManagers
                   .filter((am) => am.role === "comanager")
-                  .map((am) => am.manager.name)
+                  .map((am) => am.user.name)
                   .join(", ");
                 const allNames = [managerNames, comanagerNames]
                   .filter(Boolean)

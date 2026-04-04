@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { hasRole } from "@/lib/auth-utils";
+import { sendComanagerInvitation } from "@/lib/email";
+import { randomUUID } from "crypto";
 
 export async function GET() {
   const activities = await db.activity.findMany({
     include: {
       activityManagers: {
         where: { status: "confirmed" },
-        include: { manager: true },
+        include: { user: true },
       },
       _count: {
         select: {
@@ -28,6 +31,9 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!hasRole(session, "manager")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const body = await request.json();
@@ -39,11 +45,11 @@ export async function POST(request: NextRequest) {
       date,
       capacity = 0,
       maximumRegistration = 0,
-      managerId,
-      comanagerIds = [],
+      userEmail,
+      comanagerEmails = [],
     } = body;
 
-    if (!title || !deadline || !date || !managerId) {
+    if (!title || !deadline || !date || !userEmail) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -70,10 +76,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check intern rule: intern managers need at least one qualified comanager
-    const manager = await db.manager.findUnique({ where: { id: managerId } });
-    if (manager?.intern && comanagerIds.length > 0) {
-      const qualifiedComanagers = await db.manager.findMany({
-        where: { id: { in: comanagerIds }, intern: false },
+    const manager = await db.user.findUnique({
+      where: { email: userEmail },
+      include: { managerProfile: true },
+    });
+    if (manager?.managerProfile?.intern && comanagerEmails.length > 0) {
+      const qualifiedComanagers = await db.managerProfile.findMany({
+        where: {
+          userEmail: { in: comanagerEmails },
+          intern: false,
+        },
       });
       if (qualifiedComanagers.length === 0) {
         return NextResponse.json(
@@ -82,6 +94,14 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Generate tokens for comanager invitations
+    const comanagerData = comanagerEmails.map((email: string) => ({
+      userEmail: email,
+      role: "comanager" as const,
+      status: "invited" as const,
+      token: randomUUID(),
+    }));
 
     const activity = await db.activity.create({
       data: {
@@ -95,16 +115,26 @@ export async function POST(request: NextRequest) {
         status: "open",
         activityManagers: {
           create: [
-            { managerId, role: "manager", status: "confirmed" },
-            ...comanagerIds.map((id: string) => ({
-              managerId: id,
-              role: "comanager" as const,
-              status: "invited" as const,
-            })),
+            { userEmail, role: "manager", status: "confirmed" },
+            ...comanagerData,
           ],
         },
       },
     });
+
+    // Send invitation emails to comanagers
+    const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+    const managerName = session.user?.name || userEmail;
+    for (const cm of comanagerData) {
+      const comanager = await db.user.findUnique({ where: { email: cm.userEmail } });
+      const inviteUrl = `${baseUrl}/invitations/comanager/${cm.token}`;
+      await sendComanagerInvitation(
+        cm.userEmail,
+        comanager?.name || cm.userEmail,
+        title,
+        inviteUrl
+      ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
+    }
 
     return NextResponse.json({ id: activity.id });
   } catch (error) {

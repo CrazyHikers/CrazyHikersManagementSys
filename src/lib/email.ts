@@ -1,30 +1,40 @@
 import { Resend } from "resend";
 
+let resendInstance: Resend | null = null;
+
 function getResend() {
-  return new Resend(process.env.RESEND_API_KEY || "re_placeholder");
+  if (!resendInstance) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
 }
 
-const FROM_EMAIL = "Crazy Hiker <noreply@crazyhiker.com>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Crazy Hiker <onboarding@resend.dev>";
 
 export async function sendEmail({
   to,
   subject,
   html,
   text,
-  attachments,
 }: {
   to: string;
   subject: string;
   html?: string;
   text?: string;
-  attachments?: { filename: string; content: Buffer }[];
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const payload: any = { from: FROM_EMAIL, to, subject };
+  const payload: any = { from: FROM_EMAIL, to: [to], subject };
   if (html) payload.html = html;
   if (text) payload.text = text;
-  if (attachments) payload.attachments = attachments;
-  return getResend().emails.send(payload);
+  const { data, error } = await getResend().emails.send(payload);
+
+  if (error) {
+    console.error("[EMAIL] Send failed:", error);
+    throw new Error(`Email send failed: ${error.message}`);
+  }
+
+  console.log("[EMAIL] Sent to", to, "id:", data?.id);
+  return data;
 }
 
 export async function sendMagicLinkEmail(email: string, url: string) {
@@ -34,7 +44,7 @@ export async function sendMagicLinkEmail(email: string, url: string) {
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h2>Sign in to Crazy Hiker</h2>
-        <p>Click the button below to sign in to your manager account.</p>
+        <p>Click the button below to sign in to your account.</p>
         <a href="${url}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Sign In
         </a>
@@ -110,6 +120,83 @@ export async function sendComanagerInvitation(
         <a href="${acceptUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Accept Invitation
         </a>
+        <p>Best regards,<br/>Crazy Hiker Team</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPromotionReferralEmail(
+  voterEmail: string,
+  voterName: string,
+  requesterName: string,
+  voteUrl: string
+) {
+  return sendEmail({
+    to: voterEmail,
+    subject: `Manager Referral Request - ${requesterName}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2>Manager Referral Request</h2>
+        <p>Dear ${voterName},</p>
+        <p><strong>${requesterName}</strong> has requested to become an intern manager and listed you as a referral.</p>
+        <p>Please review their profile and approve or reject this request. This link expires in 24 hours.</p>
+        <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+          Review Request
+        </a>
+        <p>Best regards,<br/>Crazy Hiker Team</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPromotionVoteEmail(
+  voterEmail: string,
+  voterName: string,
+  requesterName: string,
+  voteUrl: string
+) {
+  return sendEmail({
+    to: voterEmail,
+    subject: `Promotion Vote - ${requesterName}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2>Promotion Vote</h2>
+        <p>Dear ${voterName},</p>
+        <p><strong>${requesterName}</strong> is requesting promotion from intern to qualified manager.</p>
+        <p>Please cast your vote within 24 hours. You may optionally provide a reason for your decision.</p>
+        <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+          Cast Your Vote
+        </a>
+        <p>Best regards,<br/>Crazy Hiker Team</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPromotionResultEmail(
+  userEmail: string,
+  userName: string,
+  promoted: boolean,
+  newRole: string,
+  reasons?: string[]
+) {
+  const reasonsHtml = reasons && reasons.length > 0
+    ? `<p>Feedback from voters:</p><ul>${reasons.map(r => `<li>${r}</li>`).join("")}</ul>`
+    : "";
+
+  return sendEmail({
+    to: userEmail,
+    subject: promoted ? "Promotion Approved!" : "Promotion Request Update",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2>${promoted ? "Congratulations!" : "Promotion Update"}</h2>
+        <p>Dear ${userName},</p>
+        ${promoted
+          ? `<p>Your promotion request has been approved! You are now a <strong>${newRole}</strong>.</p>`
+          : `<p>Unfortunately, your promotion request was not approved at this time.</p>`
+        }
+        ${reasonsHtml}
         <p>Best regards,<br/>Crazy Hiker Team</p>
       </div>
     `,

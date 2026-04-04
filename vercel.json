@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/waivers",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/promotions",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/kpi",
+      "schedule": "0 3 1 11 *"
     }
   ]
 }

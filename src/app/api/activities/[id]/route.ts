@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { hasRole } from "@/lib/auth-utils";
 
 export async function GET(
   _req: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
   const activity = await db.activity.findUnique({
     where: { id },
     include: {
-      activityManagers: { include: { manager: true } },
+      activityManagers: { include: { user: true } },
       _count: {
         select: {
           registrations: {
@@ -36,6 +37,9 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!hasRole(session, "manager")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await request.json();
@@ -58,18 +62,12 @@ export async function PATCH(
           db.registration.deleteMany({
             where: { activityId: id, status: "registered" },
           }),
-          // Update manager KPIs
-          ...await (async () => {
-            const managers = await db.activityManager.findMany({
-              where: { activityId: id, status: "confirmed" },
-            });
-            return managers.map((m) =>
-              db.manager.update({
-                where: { id: m.managerId },
-                data: { kpi: { increment: m.role === "manager" ? 2 : 1 } },
-              })
-            );
-          })(),
+          // KPI is computed on the fly — no increment needed
+          // Invalidate pending comanager invitation tokens
+          db.activityManager.updateMany({
+            where: { activityId: id, status: "invited" },
+            data: { token: null },
+          }),
           db.activity.update({
             where: { id },
             data: { status: "completed" },
@@ -78,6 +76,11 @@ export async function PATCH(
       } else if (body.status === "cancelled") {
         await db.$transaction([
           db.registration.deleteMany({ where: { activityId: id } }),
+          // Invalidate pending comanager invitation tokens
+          db.activityManager.updateMany({
+            where: { activityId: id, status: "invited" },
+            data: { token: null },
+          }),
           db.activity.update({
             where: { id },
             data: { status: "cancelled" },
@@ -104,8 +107,7 @@ export async function PATCH(
 
       for (const field of allowedFields) {
         if (body[field] !== undefined) {
-          updateData[field === "coverImgId" ? "coverImgId" : field] =
-            body[field];
+          updateData[field] = body[field];
         }
       }
 

@@ -9,85 +9,91 @@ datasource db {
 
 // Auth.js tables for magic link verification
 model VerificationToken {
-  identifier String
-  token      String   @unique
+  identifier String   @db.VarChar(255)
+  token      String   @unique @db.VarChar(255)
   expires    DateTime
 
   @@id([identifier, token])
   @@map("verification_tokens")
 }
 
-model Manager {
-  id        String   @id @default(uuid())
+// ============================================================================
+// UNIFIED USER MODEL
+// ============================================================================
+
+enum UserRole {
+  admin
+  manager
+  member
+}
+
+model User {
+  email     String   @id @db.VarChar(255)
   name      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  tag       String   @unique @db.VarChar(255)
-  intern    Boolean  @default(true)
-  kpi       Int      @default(0)
+  role      UserRole @default(member)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
-  activityManagers ActivityManager[]
-  activityUpdates  ActivityUpdate[]
+  // Relations
+  managerProfile    ManagerProfile?
+  activityManagers  ActivityManager[]
+  activityUpdates   ActivityUpdate[]
+  waivers           UserWaiver[]
+  registrations     Registration[]
+  flags             UserFlag[]          @relation("flaggedUser")
+  issuedFlags       UserFlag[]          @relation("flagIssuer")
+  promotionRequests PromotionRequest[]
 
-  @@index([email])
-  @@index([tag])
-  @@map("managers")
+  @@index([role])
+  @@map("users")
 }
 
-model Member {
-  id        String   @id @default(uuid())
-  name      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+model ManagerProfile {
+  userEmail   String    @id @map("user_email") @db.VarChar(255)
+  tag         String    @unique @db.VarChar(255)
+  intern      Boolean   @default(true)
+  internSince DateTime? @map("intern_since")
 
-  waivers       MemberWaiver[]
-  registrations Registration[]
-  flags         MemberFlag[]
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 
-  @@index([email])
-  @@map("members")
+  @@map("manager_profiles")
 }
 
-model MemberFlag {
-  id         String       @id @default(uuid())
-  memberId   String       @map("member_id") @db.VarChar(255)
-  activityId String       @map("activity_id") @db.VarChar(255)
-  flagType   FlagType     @map("flag_type")
-  reason     String?      @db.Text
-  banUntil   DateTime     @map("ban_until")
-  expiresAt  DateTime     @map("expires_at")  // when the flag itself expires (6 months default)
-  issuedBy   String       @map("issued_by") @db.VarChar(255)
-  issuedAt   DateTime     @default(now()) @map("issued_at")
-
-  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@index([memberId])
-  @@index([banUntil])
-  @@index([expiresAt])
-  @@map("member_flags")
-}
+// ============================================================================
+// FLAG / BAN SYSTEM
+// ============================================================================
 
 enum FlagType {
   yellow
   red
 }
 
-model MemberWaiver {
-  fileId   String             @id @map("file_id") @db.VarChar(255)
-  memberId String             @map("member_id") @db.VarChar(255)
-  signedAt DateTime           @default(now()) @map("signed_at")
-  status   MemberWaiverStatus @default(pending_approval)
+model UserFlag {
+  id         String   @id @default(uuid()) @db.VarChar(255)
+  userEmail  String   @map("user_email") @db.VarChar(255)
+  activityId String   @map("activity_id") @db.VarChar(255)
+  flagType   FlagType @map("flag_type")
+  reason     String?  @db.Text
+  banUntil   DateTime @map("ban_until")
+  expiresAt  DateTime @map("expires_at")
+  issuedBy   String   @map("issued_by") @db.VarChar(255)
+  issuedAt   DateTime @default(now()) @map("issued_at")
 
-  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  user     User     @relation("flaggedUser", fields: [userEmail], references: [email], onDelete: Cascade)
+  issuer   User     @relation("flagIssuer", fields: [issuedBy], references: [email], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  @@index([memberId])
-  @@map("member_waivers")
+  @@index([userEmail])
+  @@index([banUntil])
+  @@index([expiresAt])
+  @@map("user_flags")
 }
 
-enum MemberWaiverStatus {
+// ============================================================================
+// WAIVERS
+// ============================================================================
+
+enum WaiverStatus {
   pending_approval
   approved
   rejected
@@ -95,8 +101,31 @@ enum MemberWaiverStatus {
   expired
 }
 
+model UserWaiver {
+  fileId    String       @id @map("file_id") @db.VarChar(255)
+  userEmail String       @map("user_email") @db.VarChar(255)
+  signedAt  DateTime     @default(now()) @map("signed_at")
+  status    WaiverStatus @default(pending_approval)
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@index([userEmail])
+  @@map("user_waivers")
+}
+
+// ============================================================================
+// ACTIVITIES
+// ============================================================================
+
+enum ActivityStatus {
+  open
+  closed
+  completed
+  cancelled
+}
+
 model Activity {
-  id                  String         @id @default(uuid())
+  id                  String         @id @default(uuid()) @db.VarChar(255)
   title               String         @db.VarChar(500)
   description         String         @db.Text
   coverImgId          String         @map("cover_img_id") @db.VarChar(255)
@@ -111,7 +140,7 @@ model Activity {
   activityManagers ActivityManager[]
   registrations    Registration[]
   updates          ActivityUpdate[]
-  flags            MemberFlag[]
+  flags            UserFlag[]
 
   @@index([status])
   @@index([deadline])
@@ -119,31 +148,9 @@ model Activity {
   @@map("activities")
 }
 
-enum ActivityStatus {
-  open
-  closed
-  completed
-  cancelled
-}
-
-model ActivityManager {
-  activityId  String                @map("activity_id") @db.VarChar(255)
-  managerId   String                @map("manager_id") @db.VarChar(255)
-  role        ActivityManagerRole
-  status      ActivityManagerStatus @default(confirmed)
-  invitedAt   DateTime              @default(now()) @map("invited_at")
-  respondedAt DateTime?             @map("responded_at")
-
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  manager  Manager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
-
-  @@id([activityId, managerId])
-  @@index([activityId])
-  @@index([managerId])
-  @@index([role])
-  @@index([status])
-  @@map("activity_managers")
-}
+// ============================================================================
+// ACTIVITY RELATIONSHIPS
+// ============================================================================
 
 enum ActivityManagerRole {
   manager
@@ -156,22 +163,24 @@ enum ActivityManagerStatus {
   declined
 }
 
-model Registration {
-  activityId   String             @map("activity_id") @db.VarChar(255)
-  memberId     String             @map("member_id") @db.VarChar(255)
-  status       RegistrationStatus @default(registered)
-  registeredAt DateTime           @default(now()) @map("registered_at")
-  confirmedAt  DateTime?          @map("confirmed_at")
-  notes        String?            @db.Text
+model ActivityManager {
+  activityId  String                @map("activity_id") @db.VarChar(255)
+  userEmail   String                @map("user_email") @db.VarChar(255)
+  role        ActivityManagerRole
+  status      ActivityManagerStatus @default(confirmed)
+  invitedAt   DateTime              @default(now()) @map("invited_at")
+  respondedAt DateTime?             @map("responded_at")
+  token       String?               @unique @db.VarChar(255)
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 
-  @@id([activityId, memberId])
+  @@id([activityId, userEmail])
   @@index([activityId])
-  @@index([memberId])
+  @@index([userEmail])
+  @@index([role])
   @@index([status])
-  @@map("registrations")
+  @@map("activity_managers")
 }
 
 enum RegistrationStatus {
@@ -181,8 +190,26 @@ enum RegistrationStatus {
   absent
 }
 
+model Registration {
+  activityId   String             @map("activity_id") @db.VarChar(255)
+  userEmail    String             @map("user_email") @db.VarChar(255)
+  status       RegistrationStatus @default(registered)
+  registeredAt DateTime           @default(now()) @map("registered_at")
+  confirmedAt  DateTime?          @map("confirmed_at")
+  notes        String?            @db.Text
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@id([activityId, userEmail])
+  @@index([activityId])
+  @@index([userEmail])
+  @@index([status])
+  @@map("registrations")
+}
+
 model ActivityUpdate {
-  id         String   @id @default(uuid())
+  id         String   @id @default(uuid()) @db.VarChar(255)
   activityId String   @map("activity_id") @db.VarChar(255)
   title      String   @db.VarChar(500)
   content    String?  @db.Text
@@ -190,15 +217,85 @@ model ActivityUpdate {
   createdAt  DateTime @default(now()) @map("created_at")
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  manager  Manager  @relation(fields: [postedBy], references: [id])
+  author   User     @relation(fields: [postedBy], references: [email])
 
   @@index([activityId])
   @@index([createdAt])
   @@map("activity_updates")
 }
 
+// ============================================================================
+// PROMOTIONS
+// ============================================================================
+
+enum PromotionType {
+  member_to_intern
+  intern_to_qualified
+}
+
+enum PromotionStatus {
+  pending
+  pending_admin_review
+  approved
+  rejected
+  expired
+}
+
+model PromotionRequest {
+  id              String          @id @default(uuid()) @db.VarChar(255)
+  userEmail       String          @map("user_email") @db.VarChar(255)
+  type            PromotionType
+  status          PromotionStatus @default(pending)
+  applicationText String?         @map("application_text") @db.Text
+  requestedAt     DateTime        @default(now()) @map("requested_at")
+  expiresAt       DateTime        @map("expires_at")
+  resolvedAt      DateTime?       @map("resolved_at")
+
+  user  User              @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  votes PromotionVote[]
+
+  @@index([userEmail])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("promotion_requests")
+}
+
+model PromotionVote {
+  id         String   @id @default(uuid()) @db.VarChar(255)
+  requestId  String   @map("request_id") @db.VarChar(255)
+  voterEmail String   @map("voter_email") @db.VarChar(255)
+  approved   Boolean?
+  reason     String?  @db.Text
+  votedAt    DateTime? @map("voted_at")
+  token      String   @unique @db.VarChar(255)
+
+  request PromotionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, voterEmail])
+  @@index([requestId])
+  @@index([token])
+  @@map("promotion_votes")
+}
+
+// ============================================================================
+// SYSTEM
+// ============================================================================
+
+enum AuditEntityType {
+  user
+  activity
+  registration
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  status_change
+}
+
 model AuditLog {
-  id          String          @id @default(uuid())
+  id          String          @id @default(uuid()) @db.VarChar(255)
   entityType  AuditEntityType @map("entity_type")
   entityId    String          @map("entity_id") @db.VarChar(255)
   action      AuditAction
@@ -210,20 +307,6 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_log")
-}
-
-enum AuditEntityType {
-  manager
-  member
-  activity
-  registration
-}
-
-enum AuditAction {
-  create
-  update
-  delete
-  status_change
 }
 
 model AppSettings {

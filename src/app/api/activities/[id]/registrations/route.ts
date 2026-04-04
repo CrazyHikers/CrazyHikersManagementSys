@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { hasRole } from "@/lib/auth-utils";
 import { sendRegistrationConfirmation } from "@/lib/email";
 
 export async function GET(
@@ -11,11 +12,14 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!hasRole(session, "manager")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id } = await params;
   const registrations = await db.registration.findMany({
     where: { activityId: id },
-    include: { member: true },
+    include: { user: true },
     orderBy: { registeredAt: "asc" },
   });
 
@@ -30,11 +34,14 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!hasRole(session, "manager")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id: activityId } = await params;
-  const { memberId, status } = await request.json();
+  const { userEmail, status } = await request.json();
 
-  if (!memberId || !status) {
+  if (!userEmail || !status) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
@@ -48,7 +55,7 @@ export async function PATCH(
       await db.$transaction([
         db.registration.update({
           where: {
-            activityId_memberId: { activityId, memberId },
+            activityId_userEmail: { activityId, userEmail },
           },
           data: { status: "registration_confirmed", confirmedAt: new Date() },
         }),
@@ -57,7 +64,7 @@ export async function PATCH(
           ? [
               db.registration.deleteMany({
                 where: {
-                  memberId,
+                  userEmail,
                   status: "registered",
                   activityId: { not: activityId },
                   activity: { date: activity.date },
@@ -68,18 +75,18 @@ export async function PATCH(
       ]);
 
       // Send confirmation email
-      const member = await db.member.findUnique({ where: { id: memberId } });
-      if (member && activity) {
+      const user = await db.user.findUnique({ where: { email: userEmail } });
+      if (user && activity) {
         await sendRegistrationConfirmation(
-          member.email,
-          member.name,
+          user.email,
+          user.name,
           activity.title
         ).catch(console.error);
       }
     } else {
       await db.registration.update({
         where: {
-          activityId_memberId: { activityId, memberId },
+          activityId_userEmail: { activityId, userEmail },
         },
         data: { status },
       });
@@ -103,13 +110,16 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!hasRole(session, "manager")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { id: activityId } = await params;
-  const { memberId } = await request.json();
+  const { userEmail } = await request.json();
 
   await db.registration.delete({
     where: {
-      activityId_memberId: { activityId, memberId },
+      activityId_userEmail: { activityId, userEmail },
     },
   });
 

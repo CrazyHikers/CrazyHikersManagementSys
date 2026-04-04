@@ -2,7 +2,12 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
 
-export function SiteHeader() {
+type SiteHeaderUser = {
+  name?: string | null;
+  email?: string | null;
+} | null;
+
+export function SiteHeader({ user }: { user?: SiteHeaderUser }) {
   const t = useTranslations("common");
   const nav = useTranslations("nav");
 
@@ -14,12 +19,34 @@ export function SiteHeader() {
           {t("appName")}
         </Link>
         <div className="flex items-center gap-4">
-          <Link
-            href="/admin"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {nav("admin")}
-          </Link>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                {user.name || user.email}
+              </span>
+              <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {nav("dashboard")}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/signin"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {nav("signIn")}
+              </Link>
+              <Link
+                href="/signup"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {nav("signUp")}
+              </Link>
+            </>
+          )}
           <LocaleSwitcher />
         </div>
       </div>

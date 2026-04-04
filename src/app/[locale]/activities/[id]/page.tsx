@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
+import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,7 @@ async function getActivity(id: string) {
     include: {
       activityManagers: {
         where: { status: "confirmed" },
-        include: { manager: true },
+        include: { user: true },
       },
       _count: {
         select: {
@@ -35,6 +36,7 @@ export default async function ActivityDetailPage({
 }) {
   const { id } = await params;
   const t = await getTranslations("activity");
+  const session = await auth();
   const activity = await getActivity(id);
 
   if (!activity) notFound();
@@ -48,22 +50,26 @@ export default async function ActivityDetailPage({
 
   const managers = activity.activityManagers
     .filter((am) => am.role === "manager")
-    .map((am) => am.manager.name);
+    .map((am) => am.user.name);
   const comanagers = activity.activityManagers
     .filter((am) => am.role === "comanager")
-    .map((am) => am.manager.name);
+    .map((am) => am.user.name);
+
+  const sessionUser = session?.user
+    ? { name: session.user.name, email: session.user.email }
+    : null;
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={session?.user ?? null} />
       <main className="flex-1 bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
           {activity.coverImgId && (
-            <div className="rounded-lg overflow-hidden mb-6 aspect-video">
+            <div className="rounded-lg overflow-hidden mb-6 max-h-80 bg-gray-100">
               <img
                 src={getPublicUrl(activity.coverImgId)}
                 alt={activity.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full max-h-80 object-contain"
               />
             </div>
           )}
@@ -141,7 +147,10 @@ export default async function ActivityDetailPage({
                 <CardTitle>{t("registrationForm")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <RegistrationForm activityId={activity.id} />
+                <RegistrationForm
+                  activityId={activity.id}
+                  session={sessionUser}
+                />
               </CardContent>
             </Card>
           ) : (
