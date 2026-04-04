@@ -128,7 +128,7 @@ export default async function ActivityDetailPage({
             <Card>
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">
-                  {managers.length > 0 ? "Manager" : ""}
+                  {managers.length > 0 ? t("manager") : ""}
                 </div>
                 <div className="font-medium">
                   {managers.join(", ")}

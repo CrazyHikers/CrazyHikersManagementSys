@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { hasRole } from "@/lib/auth-utils";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -21,7 +22,6 @@ export default async function MembersPage() {
   const t = await getTranslations("dashboard.members");
 
   const members = await db.user.findMany({
-    where: { role: "member" },
     include: {
       _count: {
         select: {
@@ -29,7 +29,6 @@ export default async function MembersPage() {
         },
       },
       waivers: {
-        where: { status: "approved" },
         orderBy: { signedAt: "desc" },
         take: 1,
       },
@@ -49,40 +48,42 @@ export default async function MembersPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {members.map((m) => (
-          <div key={m.email} className="bg-white rounded-lg border p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-medium">{m.name}</div>
-                <div className="text-sm text-muted-foreground">{m.email}</div>
+          <Link key={m.email} href={`/dashboard/members/${encodeURIComponent(m.email)}`}>
+            <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-medium">{m.name}</div>
+                  <div className="text-sm text-muted-foreground">{m.email}</div>
+                </div>
+                <div className="flex gap-1 flex-wrap justify-end">
+                  <Badge className={
+                    m.role === "admin" ? "bg-purple-100 text-purple-800 text-xs" :
+                    m.role === "manager" ? "bg-blue-100 text-blue-800 text-xs" :
+                    "bg-gray-100 text-gray-800 text-xs"
+                  }>
+                    {m.role}
+                  </Badge>
+                  {m.waivers.length > 0 ? (
+                    <Badge className="bg-green-100 text-green-800 text-xs">
+                      {m.waivers[0].status}
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-xs">
+                      No waiver
+                    </Badge>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-1">
-                {m.waivers.length > 0 ? (
-                  <Badge className="bg-green-100 text-green-800 text-xs">
-                    Waiver OK
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="text-xs">
-                    No waiver
-                  </Badge>
-                )}
+              <div className="text-sm text-muted-foreground mt-2">
+                {t("totalAttended")}: {m._count.registrations}
                 {m.flags.length > 0 && (
-                  <Badge
-                    className={`text-xs ${
-                      m.flags[0].flagType === "red"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    Banned until{" "}
-                    {m.flags[0].banUntil.toLocaleDateString()}
-                  </Badge>
+                  <span className="text-red-600 ml-2">
+                    Banned until {m.flags[0].banUntil.toLocaleDateString()}
+                  </span>
                 )}
               </div>
             </div>
-            <div className="text-sm text-muted-foreground mt-2">
-              {t("totalAttended")}: {m._count.registrations}
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -93,6 +94,7 @@ export default async function MembersPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>{t("totalAttended")}</TableHead>
               <TableHead>{t("waiverStatus")}</TableHead>
               <TableHead>Status</TableHead>
@@ -100,14 +102,31 @@ export default async function MembersPage() {
           </TableHeader>
           <TableBody>
             {members.map((m) => (
-              <TableRow key={m.email}>
-                <TableCell className="font-medium">{m.name}</TableCell>
+              <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
+                <TableCell>
+                  <Link href={`/dashboard/members/${encodeURIComponent(m.email)}`} className="font-medium hover:underline">
+                    {m.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{m.email}</TableCell>
+                <TableCell>
+                  <Badge className={
+                    m.role === "admin" ? "bg-purple-100 text-purple-800" :
+                    m.role === "manager" ? "bg-blue-100 text-blue-800" :
+                    "bg-gray-100 text-gray-800"
+                  }>
+                    {m.role}
+                  </Badge>
+                </TableCell>
                 <TableCell>{m._count.registrations}</TableCell>
                 <TableCell>
                   {m.waivers.length > 0 ? (
-                    <Badge className="bg-green-100 text-green-800">
-                      Approved
+                    <Badge className={
+                      m.waivers[0].status === "approved" ? "bg-green-100 text-green-800" :
+                      m.waivers[0].status === "pending_approval" ? "bg-yellow-100 text-yellow-800" :
+                      "bg-gray-100 text-gray-800"
+                    }>
+                      {m.waivers[0].status}
                     </Badge>
                   ) : (
                     <Badge variant="destructive">None</Badge>
@@ -115,13 +134,11 @@ export default async function MembersPage() {
                 </TableCell>
                 <TableCell>
                   {m.flags.length > 0 ? (
-                    <Badge
-                      className={
-                        m.flags[0].flagType === "red"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }
-                    >
+                    <Badge className={
+                      m.flags[0].flagType === "red"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }>
                       Banned until {m.flags[0].banUntil.toLocaleDateString()}
                     </Badge>
                   ) : (

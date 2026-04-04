@@ -62,7 +62,8 @@
     "capacity": "Capacity",
     "registered": "Registered",
     "deadline": "Deadline",
-    "date": "Date"
+    "date": "Date",
+    "manager": "Led by"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -62,7 +62,8 @@
     "capacity": "容量",
     "registered": "已报名",
     "deadline": "截止时间",
-    "date": "活动日期"
+    "date": "活动日期",
+    "manager": "领队"
   },
   "dashboard": {
     "title": "控制面板",
