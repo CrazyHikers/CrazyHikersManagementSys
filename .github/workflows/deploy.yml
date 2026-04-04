@@ -30,9 +30,19 @@ jobs:
       - name: Build
         run: npx next build
 
-      - name: Push to deploy branch
+      - name: Prepare deploy branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B deploy
-          git push origin deploy --force
+
+          # Remove dev/meta files not needed for production
+          rm -f CLAUDE.md AGENTS.md DEPLOY.md README.md
+          rm -rf .claude scripts
+          rm -rf .github
+
+          git add -A
+          git commit -m "Deploy: $(date -u +%Y-%m-%dT%H:%M:%SZ) from main@$(git rev-parse --short main)" --allow-empty
+
+      - name: Push deploy branch
+        run: git push origin deploy --force
