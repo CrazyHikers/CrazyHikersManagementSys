@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/adapter-mariadb"],
+  devIndicators: false,
 };
 
 export default withNextIntl(nextConfig);

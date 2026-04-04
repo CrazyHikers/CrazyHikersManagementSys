@@ -163,7 +163,21 @@ Copy each output — you'll need them in step 8.
 
 ## 6. Set Up the Database Tables
 
-The app needs new tables in your existing Aiven MySQL database (for verification tokens, member flags, app settings, etc.).
+The app uses the following tables in your Aiven MySQL database:
+
+- `users` — all users (email PK, role: admin/manager/member)
+- `manager_profiles` — manager-specific data (tag, intern status)
+- `activities` — hiking activities
+- `activity_managers` — manager/comanager assignments per activity
+- `registrations` — member registrations per activity
+- `user_waivers` — waiver submissions
+- `user_flags` — yellow/red flags for members
+- `promotion_requests` — promotion applications
+- `promotion_votes` — referral/voting responses
+- `verification_tokens` — magic link tokens (Auth.js)
+- `app_settings` — 17 configurable admin settings
+- `activity_updates` — activity announcements
+- `audit_log` — change history
 
 ### Option A: Using Prisma Push (simplest)
 
@@ -202,6 +216,17 @@ npx prisma studio
 ```
 
 This opens a web-based database browser at `http://localhost:5555`. You should see all the tables listed.
+
+### Seed the First Admin
+
+After creating the tables, insert your admin user directly:
+
+```sql
+-- Connect to your MySQL database and run:
+INSERT INTO users (email, name, role) VALUES ('your-email@example.com', 'Your Name', 'admin');
+```
+
+The default app settings (ban durations, promotion thresholds, KPI config, etc.) are automatically used from defaults in the code. You can customize them later via the Settings page in the admin dashboard.
 
 ---
 
