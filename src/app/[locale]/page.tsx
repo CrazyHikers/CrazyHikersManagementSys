@@ -21,7 +21,7 @@ async function getOpenActivities() {
         select: {
           registrations: {
             where: {
-              status: { in: ["registered", "registration_confirmed"] },
+              status: { in: ["registration_confirmed", "attended"] },
             },
           },
         },

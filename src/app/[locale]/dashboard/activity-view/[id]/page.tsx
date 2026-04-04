@@ -52,7 +52,7 @@ export default async function ActivityViewPage({
       _count: {
         select: {
           registrations: {
-            where: { status: { in: ["registered", "registration_confirmed", "attended"] } },
+            where: { status: { in: ["registration_confirmed", "attended"] } },
           },
         },
       },

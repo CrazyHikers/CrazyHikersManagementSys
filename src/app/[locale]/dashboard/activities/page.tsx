@@ -40,7 +40,7 @@ export default async function ActivitiesPage() {
       _count: {
         select: {
           registrations: {
-            where: { status: { in: ["registered", "registration_confirmed"] } },
+            where: { status: { in: ["registration_confirmed", "attended"] } },
           },
         },
       },

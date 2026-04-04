@@ -23,7 +23,7 @@ async function getMemberStats(email: string) {
     db.registration.count({
       where: {
         userEmail: email,
-        status: { in: ["registered", "registration_confirmed"] },
+        status: { in: ["registration_confirmed", "attended"] },
         activity: { date: { gte: now } },
       },
     }),
