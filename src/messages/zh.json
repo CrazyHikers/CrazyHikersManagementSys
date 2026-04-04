@@ -55,6 +55,8 @@
     "notes": "备注（可选）",
     "registerButton": "报名参加",
     "registrationSuccess": "报名提交成功！",
+    "signInToRegister": "请先登录后再报名参加活动",
+    "signIn": "登录",
     "registrationClosed": "报名已截止",
     "alreadyRegistered": "你已经报名了",
     "capacity": "容量",

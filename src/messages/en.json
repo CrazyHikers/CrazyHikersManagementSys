@@ -55,6 +55,8 @@
     "notes": "Notes (optional)",
     "registerButton": "Register for this activity",
     "registrationSuccess": "Registration submitted successfully!",
+    "signInToRegister": "Please sign in to register for this activity",
+    "signIn": "Sign In",
     "registrationClosed": "Registration is closed",
     "alreadyRegistered": "You are already registered",
     "capacity": "Capacity",

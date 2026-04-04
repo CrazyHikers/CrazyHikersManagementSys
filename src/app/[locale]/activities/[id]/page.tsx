@@ -5,7 +5,9 @@ import { getPublicUrl } from "@/lib/r2";
 import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import { RegistrationForm } from "@/components/registration-form";
 
 async function getActivity(id: string) {
@@ -142,17 +144,30 @@ export default async function ActivityDetailPage({
           </div>
 
           {isOpen && !isFull ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("registrationForm")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RegistrationForm
-                  activityId={activity.id}
-                  session={sessionUser}
-                />
-              </CardContent>
-            </Card>
+            session?.user ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("registrationForm")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RegistrationForm
+                    activityId={activity.id}
+                    session={sessionUser}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground mb-4">{t("signInToRegister")}</p>
+                  <Link href="/signin">
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      {t("signIn")}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )
           ) : (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
