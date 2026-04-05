@@ -74,13 +74,15 @@ export async function PATCH(
           : []),
       ]);
 
-      // Send confirmation email
+      // Send confirmation email with QR code if available
       const user = await db.user.findUnique({ where: { email: userEmail } });
       if (user && activity) {
+        const qrCodeUrl = (activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as string | undefined;
         await sendRegistrationConfirmation(
           user.email,
           user.name,
-          activity.title
+          activity.title,
+          qrCodeUrl
         ).catch(console.error);
       }
     } else {

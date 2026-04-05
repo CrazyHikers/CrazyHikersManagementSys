@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       userEmail,
       comanagerEmails = [],
       metadata,
+      qrCodeUrl,
     } = body;
 
     if (!title || !deadline || !date || !userEmail) {
@@ -113,7 +114,10 @@ export async function POST(request: NextRequest) {
         date: activityDate,
         capacity,
         maximumRegistration,
-        ...(metadata ? { metadata } : {}),
+        metadata: {
+          ...(metadata || {}),
+          ...(qrCodeUrl ? { qrCodeUrl } : {}),
+        },
         status: "open",
         activityManagers: {
           create: [
