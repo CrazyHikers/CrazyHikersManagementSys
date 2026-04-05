@@ -77,7 +77,7 @@ export async function GET() {
 
   // Available referrals (non-intern managers) for member->intern
   const qualifiedManagers = await db.user.findMany({
-    where: { role: { in: ["manager", "admin"] } },
+    where: { role: { in: ["manager", "admin", "dev"] } },
     include: { managerProfile: true },
   });
   const availableReferrals = qualifiedManagers

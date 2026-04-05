@@ -10,7 +10,7 @@ async function getManagerStats() {
     await Promise.all([
       db.activity.count({ where: { status: "open" } }),
       db.user.count({ where: { role: "member" } }),
-      db.user.count({ where: { role: { in: ["manager", "admin"] } } }),
+      db.user.count({ where: { role: { in: ["manager", "admin", "dev"] } } }),
       db.userWaiver.count({ where: { status: "pending_approval" } }),
     ]);
 

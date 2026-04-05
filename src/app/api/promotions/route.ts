@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     const referrals = await db.user.findMany({
       where: {
         email: { in: referralEmails },
-        role: { in: ["manager", "admin"] },
+        role: { in: ["manager", "admin", "dev"] },
       },
       include: { managerProfile: true },
     });

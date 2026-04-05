@@ -15,7 +15,7 @@ export async function GET() {
   }
 
   const managers = await db.user.findMany({
-    where: { role: { in: ["manager", "admin"] } },
+    where: { role: { in: ["manager", "admin", "dev"] } },
     include: { managerProfile: true },
     orderBy: { name: "asc" },
   });
