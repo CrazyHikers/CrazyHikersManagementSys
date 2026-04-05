@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
@@ -68,6 +69,8 @@ export default async function UserDetailPage({
 
   if (!user) notFound();
 
+  const t = await getTranslations("dashboard.myProfile");
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -88,32 +91,32 @@ export default async function UserDetailPage({
       {/* Basic info */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-lg">Basic Info</CardTitle>
+          <CardTitle className="text-lg">{t("basicInfo")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Email: </span>
+              <span className="text-muted-foreground">{t("email")}: </span>
               <span className="font-medium">{user.email}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Role: </span>
+              <span className="text-muted-foreground">{t("role")}: </span>
               <span className="font-medium">{user.role}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Joined: </span>
+              <span className="text-muted-foreground">{t("joined")}: </span>
               <span className="font-medium">{user.createdAt.toLocaleDateString()}</span>
             </div>
             {user.role === "manager" && user.managerProfile && (
               <>
                 <div>
-                  <span className="text-muted-foreground">Tag: </span>
+                  <span className="text-muted-foreground">{t("tag")}: </span>
                   <span className="font-medium">{user.managerProfile.tag}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Status: </span>
+                  <span className="text-muted-foreground">{t("status")}: </span>
                   <Badge className={user.managerProfile.intern ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
-                    {user.managerProfile.intern ? "Intern" : "Qualified"}
+                    {user.managerProfile.intern ? t("intern") : t("qualified")}
                   </Badge>
                 </div>
               </>
@@ -130,28 +133,28 @@ export default async function UserDetailPage({
 
         const formatValue = (val: unknown): string => {
           if (Array.isArray(val)) return val.join(", ");
-          if (typeof val === "boolean") return val ? "Yes" : "No";
+          if (typeof val === "boolean") return val ? t("yes") : t("no");
           return String(val);
         };
 
         const profileFields = [
-          { key: "emergencyContact", label: "Emergency Contact" },
-          { key: "emergencyPhone", label: "Emergency Phone" },
-          { key: "gender", label: "Gender" },
-          { key: "organization", label: "School/Organization" },
-          { key: "position", label: "Position" },
-          { key: "fitnessActivities", label: "Fitness Activities" },
-          { key: "fiveKmPace", label: "5km Pace" },
-          { key: "maxElevationGain", label: "Max Elevation Gain (m)" },
-          { key: "maxElevationLoss", label: "Max Elevation Loss (m)" },
-          { key: "equipment", label: "Equipment" },
-          { key: "quizManagerDuties", label: "Manager Duties Quiz" },
-          { key: "quizMemberDuties", label: "Member Duties Quiz" },
-          { key: "canDoEquipmentCheck", label: "Can Do Equipment Check" },
-          { key: "navigationSoftware", label: "Navigation Software" },
-          { key: "selfIntro", label: "Self Introduction" },
-          { key: "insurance", label: "Insurance" },
-          { key: "followsCrazyHikers", label: "Follows CrazyHikers" },
+          { key: "emergencyContact", label: t("emergencyContact") },
+          { key: "emergencyPhone", label: t("emergencyPhone") },
+          { key: "gender", label: t("gender") },
+          { key: "organization", label: t("organization") },
+          { key: "position", label: t("position") },
+          { key: "fitnessActivities", label: t("fitnessActivities") },
+          { key: "fiveKmPace", label: t("fiveKmPace") },
+          { key: "maxElevationGain", label: t("maxElevationGain") },
+          { key: "maxElevationLoss", label: t("maxElevationLoss") },
+          { key: "equipment", label: t("equipment") },
+          { key: "quizManagerDuties", label: t("quizManagerDuties") },
+          { key: "quizMemberDuties", label: t("quizMemberDuties") },
+          { key: "canDoEquipmentCheck", label: t("canDoEquipmentCheck") },
+          { key: "navigationSoftware", label: t("navigationSoftware") },
+          { key: "selfIntro", label: t("selfIntro") },
+          { key: "insurance", label: t("insurance") },
+          { key: "followsCrazyHikers", label: t("followsCrazyHikers") },
         ];
         const filledFields = profileFields.filter((f) => {
           const val = p[f.key];
@@ -162,7 +165,7 @@ export default async function UserDetailPage({
         return (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Personal Details</CardTitle>
+              <CardTitle className="text-lg">{t("personalDetails")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -181,17 +184,17 @@ export default async function UserDetailPage({
       {/* Waivers */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-lg">Waivers ({user.waivers.length})</CardTitle>
+          <CardTitle className="text-lg">{t("waivers")} ({user.waivers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {user.waivers.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No waivers submitted</p>
+            <p className="text-muted-foreground text-center py-4">{t("noWaivers")}</p>
           ) : (
             <div className="space-y-2">
               {user.waivers.map((w) => (
                 <div key={w.fileId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Submitted: </span>
+                    <span className="text-muted-foreground">{t("submitted")}: </span>
                     {w.signedAt.toLocaleDateString()}
                   </div>
                   <div className="flex items-center gap-2">
@@ -204,7 +207,7 @@ export default async function UserDetailPage({
                       rel="noopener noreferrer"
                       className="text-sm text-green-600 hover:underline"
                     >
-                      View
+                      {t("view")}
                     </a>
                   </div>
                 </div>
@@ -217,18 +220,18 @@ export default async function UserDetailPage({
       {/* Activities */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-lg">Activity History ({user.registrations.length})</CardTitle>
+          <CardTitle className="text-lg">{t("activityHistory")} ({user.registrations.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {user.registrations.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No activity participation</p>
+            <p className="text-muted-foreground text-center py-4">{t("noActivities")}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Activity</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("activity")}</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -261,11 +264,11 @@ export default async function UserDetailPage({
       {/* Flags */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Flags ({user.flags.length})</CardTitle>
+          <CardTitle className="text-lg">{t("flags")} ({user.flags.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {user.flags.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No flags</p>
+            <p className="text-muted-foreground text-center py-4">{t("noFlags")}</p>
           ) : (
             <div className="space-y-3">
               {user.flags.map((f) => (
@@ -273,22 +276,22 @@ export default async function UserDetailPage({
                   <div className="flex items-center gap-2 mb-1">
                     <Badge className={flagColors[f.flagType]}>{f.flagType}</Badge>
                     <span className="text-sm text-muted-foreground">
-                      from {f.activity.title}
+                      {t("from")} {f.activity.title}
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Issued by {f.issuer.name} on {f.issuedAt.toLocaleDateString()}
+                    {t("issuedBy")} {f.issuer.name} {t("on")} {f.issuedAt.toLocaleDateString()}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Ban until: {f.banUntil.toLocaleDateString()}
+                    {t("banUntil")}: {f.banUntil.toLocaleDateString()}
                     {f.banUntil > new Date() ? (
-                      <Badge className="bg-red-100 text-red-800 ml-2 text-xs">Active</Badge>
+                      <Badge className="bg-red-100 text-red-800 ml-2 text-xs">{t("active")}</Badge>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-800 ml-2 text-xs">Expired</Badge>
+                      <Badge className="bg-gray-100 text-gray-800 ml-2 text-xs">{t("expired")}</Badge>
                     )}
                   </div>
                   {f.reason && (
-                    <div className="text-sm mt-1">Reason: {f.reason}</div>
+                    <div className="text-sm mt-1">{t("reason")}: {f.reason}</div>
                   )}
                 </div>
               ))}
