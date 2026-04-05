@@ -10,6 +10,7 @@ export async function GET() {
 
   const user = await db.user.findUnique({
     where: { email: session.user.email },
+    include: { managerProfile: true },
   });
 
   if (!user) {
@@ -20,6 +21,7 @@ export async function GET() {
     email: user.email,
     name: user.name,
     role: user.role,
+    tag: user.managerProfile?.tag || null,
   });
 }
 
@@ -29,7 +31,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name } = await request.json();
+  const { name, tag } = await request.json();
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -38,11 +40,21 @@ export async function PATCH(request: NextRequest) {
   const updated = await db.user.update({
     where: { email: session.user.email },
     data: { name: name.trim() },
+    include: { managerProfile: true },
   });
+
+  // Update tag if provided and user has a manager profile
+  if (tag !== undefined && updated.managerProfile) {
+    await db.managerProfile.update({
+      where: { userEmail: session.user.email },
+      data: { tag: tag.trim() },
+    });
+  }
 
   return NextResponse.json({
     email: updated.email,
     name: updated.name,
     role: updated.role,
+    tag: tag !== undefined ? tag.trim() : (updated.managerProfile?.tag || null),
   });
 }

@@ -157,6 +157,8 @@
       "role": "角色",
       "save": "保存",
       "saved": "资料已更新",
+      "tag": "标签",
+      "tagPlaceholder": "你的领队标签",
       "updateName": "更新姓名"
     },
     "settings": {

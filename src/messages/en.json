@@ -157,6 +157,8 @@
       "role": "Role",
       "save": "Save",
       "saved": "Profile updated",
+      "tag": "Tag",
+      "tagPlaceholder": "Your unique manager tag",
       "updateName": "Update Name"
     },
     "settings": {

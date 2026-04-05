@@ -14,6 +14,7 @@ type Profile = {
   email: string;
   name: string;
   role: string;
+  tag: string | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +31,7 @@ export default function MyProfilePage() {
   const t = useTranslations("dashboard.myProfile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
+  const [tag, setTag] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [promotionEligibility, setPromotionEligibility] =
@@ -59,6 +61,7 @@ export default function MyProfilePage() {
         const data = await res.json();
         setProfile(data);
         setName(data.name);
+        setTag(data.tag || "");
       }
     } finally {
       setLoading(false);
@@ -73,7 +76,7 @@ export default function MyProfilePage() {
       const res = await fetch("/api/users/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, tag: tag || undefined }),
       });
 
       if (!res.ok) throw new Error("Failed to update profile");
@@ -129,6 +132,17 @@ export default function MyProfilePage() {
                 required
               />
             </div>
+            {profile.role === "manager" && (
+              <div className="space-y-2">
+                <Label htmlFor="tag">{t("tag")}</Label>
+                <Input
+                  id="tag"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  placeholder={t("tagPlaceholder")}
+                />
+              </div>
+            )}
             <Button
               type="submit"
               className="bg-green-600 hover:bg-green-700"
