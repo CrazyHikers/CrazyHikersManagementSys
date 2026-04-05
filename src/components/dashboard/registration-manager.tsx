@@ -15,12 +15,11 @@ import {
 import { toast } from "sonner";
 
 type RegistrationFormData = {
-  expectations?: string;
-  dietaryRestrictions?: string;
-  bringItems?: string;
-  isCrazyHikerMember?: string;
-  fitnessStatement?: string;
-  confirmRules?: boolean;
+  transportTicket?: string;
+  departureCity?: string;
+  cameraEquipment?: string[];
+  willPostSocialMedia?: boolean;
+  willingToBePhotographed?: boolean;
   confirmInfo?: boolean;
 };
 
@@ -219,23 +218,20 @@ export function RegistrationManager({
                     </button>
                     {expandedFormData.has(reg.userEmail) && (
                       <div className="mt-2 p-3 bg-gray-50 rounded text-sm space-y-1">
-                        {reg.formData.expectations && (
-                          <div><span className="text-muted-foreground">Expectations: </span>{reg.formData.expectations}</div>
+                        {reg.formData.transportTicket && (
+                          <div><span className="text-muted-foreground">Transport Ticket: </span>{reg.formData.transportTicket}</div>
                         )}
-                        {reg.formData.dietaryRestrictions && (
-                          <div><span className="text-muted-foreground">Dietary: </span>{reg.formData.dietaryRestrictions}</div>
+                        {reg.formData.departureCity && (
+                          <div><span className="text-muted-foreground">Departure City: </span>{reg.formData.departureCity}</div>
                         )}
-                        {reg.formData.bringItems && (
-                          <div><span className="text-muted-foreground">Bringing: </span>{reg.formData.bringItems}</div>
+                        {reg.formData.cameraEquipment && reg.formData.cameraEquipment.length > 0 && (
+                          <div><span className="text-muted-foreground">Camera Equipment: </span>{reg.formData.cameraEquipment.join(", ")}</div>
                         )}
-                        {reg.formData.isCrazyHikerMember && (
-                          <div><span className="text-muted-foreground">Member: </span>{reg.formData.isCrazyHikerMember}</div>
+                        {reg.formData.willPostSocialMedia !== undefined && (
+                          <div><span className="text-muted-foreground">Will Post Social Media: </span>{reg.formData.willPostSocialMedia ? "Yes" : "No"}</div>
                         )}
-                        {reg.formData.fitnessStatement && (
-                          <div><span className="text-muted-foreground">Fitness: </span>{reg.formData.fitnessStatement}</div>
-                        )}
-                        {reg.formData.confirmRules && (
-                          <div><span className="text-muted-foreground">Rules confirmed: </span>Yes</div>
+                        {reg.formData.willingToBePhotographed !== undefined && (
+                          <div><span className="text-muted-foreground">Willing to be Photographed: </span>{reg.formData.willingToBePhotographed ? "Yes" : "No"}</div>
                         )}
                         {reg.formData.confirmInfo && (
                           <div><span className="text-muted-foreground">Info confirmed: </span>Yes</div>

@@ -19,21 +19,29 @@ import { toast } from "sonner";
 import { PromotionRequest } from "@/components/dashboard/promotion-request";
 
 type UserProfile = {
-  phone?: string;
+  // Emergency
   emergencyContact?: string;
   emergencyPhone?: string;
+  // Personal
   gender?: string;
-  nationality?: string;
-  city?: string;
-  fitnessLevel?: string;
+  organization?: string;
+  position?: string;
+  // Fitness
+  fitnessActivities?: string[];
+  fiveKmPace?: string;
   maxElevationGain?: string;
   maxElevationLoss?: string;
-  transportPreference?: string;
-  regionPreference?: string;
-  equipment?: string;
-  medicalConditions?: string;
-  socialMedia?: string;
-  travelCard?: string;
+  // Equipment
+  equipment?: string[];
+  // Knowledge Quiz
+  quizManagerDuties?: string[];
+  quizMemberDuties?: string[];
+  // Other
+  canDoEquipmentCheck?: boolean;
+  navigationSoftware?: string;
+  selfIntro?: string;
+  insurance?: string[];
+  followsCrazyHikers?: boolean;
 };
 
 type Profile = {
@@ -55,22 +63,29 @@ const roleBadgeColors: Record<string, string> = {
 };
 
 const emptyUserProfile: UserProfile = {
-  phone: "",
   emergencyContact: "",
   emergencyPhone: "",
   gender: "",
-  nationality: "",
-  city: "",
-  fitnessLevel: "",
+  organization: "",
+  position: "",
+  fitnessActivities: [],
+  fiveKmPace: "",
   maxElevationGain: "",
   maxElevationLoss: "",
-  transportPreference: "",
-  regionPreference: "",
-  equipment: "",
-  medicalConditions: "",
-  socialMedia: "",
-  travelCard: "",
+  equipment: [],
+  quizManagerDuties: [],
+  quizMemberDuties: [],
+  canDoEquipmentCheck: undefined,
+  navigationSoftware: "",
+  selfIntro: "",
+  insurance: [],
 };
+
+const fitnessOptions = ["跑步", "游泳", "骑行", "徒步", "ASVZ有氧", "其他"];
+const equipmentOptions = ["登山鞋", "越野跑鞋(非普通跑鞋)", "登山杖", "冲锋衣", "登山包", "户外水袋>1.5L", "魔术头巾", "冰袖"];
+const managerDutyOptions = ["导引队伍", "指挥行动", "活跃气氛", "协助背负"];
+const memberDutyOptions = ["听从领队指挥", "行前装备检查", "尊重领队劳动", "自我安全意识", "擅自独自行动", "随性穿搭出门", "领队为我服务", "责任全甩领队"];
+const insuranceOptions = ["Rega直升机俱乐部", "雇员(公司保险)", "个人额外购买", "以上都没有"];
 
 export default function MyProfilePage() {
   const t = useTranslations("dashboard.myProfile");
@@ -141,8 +156,16 @@ export default function MyProfilePage() {
     }
   }
 
-  function updateProfileField(field: keyof UserProfile, value: string) {
+  function updateProfileField(field: keyof UserProfile, value: string | string[] | boolean | undefined) {
     setUserProfile((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleCheckbox(field: keyof UserProfile, opt: string, checked: boolean) {
+    const current = (userProfile[field] as string[] | undefined) || [];
+    const updated = checked
+      ? [...current, opt]
+      : current.filter((x) => x !== opt);
+    updateProfileField(field, updated);
   }
 
   async function handleSaveProfile(e: React.FormEvent<HTMLFormElement>) {
@@ -234,57 +257,9 @@ export default function MyProfilePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveProfile} className="space-y-6">
-            {/* Personal */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("personal")}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="gender">{t("gender")}</Label>
-                  <Select
-                    value={userProfile.gender || ""}
-                    onValueChange={(val) => updateProfileField("gender", val || "")}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("selectGender")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">{t("male")}</SelectItem>
-                      <SelectItem value="female">{t("female")}</SelectItem>
-                      <SelectItem value="other">{t("otherGender")}</SelectItem>
-                      <SelectItem value="prefer_not_to_say">{t("preferNotToSay")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="nationality">{t("nationality")}</Label>
-                  <Input
-                    id="nationality"
-                    value={userProfile.nationality || ""}
-                    onChange={(e) => updateProfileField("nationality", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">{t("city")}</Label>
-                  <Input
-                    id="city"
-                    value={userProfile.city || ""}
-                    onChange={(e) => updateProfileField("city", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">{t("phone")}</Label>
-                  <Input
-                    id="phone"
-                    value={userProfile.phone || ""}
-                    onChange={(e) => updateProfileField("phone", e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Emergency Contact */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("emergency")}</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("emergencySection")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="emergencyContact">{t("emergencyContact")}</Label>
@@ -305,99 +280,236 @@ export default function MyProfilePage() {
               </div>
             </div>
 
-            {/* Hiking */}
+            {/* Personal */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("hiking")}</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("personalSection")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fitnessLevel">{t("fitnessLevel")}</Label>
+                  <Label htmlFor="gender">{t("gender")}</Label>
+                  <Select
+                    value={userProfile.gender || ""}
+                    onValueChange={(val) => updateProfileField("gender", val || "")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("selectGender")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="男">{t("male")}</SelectItem>
+                      <SelectItem value="女">{t("female")}</SelectItem>
+                      <SelectItem value="其他">{t("otherGender")}</SelectItem>
+                      <SelectItem value="不愿透露">{t("preferNotToSay")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="organization">{t("organization")}</Label>
                   <Input
-                    id="fitnessLevel"
-                    value={userProfile.fitnessLevel || ""}
-                    onChange={(e) => updateProfileField("fitnessLevel", e.target.value)}
+                    id="organization"
+                    value={userProfile.organization || ""}
+                    onChange={(e) => updateProfileField("organization", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="maxElevationGain">{t("maxElevationGain")}</Label>
+                  <Label htmlFor="position">{t("position")}</Label>
                   <Input
-                    id="maxElevationGain"
-                    type="number"
-                    min="0"
-                    value={userProfile.maxElevationGain || ""}
-                    onChange={(e) => updateProfileField("maxElevationGain", e.target.value)}
+                    id="position"
+                    value={userProfile.position || ""}
+                    onChange={(e) => updateProfileField("position", e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxElevationLoss">{t("maxElevationLoss")}</Label>
-                  <Input
-                    id="maxElevationLoss"
-                    type="number"
-                    min="0"
-                    value={userProfile.maxElevationLoss || ""}
-                    onChange={(e) => updateProfileField("maxElevationLoss", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transportPreference">{t("transportPreference")}</Label>
-                  <Input
-                    id="transportPreference"
-                    value={userProfile.transportPreference || ""}
-                    onChange={(e) => updateProfileField("transportPreference", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="regionPreference">{t("regionPreference")}</Label>
-                  <Input
-                    id="regionPreference"
-                    value={userProfile.regionPreference || ""}
-                    onChange={(e) => updateProfileField("regionPreference", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="equipment">{t("equipment")}</Label>
-                <Textarea
-                  id="equipment"
-                  rows={2}
-                  value={userProfile.equipment || ""}
-                  onChange={(e) => updateProfileField("equipment", e.target.value)}
-                />
               </div>
             </div>
 
-            {/* Medical */}
+            {/* Fitness & Experience */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("medical")}</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("fitnessSection")}</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("fitnessActivities")}</Label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {fitnessOptions.map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={(userProfile.fitnessActivities || []).includes(opt)}
+                          onChange={(e) => toggleCheckbox("fitnessActivities", opt, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fiveKmPace">{t("fiveKmPace")}</Label>
+                    <Input
+                      id="fiveKmPace"
+                      value={userProfile.fiveKmPace || ""}
+                      onChange={(e) => updateProfileField("fiveKmPace", e.target.value)}
+                      placeholder="e.g. 6:30"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxElevationGain">{t("maxElevationGain")}</Label>
+                    <Input
+                      id="maxElevationGain"
+                      type="number"
+                      min="0"
+                      value={userProfile.maxElevationGain || ""}
+                      onChange={(e) => updateProfileField("maxElevationGain", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxElevationLoss">{t("maxElevationLoss")}</Label>
+                    <Input
+                      id="maxElevationLoss"
+                      type="number"
+                      min="0"
+                      value={userProfile.maxElevationLoss || ""}
+                      onChange={(e) => updateProfileField("maxElevationLoss", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Equipment */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("equipmentSection")}</h3>
               <div className="space-y-2">
-                <Label htmlFor="medicalConditions">{t("medicalConditions")}</Label>
-                <Textarea
-                  id="medicalConditions"
-                  rows={2}
-                  value={userProfile.medicalConditions || ""}
-                  onChange={(e) => updateProfileField("medicalConditions", e.target.value)}
-                />
+                <Label>{t("equipment")}</Label>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {equipmentOptions.map((opt) => (
+                    <label key={opt} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={(userProfile.equipment || []).includes(opt)}
+                        onChange={(e) => toggleCheckbox("equipment", opt, e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Knowledge Quiz */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("quizSection")}</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("quizManagerDuties")}</Label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {managerDutyOptions.map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={(userProfile.quizManagerDuties || []).includes(opt)}
+                          onChange={(e) => toggleCheckbox("quizManagerDuties", opt, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("quizMemberDuties")}</Label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {memberDutyOptions.map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={(userProfile.quizMemberDuties || []).includes(opt)}
+                          onChange={(e) => toggleCheckbox("quizMemberDuties", opt, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Other */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("other")}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("otherSection")}</h3>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="socialMedia">{t("socialMedia")}</Label>
+                  <Label>{t("canDoEquipmentCheck")}</Label>
+                  <Select
+                    value={userProfile.canDoEquipmentCheck === true ? "yes" : userProfile.canDoEquipmentCheck === false ? "no" : ""}
+                    onValueChange={(val) => updateProfileField("canDoEquipmentCheck", val === "yes" ? true : val === "no" ? false : undefined)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">{t("yes")}</SelectItem>
+                      <SelectItem value="no">{t("no")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="navigationSoftware">{t("navigationSoftware")}</Label>
                   <Input
-                    id="socialMedia"
-                    value={userProfile.socialMedia || ""}
-                    onChange={(e) => updateProfileField("socialMedia", e.target.value)}
+                    id="navigationSoftware"
+                    value={userProfile.navigationSoftware || ""}
+                    onChange={(e) => updateProfileField("navigationSoftware", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="travelCard">{t("travelCard")}</Label>
-                  <Input
-                    id="travelCard"
-                    value={userProfile.travelCard || ""}
-                    onChange={(e) => updateProfileField("travelCard", e.target.value)}
+                  <Label htmlFor="selfIntro">{t("selfIntro")}</Label>
+                  <Textarea
+                    id="selfIntro"
+                    rows={3}
+                    value={userProfile.selfIntro || ""}
+                    onChange={(e) => updateProfileField("selfIntro", e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("insurance")}</Label>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {insuranceOptions.map((opt) => (
+                      <label key={opt} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={(userProfile.insurance || []).includes(opt)}
+                          onChange={(e) => toggleCheckbox("insurance", opt, e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Label>{t("followsCrazyHikers")}</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="followsCrazyHikers"
+                      checked={userProfile.followsCrazyHikers === true}
+                      onChange={() => updateProfileField("followsCrazyHikers", true)}
+                      className="h-4 w-4"
+                    />
+                    {t("yes")}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="followsCrazyHikers"
+                      checked={userProfile.followsCrazyHikers === false}
+                      onChange={() => updateProfileField("followsCrazyHikers", false)}
+                      className="h-4 w-4"
+                    />
+                    {t("no")}
+                  </label>
                 </div>
               </div>
             </div>

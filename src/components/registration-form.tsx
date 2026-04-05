@@ -21,6 +21,8 @@ type SessionUser = {
   email?: string | null;
 } | null;
 
+const cameraEquipmentOptions = ["微单或单反", "无人机", "运动相机", "其他"];
+
 export function RegistrationForm({
   activityId,
   session,
@@ -32,7 +34,13 @@ export function RegistrationForm({
   const [loading, setLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
   const [checking, setChecking] = useState(!!session?.email);
-  const [isCrazyHikerMember, setIsCrazyHikerMember] = useState("");
+
+  // Per-registration form state
+  const [transportTicket, setTransportTicket] = useState("");
+  const [departureCity, setDepartureCity] = useState("");
+  const [cameraEquipment, setCameraEquipment] = useState<string[]>([]);
+  const [willPostSocialMedia, setWillPostSocialMedia] = useState("");
+  const [willingToBePhotographed, setWillingToBePhotographed] = useState("");
 
   // Check if user is already registered
   useEffect(() => {
@@ -46,6 +54,12 @@ export function RegistrationForm({
       .finally(() => setChecking(false));
   }, [activityId, session?.email]);
 
+  function toggleCameraEquipment(opt: string, checked: boolean) {
+    setCameraEquipment((prev) =>
+      checked ? [...prev, opt] : prev.filter((x) => x !== opt)
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -56,12 +70,11 @@ export function RegistrationForm({
       name: (fd.get("name") as string) || session?.name || "",
       notes: fd.get("notes") as string,
       formData: {
-        expectations: fd.get("expectations") as string || undefined,
-        dietaryRestrictions: fd.get("dietaryRestrictions") as string || undefined,
-        bringItems: fd.get("bringItems") as string || undefined,
-        isCrazyHikerMember: isCrazyHikerMember || undefined,
-        fitnessStatement: fd.get("fitnessStatement") as string || undefined,
-        confirmRules: fd.get("confirmRules") === "on",
+        transportTicket: transportTicket || undefined,
+        departureCity: departureCity || undefined,
+        cameraEquipment: cameraEquipment.length > 0 ? cameraEquipment : undefined,
+        willPostSocialMedia: willPostSocialMedia === "yes" ? true : willPostSocialMedia === "no" ? false : undefined,
+        willingToBePhotographed: willingToBePhotographed === "yes" ? true : willingToBePhotographed === "no" ? false : undefined,
         confirmInfo: fd.get("confirmInfo") === "on",
       },
     };
@@ -175,24 +188,48 @@ export function RegistrationForm({
         <Textarea id="notes" name="notes" rows={2} />
       </div>
 
-      {/* Additional per-registration fields */}
+      {/* Per-registration fields */}
       <div className="border-t pt-4 space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground">{t("additionalInfo")}</h3>
+
         <div className="space-y-2">
-          <Label htmlFor="expectations">{t("expectations")}</Label>
-          <Textarea id="expectations" name="expectations" rows={2} />
+          <Label htmlFor="transportTicket">{t("transportTicket")}</Label>
+          <Input
+            id="transportTicket"
+            value={transportTicket}
+            onChange={(e) => setTransportTicket(e.target.value)}
+          />
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="dietaryRestrictions">{t("dietaryRestrictions")}</Label>
-          <Input id="dietaryRestrictions" name="dietaryRestrictions" />
+          <Label htmlFor="departureCity">{t("departureCity")}</Label>
+          <Input
+            id="departureCity"
+            value={departureCity}
+            onChange={(e) => setDepartureCity(e.target.value)}
+          />
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="bringItems">{t("bringItems")}</Label>
-          <Textarea id="bringItems" name="bringItems" rows={2} />
+          <Label>{t("cameraEquipment")}</Label>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {cameraEquipmentOptions.map((opt) => (
+              <label key={opt} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={cameraEquipment.includes(opt)}
+                  onChange={(e) => toggleCameraEquipment(opt, e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="isCrazyHikerMember">{t("isCrazyHikerMember")}</Label>
-          <Select value={isCrazyHikerMember} onValueChange={(val) => setIsCrazyHikerMember(val || "")}>
+          <Label>{t("willPostSocialMedia")}</Label>
+          <Select value={willPostSocialMedia} onValueChange={(val) => setWillPostSocialMedia(val || "")}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -202,27 +239,24 @@ export function RegistrationForm({
             </SelectContent>
           </Select>
         </div>
+
+
         <div className="space-y-2">
-          <Label htmlFor="fitnessStatement">{t("fitnessStatement")}</Label>
-          <Textarea id="fitnessStatement" name="fitnessStatement" rows={2} />
+          <Label>{t("willingToBePhotographed")}</Label>
+          <Select value={willingToBePhotographed} onValueChange={(val) => setWillingToBePhotographed(val || "")}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">{t("willing")}</SelectItem>
+              <SelectItem value="no">{t("notWilling")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Confirmations */}
+      {/* Confirmation */}
       <div className="border-t pt-4 space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground">{t("confirmations")}</h3>
-        <div className="flex items-start gap-2">
-          <input
-            type="checkbox"
-            id="confirmRules"
-            name="confirmRules"
-            required
-            className="mt-1 h-4 w-4 rounded border-gray-300"
-          />
-          <Label htmlFor="confirmRules" className="text-sm font-normal leading-snug">
-            {t("confirmRules")}
-          </Label>
-        </div>
         <div className="flex items-start gap-2">
           <input
             type="checkbox"

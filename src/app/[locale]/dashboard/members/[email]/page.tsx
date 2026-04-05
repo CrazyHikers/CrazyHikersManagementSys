@@ -124,26 +124,40 @@ export default async function UserDetailPage({
 
       {/* Personal Details (from profile JSON) */}
       {(() => {
-        const p = (user as Record<string, unknown>).profile as Record<string, string> | null;
-        if (!p || Object.values(p).every((v) => !v)) return null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = (user as any).profile as Record<string, any> | null;
+        if (!p || Object.values(p).every((v) => !v && v !== false)) return null;
+
+        const formatValue = (val: unknown): string => {
+          if (Array.isArray(val)) return val.join(", ");
+          if (typeof val === "boolean") return val ? "Yes" : "No";
+          return String(val);
+        };
+
         const profileFields = [
-          { key: "gender", label: "Gender" },
-          { key: "nationality", label: "Nationality" },
-          { key: "city", label: "City" },
-          { key: "phone", label: "Phone" },
           { key: "emergencyContact", label: "Emergency Contact" },
           { key: "emergencyPhone", label: "Emergency Phone" },
-          { key: "fitnessLevel", label: "Fitness Level" },
+          { key: "gender", label: "Gender" },
+          { key: "organization", label: "School/Organization" },
+          { key: "position", label: "Position" },
+          { key: "fitnessActivities", label: "Fitness Activities" },
+          { key: "fiveKmPace", label: "5km Pace" },
           { key: "maxElevationGain", label: "Max Elevation Gain (m)" },
           { key: "maxElevationLoss", label: "Max Elevation Loss (m)" },
-          { key: "transportPreference", label: "Transport Preference" },
-          { key: "regionPreference", label: "Region Preference" },
           { key: "equipment", label: "Equipment" },
-          { key: "medicalConditions", label: "Medical Conditions" },
-          { key: "socialMedia", label: "Social Media" },
-          { key: "travelCard", label: "Travel Card" },
+          { key: "quizManagerDuties", label: "Manager Duties Quiz" },
+          { key: "quizMemberDuties", label: "Member Duties Quiz" },
+          { key: "canDoEquipmentCheck", label: "Can Do Equipment Check" },
+          { key: "navigationSoftware", label: "Navigation Software" },
+          { key: "selfIntro", label: "Self Introduction" },
+          { key: "insurance", label: "Insurance" },
+          { key: "followsCrazyHikers", label: "Follows CrazyHikers" },
         ];
-        const filledFields = profileFields.filter((f) => p[f.key]);
+        const filledFields = profileFields.filter((f) => {
+          const val = p[f.key];
+          if (Array.isArray(val)) return val.length > 0;
+          return val !== undefined && val !== null && val !== "";
+        });
         if (filledFields.length === 0) return null;
         return (
           <Card className="mb-6">
@@ -155,7 +169,7 @@ export default async function UserDetailPage({
                 {filledFields.map((f) => (
                   <div key={f.key}>
                     <span className="text-muted-foreground">{f.label}: </span>
-                    <span className="font-medium">{p[f.key]}</span>
+                    <span className="font-medium">{formatValue(p[f.key])}</span>
                   </div>
                 ))}
               </div>
