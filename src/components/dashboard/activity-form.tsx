@@ -177,7 +177,7 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
                         }
                       }}
                     />
-                    {m.name} {m.managerProfile?.intern ? "(Intern)" : ""}
+                    {m.name} {m.managerProfile?.intern ? `(${t("intern")})` : `(${t("qualified")})`}
                   </label>
                 ))}
             </div>

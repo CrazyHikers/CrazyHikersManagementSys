@@ -91,6 +91,8 @@
       "maxRegistration": "报名人数上限",
       "manager": "领队",
       "comanagers": "副领队",
+      "intern": "见习",
+      "qualified": "正式",
       "invited": "已邀请",
       "qrCode": "群聊二维码",
       "finishActivity": "结束活动",

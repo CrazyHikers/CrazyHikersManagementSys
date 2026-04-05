@@ -91,6 +91,8 @@
       "maxRegistration": "Max Registration",
       "manager": "Manager",
       "comanagers": "Co-managers",
+      "intern": "Intern",
+      "qualified": "Qualified",
       "invited": "Invited",
       "qrCode": "Group Chat QR Code",
       "finishActivity": "Finish Activity",
