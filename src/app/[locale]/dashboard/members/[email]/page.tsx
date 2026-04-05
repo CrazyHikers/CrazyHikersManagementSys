@@ -77,7 +77,12 @@ export default async function UserDetailPage({
 
       {/* Dev: Role changer */}
       {isDev && (
-        <RoleChanger userEmail={user.email} currentRole={user.role} />
+        <RoleChanger
+          userEmail={user.email}
+          currentRole={user.role}
+          isIntern={user.managerProfile?.intern ?? null}
+          hasManagerProfile={!!user.managerProfile}
+        />
       )}
 
       {/* Basic info */}
