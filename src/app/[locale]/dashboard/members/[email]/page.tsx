@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 
 const roleBadgeColors: Record<string, string> = {
+  dev: "bg-red-100 text-red-800",
   admin: "bg-purple-100 text-purple-800",
   manager: "bg-blue-100 text-blue-800",
   member: "bg-gray-100 text-gray-800",

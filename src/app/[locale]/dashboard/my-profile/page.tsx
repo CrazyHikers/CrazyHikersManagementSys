@@ -20,6 +20,7 @@ type Profile = {
 type PromotionEligibility = any;
 
 const roleBadgeColors: Record<string, string> = {
+  dev: "bg-red-100 text-red-800",
   admin: "bg-purple-100 text-purple-800",
   manager: "bg-blue-100 text-blue-800",
   member: "bg-green-100 text-green-800",

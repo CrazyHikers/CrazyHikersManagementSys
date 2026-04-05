@@ -57,6 +57,7 @@ export default async function MembersPage() {
                 </div>
                 <div className="flex gap-1 flex-wrap justify-end">
                   <Badge className={
+                    m.role === "dev" ? "bg-red-100 text-red-800 text-xs" :
                     m.role === "admin" ? "bg-purple-100 text-purple-800 text-xs" :
                     m.role === "manager" ? "bg-blue-100 text-blue-800 text-xs" :
                     "bg-gray-100 text-gray-800 text-xs"
@@ -111,6 +112,7 @@ export default async function MembersPage() {
                 <TableCell>{m.email}</TableCell>
                 <TableCell>
                   <Badge className={
+                    m.role === "dev" ? "bg-red-100 text-red-800" :
                     m.role === "admin" ? "bg-purple-100 text-purple-800" :
                     m.role === "manager" ? "bg-blue-100 text-blue-800" :
                     "bg-gray-100 text-gray-800"
