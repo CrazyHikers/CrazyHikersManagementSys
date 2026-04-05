@@ -36,12 +36,17 @@ export async function PATCH(
 
   const oldRole = user.role;
 
-  // If upgrading to manager, ensure manager profile exists
-  if ((role === "manager" || role === "admin" || role === "dev") && oldRole === "member") {
+  // If upgrading from member, ensure manager profile exists
+  if (["manager", "admin", "dev"].includes(role) && oldRole === "member") {
     const profile = await db.managerProfile.findUnique({ where: { userEmail: decodedEmail } });
-    if (!profile && (role === "manager")) {
+    if (!profile) {
       await db.managerProfile.create({
-        data: { userEmail: decodedEmail, tag: decodedEmail, intern: true, internSince: new Date() },
+        data: {
+          userEmail: decodedEmail,
+          tag: decodedEmail,
+          intern: role === "manager",
+          internSince: role === "manager" ? new Date() : null,
+        },
       });
     }
   }

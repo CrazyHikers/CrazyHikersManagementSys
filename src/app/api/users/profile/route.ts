@@ -43,12 +43,22 @@ export async function PATCH(request: NextRequest) {
     include: { managerProfile: true },
   });
 
-  // Update tag if provided and user has a manager profile
-  if (tag !== undefined && updated.managerProfile) {
-    await db.managerProfile.update({
-      where: { userEmail: session.user.email },
-      data: { tag: tag.trim() },
-    });
+  // Update or create tag for manager+ roles
+  if (tag !== undefined && ["manager", "admin", "dev"].includes(updated.role)) {
+    if (updated.managerProfile) {
+      await db.managerProfile.update({
+        where: { userEmail: session.user.email },
+        data: { tag: tag.trim() },
+      });
+    } else {
+      await db.managerProfile.create({
+        data: {
+          userEmail: session.user.email,
+          tag: tag.trim() || session.user.email,
+          intern: false,
+        },
+      });
+    }
   }
 
   return NextResponse.json({
