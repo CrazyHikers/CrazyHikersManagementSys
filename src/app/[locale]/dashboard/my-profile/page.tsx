@@ -132,7 +132,7 @@ export default function MyProfilePage() {
                 required
               />
             </div>
-            {profile.role === "manager" && (
+            {["manager", "admin", "dev"].includes(profile.role) && (
               <div className="space-y-2">
                 <Label htmlFor="tag">{t("tag")}</Label>
                 <Input
