@@ -120,6 +120,72 @@ export default async function ActivityViewPage({
         </CardContent>
       </Card>
 
+      {/* Hiking Details */}
+      {activity.metadata && typeof activity.metadata === "object" && Object.keys(activity.metadata as object).length > 0 && (() => {
+        const meta = activity.metadata as Record<string, unknown>;
+        const stars = (n: unknown) => typeof n === "number" ? "★".repeat(n) + "☆".repeat(5 - n) : "";
+        const has = (key: string) => meta[key] != null && meta[key] !== "";
+        return (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Hiking Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                {has("route") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Route</div>
+                    <div className="font-medium">{String(meta.route)}</div>
+                  </div>
+                ) : null}
+                {has("distance") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Distance</div>
+                    <div className="font-medium">{Number(meta.distance)} km</div>
+                  </div>
+                ) : null}
+                {has("elevationGain") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Elevation Gain</div>
+                    <div className="font-medium">{Number(meta.elevationGain)} m</div>
+                  </div>
+                ) : null}
+                {has("elevationLoss") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Elevation Loss</div>
+                    <div className="font-medium">{Number(meta.elevationLoss)} m</div>
+                  </div>
+                ) : null}
+                {has("duration") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Duration</div>
+                    <div className="font-medium">{String(meta.duration)}</div>
+                  </div>
+                ) : null}
+                {has("technicalDifficulty") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Technical Difficulty</div>
+                    <div className="font-medium">{stars(meta.technicalDifficulty)}</div>
+                  </div>
+                ) : null}
+                {has("enduranceDifficulty") ? (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Endurance Difficulty</div>
+                    <div className="font-medium">{stars(meta.enduranceDifficulty)}</div>
+                  </div>
+                ) : null}
+                {has("notes") ? (
+                  <div className="sm:col-span-2">
+                    <div className="text-sm text-muted-foreground">Notes</div>
+                    <div className="font-medium whitespace-pre-wrap">{String(meta.notes)}</div>
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Managers</CardTitle>

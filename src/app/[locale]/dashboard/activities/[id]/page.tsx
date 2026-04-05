@@ -62,6 +62,7 @@ export default async function ActivityDetailPage({
                 date: activity.date.toISOString(),
                 capacity: activity.capacity,
                 maximumRegistration: activity.maximumRegistration,
+                metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
             <ActivityActions activityId={activity.id} status={activity.status} />

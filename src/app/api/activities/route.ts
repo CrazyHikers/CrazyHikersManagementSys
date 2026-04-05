@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       maximumRegistration = 0,
       userEmail,
       comanagerEmails = [],
+      metadata,
     } = body;
 
     if (!title || !deadline || !date || !userEmail) {
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
         date: activityDate,
         capacity,
         maximumRegistration,
+        ...(metadata ? { metadata } : {}),
         status: "open",
         activityManagers: {
           create: [

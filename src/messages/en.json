@@ -69,7 +69,16 @@
     "registered": "Registered",
     "deadline": "Deadline",
     "date": "Date",
-    "manager": "Led by"
+    "manager": "Led by",
+    "route": "Route",
+    "distance": "Distance (km)",
+    "elevationGain": "Elevation Gain (m)",
+    "elevationLoss": "Elevation Loss (m)",
+    "duration": "Duration",
+    "technicalDifficulty": "Technical Difficulty",
+    "enduranceDifficulty": "Endurance Difficulty",
+    "hikingNotes": "Notes",
+    "hikingDetails": "Hiking Details"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -107,7 +116,16 @@
       "confirmRegistration": "Confirm Registration",
       "markAttended": "Mark Attended",
       "markAbsent": "Mark Absent",
-      "deregister": "Remove Registration"
+      "deregister": "Remove Registration",
+      "route": "Route",
+      "distance": "Distance (km)",
+      "elevationGain": "Elevation Gain (m)",
+      "elevationLoss": "Elevation Loss (m)",
+      "duration": "Duration",
+      "technicalDifficulty": "Technical Difficulty",
+      "enduranceDifficulty": "Endurance Difficulty",
+      "hikingNotes": "Notes",
+      "hikingDetails": "Hiking Details"
     },
     "members": {
       "title": "Members",

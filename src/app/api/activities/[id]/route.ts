@@ -103,6 +103,7 @@ export async function PATCH(
         "date",
         "capacity",
         "maximumRegistration",
+        "metadata",
       ];
 
       for (const field of allowedFields) {

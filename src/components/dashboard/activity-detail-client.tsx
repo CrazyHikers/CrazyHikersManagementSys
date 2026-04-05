@@ -13,6 +13,7 @@ type ActivityData = {
   date: string;
   capacity: number;
   maximumRegistration: number | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export function EditButton({

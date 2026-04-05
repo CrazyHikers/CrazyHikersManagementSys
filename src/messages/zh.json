@@ -69,7 +69,16 @@
     "registered": "已报名",
     "deadline": "截止时间",
     "date": "活动日期",
-    "manager": "领队"
+    "manager": "领队",
+    "route": "路线",
+    "distance": "距离（公里）",
+    "elevationGain": "爬升（米）",
+    "elevationLoss": "下降（米）",
+    "duration": "预计时长",
+    "technicalDifficulty": "技术难度",
+    "enduranceDifficulty": "体力需求",
+    "hikingNotes": "注意事项",
+    "hikingDetails": "徒步详情"
   },
   "dashboard": {
     "title": "控制面板",
@@ -107,7 +116,16 @@
       "confirmRegistration": "确认报名",
       "markAttended": "标记出席",
       "markAbsent": "标记缺席",
-      "deregister": "取消报名"
+      "deregister": "取消报名",
+      "route": "路线",
+      "distance": "距离（公里）",
+      "elevationGain": "爬升（米）",
+      "elevationLoss": "下降（米）",
+      "duration": "预计时长",
+      "technicalDifficulty": "技术难度",
+      "enduranceDifficulty": "体力需求",
+      "hikingNotes": "注意事项",
+      "hikingDetails": "徒步详情"
     },
     "members": {
       "title": "成员管理",
