@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user || !hasRole(session, "admin")) {
+  if (!session?.user || !can(session, "settings.view")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   const session = await auth();
-  if (!session?.user || !hasRole(session, "admin")) {
+  if (!session?.user || !can(session, "settings.edit")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

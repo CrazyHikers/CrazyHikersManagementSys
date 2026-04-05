@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!hasRole(session, "admin")) {
+  if (!can(session, "waivers.approve")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

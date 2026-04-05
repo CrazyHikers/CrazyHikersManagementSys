@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import { computeKpi } from "@/lib/kpi";
 
 export async function GET() {
@@ -10,7 +10,7 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!hasRole(session, "admin")) {
+  if (!can(session, "managers.list")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!hasRole(session, "admin")) {
+  if (!can(session, "managers.create")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,10 +39,10 @@ export default async function UserDetailPage({
   params: Promise<{ email: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || !hasRole(session, "manager")) {
+  if (!session?.user || !can(session, "members.viewDetail")) {
     redirect("/dashboard");
   }
-  const isAdmin = hasRole(session, "admin");
+  const isAdmin = can(session, "members.list");
 
   const { email } = await params;
   const decodedEmail = decodeURIComponent(email);

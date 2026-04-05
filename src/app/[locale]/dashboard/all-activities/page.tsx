@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,7 +23,7 @@ const statusColors: Record<string, string> = {
 
 export default async function AllActivitiesPage() {
   const session = await auth();
-  if (!session?.user || !hasRole(session, "admin")) {
+  if (!session?.user || !can(session, "activities.viewAll")) {
     redirect("/dashboard");
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
 import { randomUUID } from "crypto";
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!hasRole(session, "manager")) {
+  if (!can(session, "activities.create")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

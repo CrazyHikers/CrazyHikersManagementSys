@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import {
   sendPromotionReferralEmail,
   sendPromotionVoteEmail,
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!hasRole(session, "manager")) {
+  if (!can(session, "promotions.vote")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { hasRole } from "@/lib/auth-utils";
+import { can } from "@/lib/permissions";
 import { getPublicUrl } from "@/lib/r2";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,7 @@ export default async function ActivityViewPage({
 }) {
   const { id } = await params;
   const session = await auth();
-  const isAdmin = session?.user ? hasRole(session, "admin") : false;
+  const isAdmin = session?.user ? can(session, "members.list") : false;
 
   const activity = await db.activity.findUnique({
     where: { id },

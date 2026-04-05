@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getUserRole } from "@/lib/auth-utils";
+import { getUserRole } from "@/lib/permissions";
 import { DashboardNav } from "@/components/dashboard/nav";
 
 export default async function DashboardLayout({
