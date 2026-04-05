@@ -138,7 +138,10 @@
     },
     "myWaivers": {
       "title": "My Waivers",
-      "uploadWaiver": "Upload Waiver",
+      "downloadTemplate": "Waiver Form Template",
+      "downloadTemplateDesc": "Download, print, sign, and upload the signed waiver",
+      "download": "Download",
+      "uploadWaiver": "Upload Signed Waiver",
       "selectFile": "Select file",
       "submit": "Submit",
       "uploadSuccess": "Waiver submitted successfully",

@@ -138,7 +138,10 @@
     },
     "myWaivers": {
       "title": "我的免责声明",
-      "uploadWaiver": "上传免责声明",
+      "downloadTemplate": "免责声明模板",
+      "downloadTemplateDesc": "下载、打印、签名后上传已签署的免责声明",
+      "download": "下载",
+      "uploadWaiver": "上传已签署的免责声明",
       "selectFile": "选择文件",
       "submit": "提交",
       "uploadSuccess": "免责声明提交成功",

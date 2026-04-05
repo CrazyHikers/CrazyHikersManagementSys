@@ -96,6 +96,21 @@ export default function MyWaiversPage() {
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
 
+      {/* Download template */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">{t("downloadTemplate")}</div>
+              <div className="text-sm text-muted-foreground">{t("downloadTemplateDesc")}</div>
+            </div>
+            <a href="/waiver-template.pdf" download>
+              <Button variant="outline">{t("download")}</Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Upload form */}
       <Card className="mb-6">
         <CardHeader>
