@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ type Registration = {
   confirmedAt: string | null;
   notes: string | null;
   formData?: RegistrationFormData | null;
+  userProfile?: Record<string, unknown> | null;
   totalAttended: number;
   hasValidWaiver: boolean;
   yellowFlags: number;
@@ -170,7 +172,7 @@ export function RegistrationManager({
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">{reg.userName}</span>
+                  <Link href={`/dashboard/members/${encodeURIComponent(reg.userEmail)}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
                   <Badge className={statusColors[reg.status]}>
                     {statusLabels[reg.status]}
                   </Badge>
@@ -207,7 +209,7 @@ export function RegistrationManager({
                     {reg.notes}
                   </div>
                 )}
-                {reg.formData && Object.values(reg.formData).some((v) => v !== undefined && v !== "" && v !== false) && (
+                {(reg.formData || reg.userProfile) && (
                   <div className="mt-2">
                     <button
                       type="button"
@@ -217,24 +219,66 @@ export function RegistrationManager({
                       {expandedFormData.has(reg.userEmail) ? "Hide details" : "Show details"}
                     </button>
                     {expandedFormData.has(reg.userEmail) && (
-                      <div className="mt-2 p-3 bg-gray-50 rounded text-sm space-y-1">
-                        {reg.formData.transportTicket && (
-                          <div><span className="text-muted-foreground">Transport Ticket: </span>{reg.formData.transportTicket}</div>
+                      <div className="mt-2 space-y-3">
+                        {/* User profile summary */}
+                        {reg.userProfile && (
+                          <div className="p-3 bg-blue-50 rounded text-sm space-y-1">
+                            <div className="font-medium text-blue-800 text-xs mb-2">Profile</div>
+                            {(() => {
+                              const p = reg.userProfile;
+                              const fields: [string, string][] = [
+                                ["gender", "Gender"],
+                                ["organization", "Organization"],
+                                ["fiveKmPace", "5km Pace"],
+                                ["maxElevationGain", "Max Elevation Gain (m)"],
+                                ["maxElevationLoss", "Max Elevation Loss (m)"],
+                                ["emergencyContact", "Emergency Contact"],
+                                ["emergencyPhone", "Emergency Phone"],
+                                ["navigationSoftware", "Navigation Software"],
+                                ["selfIntro", "Self Introduction"],
+                              ];
+                              const arrayFields: [string, string][] = [
+                                ["fitnessActivities", "Fitness"],
+                                ["equipment", "Equipment"],
+                                ["insurance", "Insurance"],
+                              ];
+                              return (
+                                <>
+                                  {fields.map(([k, label]) => {
+                                    const v = p[k];
+                                    if (!v) return null;
+                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{String(v)}</div>;
+                                  })}
+                                  {arrayFields.map(([k, label]) => {
+                                    const v = p[k];
+                                    if (!Array.isArray(v) || v.length === 0) return null;
+                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{v.join(", ")}</div>;
+                                  })}
+                                </>
+                              );
+                            })()}
+                          </div>
                         )}
-                        {reg.formData.departureCity && (
-                          <div><span className="text-muted-foreground">Departure City: </span>{reg.formData.departureCity}</div>
-                        )}
-                        {reg.formData.cameraEquipment && reg.formData.cameraEquipment.length > 0 && (
-                          <div><span className="text-muted-foreground">Camera Equipment: </span>{reg.formData.cameraEquipment.join(", ")}</div>
-                        )}
-                        {reg.formData.willPostSocialMedia !== undefined && (
-                          <div><span className="text-muted-foreground">Will Post Social Media: </span>{reg.formData.willPostSocialMedia ? "Yes" : "No"}</div>
-                        )}
-                        {reg.formData.willingToBePhotographed !== undefined && (
-                          <div><span className="text-muted-foreground">Willing to be Photographed: </span>{reg.formData.willingToBePhotographed ? "Yes" : "No"}</div>
-                        )}
-                        {reg.formData.confirmInfo && (
-                          <div><span className="text-muted-foreground">Info confirmed: </span>Yes</div>
+                        {/* Per-registration form data */}
+                        {reg.formData && (
+                          <div className="p-3 bg-gray-50 rounded text-sm space-y-1">
+                            <div className="font-medium text-gray-600 text-xs mb-2">Registration Answers</div>
+                            {reg.formData.transportTicket && (
+                              <div><span className="text-muted-foreground">Transport Ticket: </span>{reg.formData.transportTicket}</div>
+                            )}
+                            {reg.formData.departureCity && (
+                              <div><span className="text-muted-foreground">Departure City: </span>{reg.formData.departureCity}</div>
+                            )}
+                            {reg.formData.cameraEquipment && reg.formData.cameraEquipment.length > 0 && (
+                              <div><span className="text-muted-foreground">Camera Equipment: </span>{reg.formData.cameraEquipment.join(", ")}</div>
+                            )}
+                            {reg.formData.willPostSocialMedia !== undefined && (
+                              <div><span className="text-muted-foreground">Will Post Social Media: </span>{reg.formData.willPostSocialMedia ? "Yes" : "No"}</div>
+                            )}
+                            {reg.formData.willingToBePhotographed !== undefined && (
+                              <div><span className="text-muted-foreground">Willing to be Photographed: </span>{reg.formData.willingToBePhotographed ? "Yes" : "No"}</div>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
