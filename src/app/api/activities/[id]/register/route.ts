@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(
@@ -96,8 +97,31 @@ export async function POST(
       return NextResponse.json({ message: "Already registered" });
     }
 
+    // Check for same-day conflict (can't register for two activities on the same date)
+    const activityDate = new Date(activity.date);
+    const dayStart = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    const sameDayRegistration = await db.registration.findFirst({
+      where: {
+        userEmail: user.email,
+        status: { in: ["registered", "registration_confirmed"] },
+        activity: {
+          date: { gte: dayStart, lt: dayEnd },
+          id: { not: activityId },
+        },
+      },
+      include: { activity: { select: { title: true } } },
+    });
+    if (sameDayRegistration) {
+      return NextResponse.json(
+        { error: `You are already registered for "${sameDayRegistration.activity.title}" on the same day.` },
+        { status: 400 }
+      );
+    }
+
     // Create registration — shadow ban is checked at query time
-    // (banned users' registrations are hidden from managers, not blocked)
     await db.registration.create({
       data: {
         activityId,
@@ -107,10 +131,64 @@ export async function POST(
       },
     });
 
-    // User always sees success (shadow ban is invisible to them)
     return NextResponse.json({ message: "Registration successful" });
   } catch (error) {
     console.error("Registration error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// Withdraw registration (user must be logged in, can only withdraw own, before deadline)
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: activityId } = await params;
+    const userEmail = session.user.email;
+
+    const activity = await db.activity.findUnique({ where: { id: activityId } });
+    if (!activity) {
+      return NextResponse.json({ error: "Activity not found" }, { status: 404 });
+    }
+
+    // Can only withdraw before the registration deadline
+    if (new Date(activity.deadline) <= new Date()) {
+      return NextResponse.json(
+        { error: "Cannot withdraw after the registration deadline" },
+        { status: 400 }
+      );
+    }
+
+    // Can only withdraw pending registrations (not confirmed/attended)
+    const registration = await db.registration.findUnique({
+      where: { activityId_userEmail: { activityId, userEmail } },
+    });
+    if (!registration) {
+      return NextResponse.json({ error: "Not registered" }, { status: 404 });
+    }
+    if (registration.status !== "registered") {
+      return NextResponse.json(
+        { error: "Cannot withdraw a confirmed registration. Please contact the activity manager." },
+        { status: 400 }
+      );
+    }
+
+    await db.registration.delete({
+      where: { activityId_userEmail: { activityId, userEmail } },
+    });
+
+    return NextResponse.json({ message: "Registration withdrawn" });
+  } catch (error) {
+    console.error("Withdraw error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

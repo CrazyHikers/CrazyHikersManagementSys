@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 type SessionUser = {
@@ -22,6 +23,20 @@ export function RegistrationForm({
 }) {
   const t = useTranslations("activity");
   const [loading, setLoading] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
+  const [checking, setChecking] = useState(!!session?.email);
+
+  // Check if user is already registered
+  useEffect(() => {
+    if (!session?.email) return;
+    fetch(`/api/activities/${activityId}/register/status`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status) setRegistrationStatus(data.status);
+      })
+      .catch(() => {})
+      .finally(() => setChecking(false));
+  }, [activityId, session?.email]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,12 +62,70 @@ export function RegistrationForm({
       }
 
       toast.success(t("registrationSuccess"));
-      (e.target as HTMLFormElement).reset();
+      setRegistrationStatus("registered");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleWithdraw() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/activities/${activityId}/register`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Withdraw failed");
+      }
+      toast.success(t("withdrawSuccess"));
+      setRegistrationStatus(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Withdraw failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (checking) {
+    return <div className="text-center py-4 text-muted-foreground">...</div>;
+  }
+
+  // Already registered — show status and withdraw button
+  if (registrationStatus) {
+    const statusLabels: Record<string, string> = {
+      registered: t("statusRegistered"),
+      registration_confirmed: t("statusConfirmed"),
+    };
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{t("yourStatus")}:</span>
+          <Badge className={
+            registrationStatus === "registration_confirmed"
+              ? "bg-green-100 text-green-800"
+              : "bg-blue-100 text-blue-800"
+          }>
+            {statusLabels[registrationStatus] || registrationStatus}
+          </Badge>
+        </div>
+        {registrationStatus === "registered" && (
+          <Button
+            variant="outline"
+            className="w-full text-red-600 border-red-200 hover:bg-red-50"
+            onClick={handleWithdraw}
+            disabled={loading}
+          >
+            {loading ? "..." : t("withdrawButton")}
+          </Button>
+        )}
+        {registrationStatus === "registration_confirmed" && (
+          <p className="text-sm text-muted-foreground">{t("confirmedNote")}</p>
+        )}
+      </div>
+    );
   }
 
   return (
