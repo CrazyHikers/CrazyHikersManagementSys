@@ -14,6 +14,16 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+type RegistrationFormData = {
+  expectations?: string;
+  dietaryRestrictions?: string;
+  bringItems?: string;
+  isCrazyHikerMember?: string;
+  fitnessStatement?: string;
+  confirmRules?: boolean;
+  confirmInfo?: boolean;
+};
+
 type Registration = {
   userEmail: string;
   userName: string;
@@ -22,6 +32,7 @@ type Registration = {
   registeredAt: string;
   confirmedAt: string | null;
   notes: string | null;
+  formData?: RegistrationFormData | null;
   totalAttended: number;
   hasValidWaiver: boolean;
   yellowFlags: number;
@@ -56,6 +67,16 @@ export function RegistrationManager({
   const [registrations, setRegistrations] = useState(initialRegistrations);
   const [saving, setSaving] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
+  const [expandedFormData, setExpandedFormData] = useState<Set<string>>(new Set());
+
+  function toggleFormData(userEmail: string) {
+    setExpandedFormData((prev) => {
+      const next = new Set(prev);
+      if (next.has(userEmail)) next.delete(userEmail);
+      else next.add(userEmail);
+      return next;
+    });
+  }
 
   // Auto-save on status change
   const updateStatus = useCallback(
@@ -185,6 +206,42 @@ export function RegistrationManager({
                 {reg.notes && (
                   <div className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-600">
                     {reg.notes}
+                  </div>
+                )}
+                {reg.formData && Object.values(reg.formData).some((v) => v !== undefined && v !== "" && v !== false) && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="text-xs text-green-700 hover:underline"
+                      onClick={() => toggleFormData(reg.userEmail)}
+                    >
+                      {expandedFormData.has(reg.userEmail) ? "Hide details" : "Show details"}
+                    </button>
+                    {expandedFormData.has(reg.userEmail) && (
+                      <div className="mt-2 p-3 bg-gray-50 rounded text-sm space-y-1">
+                        {reg.formData.expectations && (
+                          <div><span className="text-muted-foreground">Expectations: </span>{reg.formData.expectations}</div>
+                        )}
+                        {reg.formData.dietaryRestrictions && (
+                          <div><span className="text-muted-foreground">Dietary: </span>{reg.formData.dietaryRestrictions}</div>
+                        )}
+                        {reg.formData.bringItems && (
+                          <div><span className="text-muted-foreground">Bringing: </span>{reg.formData.bringItems}</div>
+                        )}
+                        {reg.formData.isCrazyHikerMember && (
+                          <div><span className="text-muted-foreground">Member: </span>{reg.formData.isCrazyHikerMember}</div>
+                        )}
+                        {reg.formData.fitnessStatement && (
+                          <div><span className="text-muted-foreground">Fitness: </span>{reg.formData.fitnessStatement}</div>
+                        )}
+                        {reg.formData.confirmRules && (
+                          <div><span className="text-muted-foreground">Rules confirmed: </span>Yes</div>
+                        )}
+                        {reg.formData.confirmInfo && (
+                          <div><span className="text-muted-foreground">Info confirmed: </span>Yes</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

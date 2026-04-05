@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -25,6 +32,7 @@ export function RegistrationForm({
   const [loading, setLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
   const [checking, setChecking] = useState(!!session?.email);
+  const [isCrazyHikerMember, setIsCrazyHikerMember] = useState("");
 
   // Check if user is already registered
   useEffect(() => {
@@ -42,11 +50,20 @@ export function RegistrationForm({
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const fd = new FormData(e.currentTarget);
     const data = {
-      email: (formData.get("email") as string) || session?.email || "",
-      name: (formData.get("name") as string) || session?.name || "",
-      notes: formData.get("notes") as string,
+      email: (fd.get("email") as string) || session?.email || "",
+      name: (fd.get("name") as string) || session?.name || "",
+      notes: fd.get("notes") as string,
+      formData: {
+        expectations: fd.get("expectations") as string || undefined,
+        dietaryRestrictions: fd.get("dietaryRestrictions") as string || undefined,
+        bringItems: fd.get("bringItems") as string || undefined,
+        isCrazyHikerMember: isCrazyHikerMember || undefined,
+        fitnessStatement: fd.get("fitnessStatement") as string || undefined,
+        confirmRules: fd.get("confirmRules") === "on",
+        confirmInfo: fd.get("confirmInfo") === "on",
+      },
     };
 
     try {
@@ -157,6 +174,69 @@ export function RegistrationForm({
         <Label htmlFor="notes">{t("notes")}</Label>
         <Textarea id="notes" name="notes" rows={2} />
       </div>
+
+      {/* Additional per-registration fields */}
+      <div className="border-t pt-4 space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground">{t("additionalInfo")}</h3>
+        <div className="space-y-2">
+          <Label htmlFor="expectations">{t("expectations")}</Label>
+          <Textarea id="expectations" name="expectations" rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dietaryRestrictions">{t("dietaryRestrictions")}</Label>
+          <Input id="dietaryRestrictions" name="dietaryRestrictions" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bringItems">{t("bringItems")}</Label>
+          <Textarea id="bringItems" name="bringItems" rows={2} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="isCrazyHikerMember">{t("isCrazyHikerMember")}</Label>
+          <Select value={isCrazyHikerMember} onValueChange={(val) => setIsCrazyHikerMember(val || "")}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">{t("yes")}</SelectItem>
+              <SelectItem value="no">{t("no")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="fitnessStatement">{t("fitnessStatement")}</Label>
+          <Textarea id="fitnessStatement" name="fitnessStatement" rows={2} />
+        </div>
+      </div>
+
+      {/* Confirmations */}
+      <div className="border-t pt-4 space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground">{t("confirmations")}</h3>
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            id="confirmRules"
+            name="confirmRules"
+            required
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <Label htmlFor="confirmRules" className="text-sm font-normal leading-snug">
+            {t("confirmRules")}
+          </Label>
+        </div>
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            id="confirmInfo"
+            name="confirmInfo"
+            required
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <Label htmlFor="confirmInfo" className="text-sm font-normal leading-snug">
+            {t("confirmInfo")}
+          </Label>
+        </div>
+      </div>
+
       <Button
         type="submit"
         className="w-full bg-green-600 hover:bg-green-700"

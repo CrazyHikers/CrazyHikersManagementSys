@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const { id: activityId } = await params;
-    const { email, name, notes } = await request.json();
+    const { email, name, notes, formData } = await request.json();
 
     if (!email || !name) {
       return NextResponse.json(
@@ -128,7 +128,8 @@ export async function POST(
         userEmail: user.email,
         status: "registered",
         notes: notes || null,
-      },
+        ...(formData && typeof formData === "object" ? { formData } : {}),
+      } as Parameters<typeof db.registration.create>[0]["data"],
     });
 
     return NextResponse.json({ message: "Registration successful" });

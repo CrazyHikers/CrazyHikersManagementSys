@@ -7,14 +7,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { PromotionRequest } from "@/components/dashboard/promotion-request";
+
+type UserProfile = {
+  phone?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  gender?: string;
+  nationality?: string;
+  city?: string;
+  fitnessLevel?: string;
+  hikingExperience?: string;
+  transportPreference?: string;
+  regionPreference?: string;
+  equipment?: string;
+  medicalConditions?: string;
+  socialMedia?: string;
+  travelCard?: string;
+};
 
 type Profile = {
   email: string;
   name: string;
   role: string;
   tag: string | null;
+  profile?: UserProfile;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,13 +53,32 @@ const roleBadgeColors: Record<string, string> = {
   member: "bg-green-100 text-green-800",
 };
 
+const emptyUserProfile: UserProfile = {
+  phone: "",
+  emergencyContact: "",
+  emergencyPhone: "",
+  gender: "",
+  nationality: "",
+  city: "",
+  fitnessLevel: "",
+  hikingExperience: "",
+  transportPreference: "",
+  regionPreference: "",
+  equipment: "",
+  medicalConditions: "",
+  socialMedia: "",
+  travelCard: "",
+};
+
 export default function MyProfilePage() {
   const t = useTranslations("dashboard.myProfile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile>(emptyUserProfile);
   const [promotionEligibility, setPromotionEligibility] =
     useState<PromotionEligibility | null>(null);
 
@@ -62,6 +107,9 @@ export default function MyProfilePage() {
         setProfile(data);
         setName(data.name);
         setTag(data.tag || "");
+        if (data.profile) {
+          setUserProfile({ ...emptyUserProfile, ...data.profile });
+        }
       }
     } finally {
       setLoading(false);
@@ -88,6 +136,30 @@ export default function MyProfilePage() {
       toast.error(err instanceof Error ? err.message : "Error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function updateProfileField(field: keyof UserProfile, value: string) {
+    setUserProfile((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSaveProfile(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/users/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, tag: tag || undefined, profile: userProfile }),
+      });
+      if (!res.ok) throw new Error("Failed to update profile");
+      const updated = await res.json();
+      setProfile(updated);
+      toast.success(t("personalDetailsSaved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error");
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -149,6 +221,179 @@ export default function MyProfilePage() {
               disabled={saving}
             >
               {saving ? "..." : t("save")}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">{t("personalDetails")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSaveProfile} className="space-y-6">
+            {/* Personal */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("personal")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">{t("gender")}</Label>
+                  <Select
+                    value={userProfile.gender || ""}
+                    onValueChange={(val) => updateProfileField("gender", val || "")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("selectGender")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">{t("male")}</SelectItem>
+                      <SelectItem value="female">{t("female")}</SelectItem>
+                      <SelectItem value="other">{t("otherGender")}</SelectItem>
+                      <SelectItem value="prefer_not_to_say">{t("preferNotToSay")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nationality">{t("nationality")}</Label>
+                  <Input
+                    id="nationality"
+                    value={userProfile.nationality || ""}
+                    onChange={(e) => updateProfileField("nationality", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">{t("city")}</Label>
+                  <Input
+                    id="city"
+                    value={userProfile.city || ""}
+                    onChange={(e) => updateProfileField("city", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t("phone")}</Label>
+                  <Input
+                    id="phone"
+                    value={userProfile.phone || ""}
+                    onChange={(e) => updateProfileField("phone", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("emergency")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact">{t("emergencyContact")}</Label>
+                  <Input
+                    id="emergencyContact"
+                    value={userProfile.emergencyContact || ""}
+                    onChange={(e) => updateProfileField("emergencyContact", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">{t("emergencyPhone")}</Label>
+                  <Input
+                    id="emergencyPhone"
+                    value={userProfile.emergencyPhone || ""}
+                    onChange={(e) => updateProfileField("emergencyPhone", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Hiking */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("hiking")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fitnessLevel">{t("fitnessLevel")}</Label>
+                  <Input
+                    id="fitnessLevel"
+                    value={userProfile.fitnessLevel || ""}
+                    onChange={(e) => updateProfileField("fitnessLevel", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hikingExperience">{t("hikingExperience")}</Label>
+                  <Input
+                    id="hikingExperience"
+                    value={userProfile.hikingExperience || ""}
+                    onChange={(e) => updateProfileField("hikingExperience", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="transportPreference">{t("transportPreference")}</Label>
+                  <Input
+                    id="transportPreference"
+                    value={userProfile.transportPreference || ""}
+                    onChange={(e) => updateProfileField("transportPreference", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="regionPreference">{t("regionPreference")}</Label>
+                  <Input
+                    id="regionPreference"
+                    value={userProfile.regionPreference || ""}
+                    onChange={(e) => updateProfileField("regionPreference", e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 mt-4">
+                <Label htmlFor="equipment">{t("equipment")}</Label>
+                <Textarea
+                  id="equipment"
+                  rows={2}
+                  value={userProfile.equipment || ""}
+                  onChange={(e) => updateProfileField("equipment", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Medical */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("medical")}</h3>
+              <div className="space-y-2">
+                <Label htmlFor="medicalConditions">{t("medicalConditions")}</Label>
+                <Textarea
+                  id="medicalConditions"
+                  rows={2}
+                  value={userProfile.medicalConditions || ""}
+                  onChange={(e) => updateProfileField("medicalConditions", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Other */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("other")}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="socialMedia">{t("socialMedia")}</Label>
+                  <Input
+                    id="socialMedia"
+                    value={userProfile.socialMedia || ""}
+                    onChange={(e) => updateProfileField("socialMedia", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="travelCard">{t("travelCard")}</Label>
+                  <Input
+                    id="travelCard"
+                    value={userProfile.travelCard || ""}
+                    onChange={(e) => updateProfileField("travelCard", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700"
+              disabled={savingProfile}
+            >
+              {savingProfile ? "..." : t("save")}
             </Button>
           </form>
         </CardContent>

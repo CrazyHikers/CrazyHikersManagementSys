@@ -122,6 +122,47 @@ export default async function UserDetailPage({
         </CardContent>
       </Card>
 
+      {/* Personal Details (from profile JSON) */}
+      {(() => {
+        const p = (user as Record<string, unknown>).profile as Record<string, string> | null;
+        if (!p || Object.values(p).every((v) => !v)) return null;
+        const profileFields = [
+          { key: "gender", label: "Gender" },
+          { key: "nationality", label: "Nationality" },
+          { key: "city", label: "City" },
+          { key: "phone", label: "Phone" },
+          { key: "emergencyContact", label: "Emergency Contact" },
+          { key: "emergencyPhone", label: "Emergency Phone" },
+          { key: "fitnessLevel", label: "Fitness Level" },
+          { key: "hikingExperience", label: "Hiking Experience" },
+          { key: "transportPreference", label: "Transport Preference" },
+          { key: "regionPreference", label: "Region Preference" },
+          { key: "equipment", label: "Equipment" },
+          { key: "medicalConditions", label: "Medical Conditions" },
+          { key: "socialMedia", label: "Social Media" },
+          { key: "travelCard", label: "Travel Card" },
+        ];
+        const filledFields = profileFields.filter((f) => p[f.key]);
+        if (filledFields.length === 0) return null;
+        return (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Personal Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                {filledFields.map((f) => (
+                  <div key={f.key}>
+                    <span className="text-muted-foreground">{f.label}: </span>
+                    <span className="font-medium">{p[f.key]}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Waivers */}
       <Card className="mb-6">
         <CardHeader>

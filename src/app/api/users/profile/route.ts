@@ -22,6 +22,7 @@ export async function GET() {
     name: user.name,
     role: user.role,
     tag: user.managerProfile?.tag || null,
+    profile: (user as Record<string, unknown>).profile || {},
   });
 }
 
@@ -31,15 +32,31 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, tag } = await request.json();
+  const { name, tag, profile } = await request.json();
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
+  // Build update data
+  const updateData: Record<string, unknown> = { name: name.trim() };
+
+  // Merge profile fields if provided
+  if (profile && typeof profile === "object") {
+    const existingUser = await db.user.findUnique({
+      where: { email: session.user.email },
+    });
+    const existingProfile = (existingUser as Record<string, unknown>)?.profile;
+    const merged = {
+      ...(typeof existingProfile === "object" && existingProfile !== null ? existingProfile : {}),
+      ...profile,
+    };
+    updateData.profile = merged;
+  }
+
   const updated = await db.user.update({
     where: { email: session.user.email },
-    data: { name: name.trim() },
+    data: updateData,
     include: { managerProfile: true },
   });
 
@@ -66,5 +83,6 @@ export async function PATCH(request: NextRequest) {
     name: updated.name,
     role: updated.role,
     tag: tag !== undefined ? tag.trim() : (updated.managerProfile?.tag || null),
+    profile: (updated as Record<string, unknown>).profile || {},
   });
 }

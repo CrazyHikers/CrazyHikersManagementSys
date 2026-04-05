@@ -61,6 +61,7 @@ export default async function RegistrationsPage({
         registeredAt: r.registeredAt.toISOString(),
         confirmedAt: r.confirmedAt?.toISOString() || null,
         notes: r.notes,
+        formData: (r as Record<string, unknown>).formData as Record<string, unknown> | null,
         totalAttended: r.user.registrations.length,
         hasValidWaiver: r.user.waivers.length > 0,
         yellowFlags: yellowCount,
