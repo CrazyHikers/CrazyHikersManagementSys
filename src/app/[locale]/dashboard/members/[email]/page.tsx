@@ -104,7 +104,7 @@ export default async function UserDetailPage({
               <span className="text-muted-foreground">Joined: </span>
               <span className="font-medium">{user.createdAt.toLocaleDateString()}</span>
             </div>
-            {user.managerProfile && (
+            {user.role === "manager" && user.managerProfile && (
               <>
                 <div>
                   <span className="text-muted-foreground">Tag: </span>
