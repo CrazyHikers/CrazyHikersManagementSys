@@ -9,7 +9,7 @@ function getResend() {
   return resendInstance;
 }
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Crazy Hiker <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Crazy Hikers <onboarding@resend.dev>";
 
 export async function sendEmail({
   to,
@@ -40,10 +40,10 @@ export async function sendEmail({
 export async function sendMagicLinkEmail(email: string, url: string) {
   return sendEmail({
     to: email,
-    subject: "Sign in to Crazy Hiker",
+    subject: "Sign in to Crazy Hikers",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2>Sign in to Crazy Hiker</h2>
+        <h2>Sign in to Crazy Hikers</h2>
         <p>Click the button below to sign in to your account.</p>
         <a href="${url}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Sign In
@@ -75,7 +75,7 @@ export async function sendRegistrationConfirmation(
         <p>Dear ${memberName},</p>
         <p>Your registration for <strong>${activityTitle}</strong> has been confirmed.</p>
         ${qrSection}
-        <p>Best regards,<br/>Crazy Hiker Team</p>
+        <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });
@@ -97,7 +97,7 @@ export async function sendWaiverExpiryNotification(
         <a href="${waiverFormUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Submit Waiver
         </a>
-        <p>Thank you,<br/>Crazy Hiker Team</p>
+        <p>Thank you,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });
@@ -120,7 +120,7 @@ export async function sendComanagerInvitation(
         <a href="${acceptUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Accept Invitation
         </a>
-        <p>Best regards,<br/>Crazy Hiker Team</p>
+        <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });
@@ -144,7 +144,7 @@ export async function sendPromotionReferralEmail(
         <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Review Request
         </a>
-        <p>Best regards,<br/>Crazy Hiker Team</p>
+        <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });
@@ -168,7 +168,7 @@ export async function sendPromotionVoteEmail(
         <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Cast Your Vote
         </a>
-        <p>Best regards,<br/>Crazy Hiker Team</p>
+        <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });
@@ -197,7 +197,7 @@ export async function sendPromotionResultEmail(
           : `<p>Unfortunately, your promotion request was not approved at this time.</p>`
         }
         ${reasonsHtml}
-        <p>Best regards,<br/>Crazy Hiker Team</p>
+        <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
   });

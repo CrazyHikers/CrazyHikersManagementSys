@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Crazy Hiker",
+    "appName": "Crazy Hikers",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -281,7 +281,7 @@
     "checkEmail": "Check your email for a sign-in link!",
     "invalidEmail": "This email is not registered",
     "signUpTitle": "Create Account",
-    "signUpDescription": "Join Crazy Hiker to register for activities",
+    "signUpDescription": "Join Crazy Hikers to register for activities",
     "namePlaceholder": "Your name",
     "createAccount": "Create Account",
     "signUpButton": "Create Account",
