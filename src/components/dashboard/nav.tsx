@@ -66,8 +66,8 @@ function NavLinks({
     );
   }
 
-  const isManager = role === "manager" || role === "admin";
-  const isAdmin = role === "admin";
+  const isManager = role === "manager" || role === "admin" || role === "dev";
+  const isAdmin = role === "admin" || role === "dev";
 
   return (
     <>

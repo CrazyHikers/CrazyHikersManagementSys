@@ -1,6 +1,6 @@
 import { auth } from "./auth";
 
-export type UserRole = "admin" | "manager" | "member";
+export type UserRole = "dev" | "admin" | "manager" | "member";
 
 export type Permission =
   // Activities
@@ -29,48 +29,56 @@ export type Permission =
   | "settings.view"
   | "settings.edit"
   // Upload
-  | "upload.files";
+  | "upload.files"
+  // Dev-only
+  | "users.changeRole";
 
 /**
  * Central permission matrix.
  * Each permission maps to the roles that are allowed to perform it.
  * To add a new role, just add it to the relevant permission arrays.
+ *
+ * Role hierarchy (for reference, not enforced):
+ *   dev > admin > manager > member
  */
 const permissionMatrix: Record<Permission, UserRole[]> = {
   // Activities
-  "activities.create": ["manager", "admin"],
-  "activities.edit": ["manager", "admin"],
-  "activities.viewOwn": ["manager", "admin"],
-  "activities.viewAll": ["admin"],
-  "activities.finish": ["manager", "admin"],
-  "activities.cancel": ["manager", "admin"],
+  "activities.create": ["manager", "admin", "dev"],
+  "activities.edit": ["manager", "admin", "dev"],
+  "activities.viewOwn": ["manager", "admin", "dev"],
+  "activities.viewAll": ["admin", "dev"],
+  "activities.finish": ["manager", "admin", "dev"],
+  "activities.cancel": ["manager", "admin", "dev"],
 
   // Registrations
-  "registrations.manage": ["manager", "admin"],
-  "registrations.flag": ["manager", "admin"],
+  "registrations.manage": ["manager", "admin", "dev"],
+  "registrations.flag": ["manager", "admin", "dev"],
 
   // Members
-  "members.list": ["admin"],
-  "members.viewDetail": ["manager", "admin"],
+  "members.list": ["admin", "dev"],
+  "members.viewDetail": ["manager", "admin", "dev"],
 
   // Waivers
-  "waivers.approve": ["admin"],
+  "waivers.approve": ["admin", "dev"],
 
   // Managers
-  "managers.list": ["admin"],
-  "managers.create": ["admin"],
+  "managers.list": ["admin", "dev"],
+  "managers.create": ["admin", "dev"],
 
   // Promotions
-  "promotions.request": ["member", "manager", "admin"],
-  "promotions.vote": ["manager", "admin"],
-  "promotions.review": ["admin"],
+  "promotions.request": ["member", "manager", "admin", "dev"],
+  "promotions.vote": ["manager", "admin", "dev"],
+  "promotions.review": ["admin", "dev"],
 
   // Settings
-  "settings.view": ["admin"],
-  "settings.edit": ["admin"],
+  "settings.view": ["admin", "dev"],
+  "settings.edit": ["admin", "dev"],
 
   // Upload
-  "upload.files": ["member", "manager", "admin"],
+  "upload.files": ["member", "manager", "admin", "dev"],
+
+  // Dev-only: directly change any user's role
+  "users.changeRole": ["dev"],
 };
 
 /**

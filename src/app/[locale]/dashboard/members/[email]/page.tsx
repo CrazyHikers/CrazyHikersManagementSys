@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
+import { RoleChanger } from "@/components/dashboard/role-changer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -43,6 +44,7 @@ export default async function UserDetailPage({
     redirect("/dashboard");
   }
   const isAdmin = can(session, "members.list");
+  const isDev = can(session, "users.changeRole");
 
   const { email } = await params;
   const decodedEmail = decodeURIComponent(email);
@@ -71,6 +73,11 @@ export default async function UserDetailPage({
         <h1 className="text-2xl font-bold">{user.name}</h1>
         <Badge className={roleBadgeColors[user.role]}>{user.role}</Badge>
       </div>
+
+      {/* Dev: Role changer */}
+      {isDev && (
+        <RoleChanger userEmail={user.email} currentRole={user.role} />
+      )}
 
       {/* Basic info */}
       <Card className="mb-6">
