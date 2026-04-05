@@ -15,7 +15,7 @@ async function getOpenActivities() {
     include: {
       activityManagers: {
         where: { status: "confirmed" },
-        include: { user: true },
+        include: { user: { include: { managerProfile: true } } },
       },
       _count: {
         select: {
@@ -61,11 +61,11 @@ export default async function HomePage() {
               {activities.map((activity) => {
                 const managerNames = activity.activityManagers
                   .filter((am) => am.role === "manager")
-                  .map((am) => am.user.name)
+                  .map((am) => am.user.managerProfile?.tag || am.user.name)
                   .join(", ");
                 const comanagerNames = activity.activityManagers
                   .filter((am) => am.role === "comanager")
-                  .map((am) => am.user.name)
+                  .map((am) => am.user.managerProfile?.tag || am.user.name)
                   .join(", ");
                 const allNames = [managerNames, comanagerNames]
                   .filter(Boolean)

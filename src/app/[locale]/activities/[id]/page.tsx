@@ -16,7 +16,7 @@ async function getActivity(id: string) {
     include: {
       activityManagers: {
         where: { status: "confirmed" },
-        include: { user: true },
+        include: { user: { include: { managerProfile: true } } },
       },
       _count: {
         select: {
@@ -52,10 +52,10 @@ export default async function ActivityDetailPage({
 
   const managers = activity.activityManagers
     .filter((am) => am.role === "manager")
-    .map((am) => am.user.name);
+    .map((am) => am.user.managerProfile?.tag || am.user.name);
   const comanagers = activity.activityManagers
     .filter((am) => am.role === "comanager")
-    .map((am) => am.user.name);
+    .map((am) => am.user.managerProfile?.tag || am.user.name);
 
   const sessionUser = session?.user
     ? { name: session.user.name, email: session.user.email }
