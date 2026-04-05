@@ -65,6 +65,8 @@ export function RegistrationManager({
   initialRegistrations: Registration[];
 }) {
   const t = useTranslations("dashboard.activities");
+  const tp = useTranslations("dashboard.myProfile");
+  const ta = useTranslations("activity");
   const [registrations, setRegistrations] = useState(initialRegistrations);
   const [saving, setSaving] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
@@ -216,31 +218,31 @@ export function RegistrationManager({
                       className="text-xs text-green-700 hover:underline"
                       onClick={() => toggleFormData(reg.userEmail)}
                     >
-                      {expandedFormData.has(reg.userEmail) ? "Hide details" : "Show details"}
+                      {expandedFormData.has(reg.userEmail) ? t("hideDetails") : t("showDetails")}
                     </button>
                     {expandedFormData.has(reg.userEmail) && (
                       <div className="mt-2 space-y-3">
                         {/* User profile summary */}
                         {reg.userProfile && (
                           <div className="p-3 bg-blue-50 rounded text-sm space-y-1">
-                            <div className="font-medium text-blue-800 text-xs mb-2">Profile</div>
+                            <div className="font-medium text-blue-800 text-xs mb-2">{tp("personalDetails")}</div>
                             {(() => {
                               const p = reg.userProfile;
                               const fields: [string, string][] = [
-                                ["gender", "Gender"],
-                                ["organization", "Organization"],
-                                ["fiveKmPace", "5km Pace"],
-                                ["maxElevationGain", "Max Elevation Gain (m)"],
-                                ["maxElevationLoss", "Max Elevation Loss (m)"],
-                                ["emergencyContact", "Emergency Contact"],
-                                ["emergencyPhone", "Emergency Phone"],
-                                ["navigationSoftware", "Navigation Software"],
-                                ["selfIntro", "Self Introduction"],
+                                ["gender", tp("gender")],
+                                ["organization", tp("organization")],
+                                ["fiveKmPace", tp("fiveKmPace")],
+                                ["maxElevationGain", tp("maxElevationGain")],
+                                ["maxElevationLoss", tp("maxElevationLoss")],
+                                ["emergencyContact", tp("emergencyContact")],
+                                ["emergencyPhone", tp("emergencyPhone")],
+                                ["navigationSoftware", tp("navigationSoftware")],
+                                ["selfIntro", tp("selfIntro")],
                               ];
                               const arrayFields: [string, string][] = [
-                                ["fitnessActivities", "Fitness"],
-                                ["equipment", "Equipment"],
-                                ["insurance", "Insurance"],
+                                ["fitnessActivities", tp("fitnessActivities")],
+                                ["equipment", tp("equipment")],
+                                ["insurance", tp("insurance")],
                               ];
                               return (
                                 <>
@@ -262,21 +264,21 @@ export function RegistrationManager({
                         {/* Per-registration form data */}
                         {reg.formData && (
                           <div className="p-3 bg-gray-50 rounded text-sm space-y-1">
-                            <div className="font-medium text-gray-600 text-xs mb-2">Registration Answers</div>
+                            <div className="font-medium text-gray-600 text-xs mb-2">{ta("additionalInfo")}</div>
                             {reg.formData.transportTicket && (
-                              <div><span className="text-muted-foreground">Transport Ticket: </span>{reg.formData.transportTicket}</div>
+                              <div><span className="text-muted-foreground">{ta("transportTicket")}: </span>{reg.formData.transportTicket}</div>
                             )}
                             {reg.formData.departureCity && (
-                              <div><span className="text-muted-foreground">Departure City: </span>{reg.formData.departureCity}</div>
+                              <div><span className="text-muted-foreground">{ta("departureCity")}: </span>{reg.formData.departureCity}</div>
                             )}
                             {reg.formData.cameraEquipment && reg.formData.cameraEquipment.length > 0 && (
-                              <div><span className="text-muted-foreground">Camera Equipment: </span>{reg.formData.cameraEquipment.join(", ")}</div>
+                              <div><span className="text-muted-foreground">{ta("cameraEquipment")}: </span>{reg.formData.cameraEquipment.join(", ")}</div>
                             )}
                             {reg.formData.willPostSocialMedia !== undefined && (
-                              <div><span className="text-muted-foreground">Will Post Social Media: </span>{reg.formData.willPostSocialMedia ? "Yes" : "No"}</div>
+                              <div><span className="text-muted-foreground">{ta("willPostSocialMedia")}: </span>{reg.formData.willPostSocialMedia ? ta("yes") : ta("no")}</div>
                             )}
                             {reg.formData.willingToBePhotographed !== undefined && (
-                              <div><span className="text-muted-foreground">Willing to be Photographed: </span>{reg.formData.willingToBePhotographed ? "Yes" : "No"}</div>
+                              <div><span className="text-muted-foreground">{ta("willingToBePhotographed")}: </span>{reg.formData.willingToBePhotographed ? ta("willing") : ta("notWilling")}</div>
                             )}
                           </div>
                         )}

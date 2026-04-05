@@ -129,6 +129,8 @@
       "markAttended": "Mark Attended",
       "markAbsent": "Mark Absent",
       "deregister": "Remove Registration",
+      "showDetails": "Show details",
+      "hideDetails": "Hide details",
       "route": "Route",
       "distance": "Distance (km)",
       "elevationGain": "Elevation Gain (m)",
