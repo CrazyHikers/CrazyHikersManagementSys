@@ -26,7 +26,8 @@ type UserProfile = {
   nationality?: string;
   city?: string;
   fitnessLevel?: string;
-  hikingExperience?: string;
+  maxElevationGain?: string;
+  maxElevationLoss?: string;
   transportPreference?: string;
   regionPreference?: string;
   equipment?: string;
@@ -61,7 +62,8 @@ const emptyUserProfile: UserProfile = {
   nationality: "",
   city: "",
   fitnessLevel: "",
-  hikingExperience: "",
+  maxElevationGain: "",
+  maxElevationLoss: "",
   transportPreference: "",
   regionPreference: "",
   equipment: "",
@@ -316,11 +318,23 @@ export default function MyProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="hikingExperience">{t("hikingExperience")}</Label>
+                  <Label htmlFor="maxElevationGain">{t("maxElevationGain")}</Label>
                   <Input
-                    id="hikingExperience"
-                    value={userProfile.hikingExperience || ""}
-                    onChange={(e) => updateProfileField("hikingExperience", e.target.value)}
+                    id="maxElevationGain"
+                    type="number"
+                    min="0"
+                    value={userProfile.maxElevationGain || ""}
+                    onChange={(e) => updateProfileField("maxElevationGain", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxElevationLoss">{t("maxElevationLoss")}</Label>
+                  <Input
+                    id="maxElevationLoss"
+                    type="number"
+                    min="0"
+                    value={userProfile.maxElevationLoss || ""}
+                    onChange={(e) => updateProfileField("maxElevationLoss", e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
