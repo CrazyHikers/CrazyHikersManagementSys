@@ -451,18 +451,18 @@ export function RegistrationManager({
                       onValueChange={(val) => val && updateStatus(reg.userEmail, val)}
                     >
                       <SelectTrigger className="w-36 h-8 text-xs">
-                        <SelectValue placeholder={t("selectStatus")} />
+                        <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="attended">{t("markAttended")}</SelectItem>
-                        <SelectItem value="absent">{t("markAbsent")}</SelectItem>
+                        <SelectItem value="attended">Attended</SelectItem>
+                        <SelectItem value="absent">Absent</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
 
-                  {/* Flag buttons — only for confirmed/attended */}
+                  {/* Flag buttons — only after confirmation (attended/absent) */}
                   <div className="flex gap-1">
-                    {["registration_confirmed", "attended"].includes(reg.status) && (
+                    {["attended", "absent"].includes(reg.status) && (
                       <>
                         {reg.pendingFlag ? (
                           <Button
