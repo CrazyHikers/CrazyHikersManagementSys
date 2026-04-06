@@ -1,41 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!can(session, "waivers.approve")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const { fileId, userEmail, action } = await request.json();
-
-  if (!fileId || !userEmail || !["approve", "decline"].includes(action)) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-
-  if (action === "approve") {
-    // Expire all existing approved waivers, then approve this one
-    await db.$transaction([
-      db.userWaiver.updateMany({
-        where: { userEmail, status: "approved" },
-        data: { status: "expired" },
-      }),
-      db.userWaiver.update({
-        where: { fileId },
-        data: { status: "approved" },
-      }),
-    ]);
-  } else {
-    await db.userWaiver.update({
-      where: { fileId },
-      data: { status: "rejected" },
-    });
-  }
-
-  return NextResponse.json({ success: true });
+// Waiver approval has been replaced by in-app e-signing (auto-approved).
+// This endpoint is no longer used.
+export async function POST() {
+  return NextResponse.json({ error: "Waiver approval is no longer supported. Waivers are now e-signed and auto-approved." }, { status: 410 });
 }

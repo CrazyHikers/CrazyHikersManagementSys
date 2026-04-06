@@ -125,7 +125,7 @@ export default async function MembersPage() {
                   {m.waivers.length > 0 ? (
                     <Badge className={
                       m.waivers[0].status === "approved" ? "bg-green-100 text-green-800" :
-                      m.waivers[0].status === "pending_approval" ? "bg-yellow-100 text-yellow-800" :
+                      m.waivers[0].status === "expiring" ? "bg-orange-100 text-orange-800" :
                       "bg-gray-100 text-gray-800"
                     }>
                       {m.waivers[0].status}

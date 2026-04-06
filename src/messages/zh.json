@@ -152,6 +152,7 @@
       "all": "全部",
       "noWaivers": "暂无免责声明记录",
       "eSignedBadge": "电子签署 (v{version})",
+      "signedAs": "签署人: {name}",
       "deleteMember": "删除成员",
       "deleteConfirmTitle": "删除成员",
       "deleteConfirmDescription": "确定要永久删除 {name} 吗？这将删除其所有数据，包括报名记录、免责声明和标记。此操作无法撤销。",
@@ -197,7 +198,8 @@
       "submittedOn": "提交于",
       "noWaivers": "暂未提交免责声明",
       "history": "签署历史",
-      "eSigned": "电子签署 (v{version})"
+      "eSigned": "电子签署 (v{version})",
+      "signedAs": "签署人: {name}"
     },
     "myProfile": {
       "title": "个人资料",

@@ -12,6 +12,7 @@ type Waiver = {
   status: string;
   signedAt: string;
   signedVersion?: number | null;
+  signedName?: string | null;
 };
 
 type WaiverStatus = {
@@ -22,8 +23,6 @@ type WaiverStatus = {
 
 const statusColors: Record<string, string> = {
   approved: "bg-green-100 text-green-800",
-  pending_approval: "bg-yellow-100 text-yellow-800",
-  rejected: "bg-red-100 text-red-800",
   expiring: "bg-orange-100 text-orange-800",
   expired: "bg-gray-100 text-gray-600",
 };
@@ -116,8 +115,13 @@ export default function MyWaiversPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm text-muted-foreground">
-                      {t("submittedOn")}: {new Date(w.signedAt).toLocaleDateString()}
+                      {t("submittedOn")}: {new Date(w.signedAt).toLocaleString()}
                     </div>
+                    {w.signedName && (
+                      <div className="text-sm text-muted-foreground">
+                        {t("signedAs", { name: w.signedName })}
+                      </div>
+                    )}
                     {w.signedVersion && (
                       <div className="text-xs text-muted-foreground">
                         {t("eSigned", { version: w.signedVersion })}

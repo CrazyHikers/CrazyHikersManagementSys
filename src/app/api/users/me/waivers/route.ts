@@ -57,19 +57,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
-  // Legacy upload flow
-  const { fileId } = body;
-  if (!fileId) {
-    return NextResponse.json({ error: "File ID required" }, { status: 400 });
-  }
-
-  await db.userWaiver.create({
-    data: {
-      fileId,
-      userEmail: session.user.email,
-      status: "pending_approval",
-    },
-  });
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ error: "Invalid request type" }, { status: 400 });
 }

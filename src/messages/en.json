@@ -152,6 +152,7 @@
       "all": "All",
       "noWaivers": "No waivers found",
       "eSignedBadge": "E-Signed (v{version})",
+      "signedAs": "Signed as: {name}",
       "deleteMember": "Delete Member",
       "deleteConfirmTitle": "Delete Member",
       "deleteConfirmDescription": "Are you sure you want to permanently delete {name}? This will remove all their data including registrations, waivers, and flags. This action cannot be undone.",
@@ -197,7 +198,8 @@
       "submittedOn": "Submitted on",
       "noWaivers": "No waivers submitted yet",
       "history": "Waiver History",
-      "eSigned": "E-Signed (v{version})"
+      "eSigned": "E-Signed (v{version})",
+      "signedAs": "Signed as: {name}"
     },
     "myProfile": {
       "title": "My Profile",

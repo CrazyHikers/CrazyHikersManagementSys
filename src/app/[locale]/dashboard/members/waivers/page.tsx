@@ -26,6 +26,7 @@ export default async function WaiversPage() {
     signedAt: w.signedAt.toISOString(),
     status: w.status,
     signedVersion: w.signedVersion,
+    signedName: w.signedName,
   }));
 
   return (
