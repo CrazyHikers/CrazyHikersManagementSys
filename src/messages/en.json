@@ -149,7 +149,14 @@
       "submitWaiver": "Submit Waiver",
       "approveWaiver": "Approve",
       "declineWaiver": "Decline",
-      "pendingApproval": "Pending Approval"
+      "pendingApproval": "Pending Approval",
+      "deleteMember": "Delete Member",
+      "deleteConfirmTitle": "Delete Member",
+      "deleteConfirmDescription": "Are you sure you want to permanently delete {name}? This will remove all their data including registrations, waivers, and flags. This action cannot be undone.",
+      "cancelDelete": "Cancel",
+      "confirmDelete": "Delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Member deleted successfully"
     },
     "managers": {
       "title": "Managers",

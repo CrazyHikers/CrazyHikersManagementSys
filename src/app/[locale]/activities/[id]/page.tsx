@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
 import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -243,6 +244,7 @@ export default async function ActivityDetailPage({
           )}
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

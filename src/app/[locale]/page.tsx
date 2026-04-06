@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
 import { auth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { ActivityCard } from "@/components/activity-card";
 
 async function getOpenActivities() {
@@ -94,6 +95,7 @@ export default async function HomePage() {
           )}
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

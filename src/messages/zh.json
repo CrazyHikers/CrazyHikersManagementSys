@@ -149,7 +149,14 @@
       "submitWaiver": "提交免责声明",
       "approveWaiver": "批准",
       "declineWaiver": "拒绝",
-      "pendingApproval": "待审核"
+      "pendingApproval": "待审核",
+      "deleteMember": "删除成员",
+      "deleteConfirmTitle": "删除成员",
+      "deleteConfirmDescription": "确定要永久删除 {name} 吗？这将删除其所有数据，包括报名记录、免责声明和标记。此操作无法撤销。",
+      "cancelDelete": "取消",
+      "confirmDelete": "删除",
+      "deleting": "删除中...",
+      "deleteSuccess": "成员已成功删除"
     },
     "managers": {
       "title": "领队管理",

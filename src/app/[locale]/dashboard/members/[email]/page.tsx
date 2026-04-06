@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { RoleChanger } from "@/components/dashboard/role-changer";
+import { DeleteMember } from "@/components/dashboard/delete-member";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -47,6 +48,7 @@ export default async function UserDetailPage({
   }
   const isAdmin = can(session, "members.list");
   const isDev = can(session, "users.changeRole");
+  const canDelete = can(session, "members.delete");
 
   const { email } = await params;
   const decodedEmail = decodeURIComponent(email);
@@ -76,6 +78,9 @@ export default async function UserDetailPage({
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold">{user.name}</h1>
         <Badge className={roleBadgeColors[user.role]}>{user.role}</Badge>
+        {canDelete && user.email !== session.user!.email && (
+          <DeleteMember userEmail={user.email} userName={user.name} />
+        )}
       </div>
 
       {/* Dev: Role changer */}

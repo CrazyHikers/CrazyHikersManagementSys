@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,7 +83,8 @@ export default function VotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+    <div className="min-h-screen bg-gray-50 flex-1">
       <SiteHeader />
       <div className="container mx-auto max-w-lg px-4 py-12">
         {loading && (
@@ -218,5 +220,7 @@ export default function VotePage() {
           )}
       </div>
     </div>
+    <SiteFooter />
+    </>
   );
 }
