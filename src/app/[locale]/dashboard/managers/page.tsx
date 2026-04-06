@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -49,7 +47,6 @@ export default function ManagersPage() {
   const [managers, setManagers] = useState<Manager[]>([]);
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,33 +97,6 @@ export default function ManagersPage() {
       toast.error(err instanceof Error ? err.message : "Error");
     } finally {
       setReviewingId(null);
-    }
-  }
-
-  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setCreating(true);
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const tag = formData.get("tag") as string;
-
-    try {
-      const res = await fetch("/api/managers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, tag: tag || undefined }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to create manager");
-      }
-      toast.success("Manager created");
-      (e.target as HTMLFormElement).reset();
-      fetchManagers();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error");
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -204,44 +174,6 @@ export default function ManagersPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Create Manager form (admin only — server protects the API) */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">{t("createManager")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreate} className="flex items-end gap-3 flex-wrap">
-            <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="user@example.com"
-                className="w-64"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="tag">{t("tag")}</Label>
-              <Input
-                id="tag"
-                name="tag"
-                placeholder="Optional"
-                className="w-40"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700"
-              disabled={creating}
-            >
-              {creating ? "..." : t("createManager")}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">

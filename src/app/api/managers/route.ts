@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
@@ -33,64 +32,3 @@ export async function GET() {
   return NextResponse.json(managersWithKpi);
 }
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!can(session, "managers.create")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  try {
-    const { email, tag } = await request.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
-
-    const existing = await db.user.findUnique({ where: { email } });
-
-    if (existing) {
-      if (existing.role === "member") {
-        // Upgrade existing member to manager
-        const updated = await db.user.update({
-          where: { email },
-          data: { role: "manager" },
-        });
-        // Create manager profile
-        await db.managerProfile.create({
-          data: { userEmail: email, tag: tag || email, intern: true, internSince: new Date() },
-        });
-        return NextResponse.json(updated);
-      }
-      return NextResponse.json(
-        { error: "User is already a manager or admin" },
-        { status: 409 }
-      );
-    }
-
-    // Create new user as manager with profile
-    const user = await db.user.create({
-      data: {
-        email,
-        name: email, // placeholder name
-        role: "manager",
-        managerProfile: {
-          create: { tag: tag || email, intern: true, internSince: new Date() },
-        },
-      },
-    });
-
-    return NextResponse.json(user);
-  } catch (error) {
-    console.error("Create manager error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}

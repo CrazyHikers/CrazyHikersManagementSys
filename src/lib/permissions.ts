@@ -21,7 +21,6 @@ export type Permission =
   | "waivers.approve"
   // Managers
   | "managers.list"
-  | "managers.create"
   // Promotions
   | "promotions.request"
   | "promotions.vote"
@@ -65,7 +64,6 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
 
   // Managers
   "managers.list": ["admin", "dev"],
-  "managers.create": ["admin", "dev"],
 
   // Promotions
   "promotions.request": ["member", "manager", "admin", "dev"],
