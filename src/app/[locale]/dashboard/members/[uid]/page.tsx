@@ -197,23 +197,21 @@ export default async function UserDetailPage({
             <div className="space-y-2">
               {user.waivers.map((w) => (
                 <div key={w.fileId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">{t("submitted")}: </span>
-                    {w.signedAt.toLocaleDateString()}
+                  <div className="text-sm space-y-1">
+                    <div>
+                      <span className="text-muted-foreground">{t("submitted")}: </span>
+                      {w.signedAt.toLocaleString()}
+                    </div>
+                    {w.signedName && (
+                      <div>
+                        <span className="text-muted-foreground">{t("legalName")}: </span>
+                        {w.signedName}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={waiverStatusColors[w.status] || ""}>
-                      {w.status}
-                    </Badge>
-                    <a
-                      href={`/api/waivers/view/${w.fileId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-green-600 hover:underline"
-                    >
-                      {t("view")}
-                    </a>
-                  </div>
+                  <Badge className={waiverStatusColors[w.status] || ""}>
+                    {w.status}
+                  </Badge>
                 </div>
               ))}
             </div>
