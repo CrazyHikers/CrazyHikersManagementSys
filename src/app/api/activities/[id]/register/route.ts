@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { isProfileComplete } from "@/lib/profile";
 
 export async function POST(
   request: NextRequest,
@@ -66,6 +67,14 @@ export async function POST(
       user = await db.user.create({
         data: { name, email, role: "member" },
       });
+    }
+
+    // Check for complete profile
+    if (!isProfileComplete(user.profile)) {
+      return NextResponse.json(
+        { error: "INCOMPLETE_PROFILE" },
+        { status: 403 }
+      );
     }
 
     // Check for valid waiver (approved or expiring)

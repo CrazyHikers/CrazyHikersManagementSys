@@ -1,8 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export function ActivityActions({
@@ -14,46 +25,106 @@ export function ActivityActions({
 }) {
   const t = useTranslations("dashboard.activities");
   const router = useRouter();
+  const [processing, setProcessing] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
-  async function handleAction(action: "close" | "finish" | "cancel") {
-    const newStatus =
-      action === "close" ? "closed" : action === "finish" ? "completed" : "cancelled";
-
-    const res = await fetch(`/api/activities/${activityId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    if (res.ok) {
-      toast.success(`Activity ${action}d`);
+  async function handleAction(newStatus: string) {
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/activities/${activityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(
+        newStatus === "closed" ? t("registrationClosed") :
+        newStatus === "completed" ? t("activityFinished") :
+        t("activityCancelled")
+      );
       router.refresh();
-    } else {
+    } catch {
       toast.error("Failed");
+    } finally {
+      setProcessing(false);
+      setFinishOpen(false);
+      setCancelOpen(false);
     }
   }
 
   return (
     <div className="flex gap-2 flex-wrap">
       {status === "open" && (
-        <Button variant="outline" size="sm" onClick={() => handleAction("close")}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleAction("closed")}
+          disabled={processing}
+        >
           {t("closeRegistration")}
         </Button>
       )}
-      <Button
-        size="sm"
-        className="bg-green-600 hover:bg-green-700"
-        onClick={() => handleAction("finish")}
-      >
-        {t("finishActivity")}
-      </Button>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={() => handleAction("cancel")}
-      >
-        {t("cancelActivity")}
-      </Button>
+
+      <Dialog open={finishOpen} onOpenChange={setFinishOpen}>
+        <DialogTrigger
+          render={
+            <Button size="sm" className="bg-green-600 hover:bg-green-700" />
+          }
+        >
+          {t("finishActivity")}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("finishConfirmTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("finishConfirmDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              {t("cancelAction")}
+            </DialogClose>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => handleAction("completed")}
+              disabled={processing}
+            >
+              {processing ? "..." : t("confirmFinish")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogTrigger
+          render={
+            <Button variant="destructive" size="sm" />
+          }
+        >
+          {t("cancelActivity")}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("cancelConfirmTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("cancelConfirmDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              {t("cancelAction")}
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => handleAction("cancelled")}
+              disabled={processing}
+            >
+              {processing ? "..." : t("confirmCancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

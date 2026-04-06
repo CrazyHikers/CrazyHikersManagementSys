@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Link } from "@/i18n/navigation";
 import { WaiverSignInline } from "@/components/waiver-sign-inline";
 
 type SessionUser = {
@@ -35,6 +36,7 @@ export function RegistrationForm({
   const [loading, setLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
   const [checking, setChecking] = useState(!!session?.email);
+  const [needsProfile, setNeedsProfile] = useState(false);
   const [needsWaiver, setNeedsWaiver] = useState(false);
   const [waiverValidityDays, setWaiverValidityDays] = useState(365);
 
@@ -53,6 +55,11 @@ export function RegistrationForm({
         .then((res) => res.json())
         .then((data) => {
           if (data.status) setRegistrationStatus(data.status);
+        }),
+      fetch("/api/users/me/profile/status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.isComplete) setNeedsProfile(true);
         }),
       fetch("/api/users/me/waivers/status")
         .then((res) => res.json())
@@ -132,6 +139,22 @@ export function RegistrationForm({
 
   if (checking) {
     return <div className="text-center py-4 text-muted-foreground">...</div>;
+  }
+
+  // Needs profile — show message with link to profile page
+  if (needsProfile && !registrationStatus) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+          {t("profileRequired")}
+        </div>
+        <Link href="/dashboard/my-profile">
+          <Button className="w-full bg-green-600 hover:bg-green-700">
+            {t("completeProfile")}
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   // Needs waiver — show inline signing before registration
