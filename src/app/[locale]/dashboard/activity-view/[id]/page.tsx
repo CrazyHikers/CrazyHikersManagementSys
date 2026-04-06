@@ -235,7 +235,7 @@ export default async function ActivityViewPage({
                   {activity.registrations.map((r) => (
                     <TableRow key={r.userEmail}>
                       <TableCell>
-                        <Link href={`/dashboard/members/${encodeURIComponent(r.userEmail)}`} className="font-medium hover:underline text-green-700">
+                        <Link href={`/dashboard/members/${r.user.uid}`} className="font-medium hover:underline text-green-700">
                           {r.user.name}
                         </Link>
                       </TableCell>

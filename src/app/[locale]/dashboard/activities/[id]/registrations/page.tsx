@@ -55,6 +55,7 @@ export default async function RegistrationsPage({
 
       return {
         userEmail: r.userEmail,
+        userUid: r.user.uid,
         userName: r.user.name,
         userEmailDisplay: r.user.email,
         status: r.status,

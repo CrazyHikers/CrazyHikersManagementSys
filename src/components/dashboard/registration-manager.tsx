@@ -26,6 +26,7 @@ type RegistrationFormData = {
 
 type Registration = {
   userEmail: string;
+  userUid: string;
   userName: string;
   userEmailDisplay: string;
   status: string;
@@ -174,7 +175,7 @@ export function RegistrationManager({
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Link href={`/dashboard/members/${encodeURIComponent(reg.userEmail)}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
+                  <Link href={`/dashboard/members/${reg.userUid}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
                   <Badge className={statusColors[reg.status]}>
                     {statusLabels[reg.status]}
                   </Badge>

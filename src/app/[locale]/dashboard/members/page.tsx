@@ -48,7 +48,7 @@ export default async function MembersPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {members.map((m) => (
-          <Link key={m.email} href={`/dashboard/members/${encodeURIComponent(m.email)}`}>
+          <Link key={m.email} href={`/dashboard/members/${m.uid}`}>
             <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between">
                 <div>
@@ -105,7 +105,7 @@ export default async function MembersPage() {
             {members.map((m) => (
               <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
                 <TableCell>
-                  <Link href={`/dashboard/members/${encodeURIComponent(m.email)}`} className="font-medium hover:underline">
+                  <Link href={`/dashboard/members/${m.uid}`} className="font-medium hover:underline">
                     {m.name}
                   </Link>
                 </TableCell>

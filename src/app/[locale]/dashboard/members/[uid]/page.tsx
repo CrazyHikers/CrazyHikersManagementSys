@@ -40,7 +40,7 @@ const flagColors: Record<string, string> = {
 export default async function UserDetailPage({
   params,
 }: {
-  params: Promise<{ email: string }>;
+  params: Promise<{ uid: string }>;
 }) {
   const session = await auth();
   if (!session?.user || !can(session, "members.viewDetail")) {
@@ -50,11 +50,10 @@ export default async function UserDetailPage({
   const isDev = can(session, "users.changeRole");
   const canDelete = can(session, "members.delete");
 
-  const { email } = await params;
-  const decodedEmail = decodeURIComponent(email);
+  const { uid } = await params;
 
   const user = await db.user.findUnique({
-    where: { email: decodedEmail },
+    where: { uid },
     include: {
       managerProfile: true,
       waivers: { orderBy: { signedAt: "desc" } },
