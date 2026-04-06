@@ -63,7 +63,7 @@ export async function sendRegistrationConfirmation(
   qrCodeUrl?: string
 ) {
   const qrSection = qrCodeUrl
-    ? `<p>Please join the group chat using the QR code below:</p><img src="${qrCodeUrl}" alt="Group Chat QR Code" style="width:200px;height:200px;" />`
+    ? `<p>Please join the group chat using the QR code below:</p><img src="${qrCodeUrl}" alt="Group Chat QR Code" style="max-width:200px;height:auto;" />`
     : "";
 
   return sendEmail({
