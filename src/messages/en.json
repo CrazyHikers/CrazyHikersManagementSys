@@ -156,6 +156,7 @@
       "flagReasonPlaceholder": "Describe why this user is being flagged...",
       "confirmFlag": "Apply Flag",
       "pendingFlagLabel": "Pending flag reason",
+      "flagLabel": "Flag reason",
       "showDetails": "Show details",
       "hideDetails": "Hide details",
       "route": "Route",
@@ -315,7 +316,13 @@
       "kpi_manager_points": "KPI points per managed activity (points)",
       "kpi_comanager_points": "KPI points per co-managed activity (points)",
       "kpi_season_start_month": "Hiking season start month (1-12)",
-      "intern_max_seasons": "Max seasons as intern before removal (seasons)"
+      "intern_max_seasons": "Max seasons as intern before removal (seasons)",
+      "rate_limit_signin_max": "Sign-in rate limit (max attempts)",
+      "rate_limit_signin_window_minutes": "Sign-in rate limit window (minutes)",
+      "rate_limit_signup_max": "Sign-up rate limit (max attempts)",
+      "rate_limit_signup_window_minutes": "Sign-up rate limit window (minutes)",
+      "rate_limit_register_max": "Registration rate limit (max attempts)",
+      "rate_limit_register_window_minutes": "Registration rate limit window (minutes)"
     }
   },
   "auth": {

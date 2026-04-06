@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
 
 // SET a pending flag on a registration (not finalized until activity completion)
 export async function POST(
@@ -106,10 +107,11 @@ export async function GET(
 
   const { email: userEmail } = await params;
   const decodedEmail = decodeURIComponent(userEmail);
+  const flagSettings = await getFlagSettings();
   const flags = await db.userFlag.findMany({
     where: {
       userEmail: decodedEmail,
-      expiresAt: { gt: new Date() },
+      issuedAt: { gt: unexpiredCutoff(flagSettings) },
     },
     orderBy: { issuedAt: "desc" },
   });

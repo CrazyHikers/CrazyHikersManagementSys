@@ -1,7 +1,7 @@
 import { db } from "./db";
 
 // Default values for all configurable settings
-const DEFAULTS: Record<string, number> = {
+export const DEFAULTS: Record<string, number> = {
   // Flag system
   ban_duration_yellow: 7,
   ban_duration_red: 30,

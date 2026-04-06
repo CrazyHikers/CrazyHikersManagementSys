@@ -51,6 +51,13 @@ type Registration = {
   hasValidWaiver: boolean;
   yellowFlags: number;
   redFlags: number;
+  flagHistory: {
+    flagType: string;
+    reason: string | null;
+    issuedAt: string;
+    activityTitle: string;
+    issuerName: string;
+  }[];
   isBanned: boolean;
   pendingFlag: string | null;
   pendingFlagReason: string | null;
@@ -351,12 +358,12 @@ export function RegistrationManager({
                       : "bg-red-50 border border-red-200 text-red-800"
                   }`}>
                     <span className="font-medium">
-                      {reg.pendingFlag === "yellow" ? "⚠" : "🚫"} {t("pendingFlagLabel")}:
+                      {reg.pendingFlag === "yellow" ? "⚠" : "🚫"} {activityStatus === "completed" ? t("flagLabel") : t("pendingFlagLabel")}:
                     </span>{" "}
                     {reg.pendingFlagReason}
                   </div>
                 )}
-                {(reg.formData || reg.userProfile) && (
+                {(reg.formData || reg.userProfile || reg.flagHistory.length > 0) && (
                   <div className="mt-2">
                     <button
                       type="button"
@@ -425,6 +432,37 @@ export function RegistrationManager({
                             {reg.formData.willingToBePhotographed !== undefined && (
                               <div><span className="text-muted-foreground">{ta("willingToBePhotographed")}: </span>{reg.formData.willingToBePhotographed ? ta("willing") : ta("notWilling")}</div>
                             )}
+                          </div>
+                        )}
+                        {/* Flag history */}
+                        {reg.flagHistory.length > 0 && (
+                          <div className="space-y-2">
+                            {reg.flagHistory.map((flag, i) => (
+                              <div key={i} className={`p-3 rounded text-sm space-y-1 ${
+                                flag.flagType === "yellow"
+                                  ? "bg-yellow-50 border border-yellow-200"
+                                  : "bg-red-50 border border-red-200"
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`text-xs ${
+                                    flag.flagType === "yellow"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}>
+                                    {flag.flagType}
+                                  </Badge>
+                                  <span className="text-muted-foreground">
+                                    {tp("from")} {flag.activityTitle}
+                                  </span>
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {tp("issuedBy")} {flag.issuerName} {tp("on")} {new Date(flag.issuedAt).toLocaleDateString()}
+                                </div>
+                                {flag.reason && (
+                                  <div>{tp("reason")}: {flag.reason}</div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { getFlagSettings, computeBanUntil, isBanActive } from "@/lib/flags";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { RoleChanger } from "@/components/dashboard/role-changer";
@@ -69,6 +70,7 @@ export default async function UserDetailPage({
   if (!user) notFound();
 
   const t = await getTranslations("dashboard.myProfile");
+  const flagSettings = await getFlagSettings();
 
   return (
     <div>
@@ -285,8 +287,8 @@ export default async function UserDetailPage({
                     {t("issuedBy")} {f.issuer.name} {t("on")} {f.issuedAt.toLocaleDateString()}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {t("banUntil")}: {f.banUntil.toLocaleDateString()}
-                    {f.banUntil > new Date() ? (
+                    {t("banUntil")}: {computeBanUntil(f.issuedAt, f.flagType, flagSettings).toLocaleDateString()}
+                    {isBanActive(f, flagSettings) ? (
                       <Badge className="bg-red-100 text-red-800 ml-2 text-xs">{t("active")}</Badge>
                     ) : (
                       <Badge className="bg-gray-100 text-gray-800 ml-2 text-xs">{t("expired")}</Badge>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
 
 export async function GET() {
   const session = await auth();
@@ -40,13 +41,16 @@ export async function GET() {
     )
   ).size;
 
-  const activeFlag = await db.userFlag.findFirst({
+  const flagSettings = await getFlagSettings();
+  const candidateFlags = await db.userFlag.findMany({
     where: {
       userEmail: email,
-      banUntil: { gt: now },
-      expiresAt: { gt: now },
+      issuedAt: { gt: banActiveCutoff(flagSettings, now) },
     },
   });
+  const activeFlag = candidateFlags.find(
+    (f) => isBanActive(f, flagSettings, now) && !isFlagExpired(f, flagSettings, now)
+  );
 
   const pendingRequest = await db.promotionRequest.findFirst({
     where: { userEmail: email, status: { in: ["pending", "pending_admin_review"] } },

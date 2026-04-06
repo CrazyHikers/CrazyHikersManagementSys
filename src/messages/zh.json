@@ -156,6 +156,7 @@
       "flagReasonPlaceholder": "请描述标记此用户的原因...",
       "confirmFlag": "确认标记",
       "pendingFlagLabel": "待定标记原因",
+      "flagLabel": "标记原因",
       "showDetails": "展开详情",
       "hideDetails": "收起详情",
       "route": "路线",
@@ -315,7 +316,13 @@
       "kpi_manager_points": "主领队每次活动KPI积分（分）",
       "kpi_comanager_points": "副领队每次活动KPI积分（分）",
       "kpi_season_start_month": "徒步季开始月份（1-12）",
-      "intern_max_seasons": "见习领队最长期限（徒步季）"
+      "intern_max_seasons": "见习领队最长期限（徒步季）",
+      "rate_limit_signin_max": "登录频率限制（最大次数）",
+      "rate_limit_signin_window_minutes": "登录频率限制窗口（分钟）",
+      "rate_limit_signup_max": "注册频率限制（最大次数）",
+      "rate_limit_signup_window_minutes": "注册频率限制窗口（分钟）",
+      "rate_limit_register_max": "报名频率限制（最大次数）",
+      "rate_limit_register_window_minutes": "报名频率限制窗口（分钟）"
     }
   },
   "auth": {

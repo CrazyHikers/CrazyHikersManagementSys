@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSetting } from "@/lib/settings";
+import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
 
 export async function GET(
   _req: NextRequest,
@@ -64,18 +65,13 @@ export async function PATCH(
         });
 
         if (flaggedRegistrations.length > 0) {
-          const [flagExpiryDays, banDaysYellow, banDaysRed, yellowThreshold] =
-            await Promise.all([
-              getSetting("flag_expiry_days"),
-              getSetting("ban_duration_yellow"),
-              getSetting("ban_duration_red"),
-              getSetting("yellow_to_red_threshold"),
-            ]);
+          const [flagSettings, yellowThreshold] = await Promise.all([
+            getFlagSettings(),
+            getSetting("yellow_to_red_threshold"),
+          ]);
 
           const issuedByEmail = session.user.email || "unknown";
           const now = new Date();
-          const expiresAt = new Date(now);
-          expiresAt.setDate(expiresAt.getDate() + flagExpiryDays);
 
           for (const reg of flaggedRegistrations) {
             let effectiveFlagType = reg.pendingFlag as "yellow" | "red";
@@ -86,7 +82,7 @@ export async function PATCH(
                 where: {
                   userEmail: reg.userEmail,
                   flagType: "yellow",
-                  expiresAt: { gt: now },
+                  issuedAt: { gt: unexpiredCutoff(flagSettings, now) },
                 },
               });
               if (activeYellowCount + 1 >= yellowThreshold) {
@@ -94,18 +90,12 @@ export async function PATCH(
               }
             }
 
-            const banDays = effectiveFlagType === "yellow" ? banDaysYellow : banDaysRed;
-            const banUntil = new Date(now);
-            banUntil.setDate(banUntil.getDate() + banDays);
-
             await db.userFlag.create({
               data: {
                 userEmail: reg.userEmail,
                 activityId: id,
                 flagType: effectiveFlagType,
                 reason: reg.pendingFlagReason || null,
-                banUntil,
-                expiresAt,
                 issuedBy: issuedByEmail,
               },
             });

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { getFlagSettings, banActiveCutoff, isBanActive, computeBanUntil } from "@/lib/flags";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +21,7 @@ export default async function MembersPage() {
     redirect("/dashboard");
   }
   const t = await getTranslations("dashboard.members");
+  const flagSettings = await getFlagSettings();
 
   const members = await db.user.findMany({
     include: {
@@ -33,9 +35,8 @@ export default async function MembersPage() {
         take: 1,
       },
       flags: {
-        where: { banUntil: { gt: new Date() } },
-        orderBy: { banUntil: "desc" },
-        take: 1,
+        where: { issuedAt: { gt: banActiveCutoff(flagSettings) } },
+        orderBy: { issuedAt: "desc" },
       },
     },
     orderBy: { name: "asc" },
@@ -77,11 +78,14 @@ export default async function MembersPage() {
               </div>
               <div className="text-sm text-muted-foreground mt-2">
                 {t("totalAttended")}: {m._count.registrations}
-                {m.flags.length > 0 && (
-                  <span className="text-red-600 ml-2">
-                    Banned until {m.flags[0].banUntil.toLocaleDateString()}
-                  </span>
-                )}
+                {(() => {
+                  const activeBan = m.flags.find((f) => isBanActive(f, flagSettings));
+                  return activeBan ? (
+                    <span className="text-red-600 ml-2">
+                      Banned until {computeBanUntil(activeBan.issuedAt, activeBan.flagType, flagSettings).toLocaleDateString()}
+                    </span>
+                  ) : null;
+                })()}
               </div>
             </div>
           </Link>
@@ -135,19 +139,22 @@ export default async function MembersPage() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {m.flags.length > 0 ? (
-                    <Badge className={
-                      m.flags[0].flagType === "red"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }>
-                      Banned until {m.flags[0].banUntil.toLocaleDateString()}
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-green-100 text-green-800">
-                      Active
-                    </Badge>
-                  )}
+                  {(() => {
+                    const activeBan = m.flags.find((f) => isBanActive(f, flagSettings));
+                    return activeBan ? (
+                      <Badge className={
+                        activeBan.flagType === "red"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }>
+                        Banned until {computeBanUntil(activeBan.issuedAt, activeBan.flagType, flagSettings).toLocaleDateString()}
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800">
+                        Active
+                      </Badge>
+                    );
+                  })()}
                 </TableCell>
               </TableRow>
             ))}

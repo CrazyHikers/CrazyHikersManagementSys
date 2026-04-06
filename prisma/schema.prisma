@@ -77,8 +77,6 @@ model UserFlag {
   activityId String   @map("activity_id") @db.VarChar(255)
   flagType   FlagType @map("flag_type")
   reason     String?  @db.Text
-  banUntil   DateTime @map("ban_until")
-  expiresAt  DateTime @map("expires_at")
   issuedBy   String   @map("issued_by") @db.VarChar(255)
   issuedAt   DateTime @default(now()) @map("issued_at")
 
@@ -87,8 +85,7 @@ model UserFlag {
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@index([userEmail])
-  @@index([banUntil])
-  @@index([expiresAt])
+  @@index([issuedAt])
   @@map("user_flags")
 }
 

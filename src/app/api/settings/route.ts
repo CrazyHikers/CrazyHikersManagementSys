@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { DEFAULTS } from "@/lib/settings";
 
 export async function GET() {
   const session = await auth();
@@ -9,13 +10,17 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const settings = await db.appSettings.findMany({
-    orderBy: { key: "asc" },
-  });
+  const stored = await db.appSettings.findMany();
+  const storedMap = new Map(stored.map((s) => [s.key, s.value]));
 
-  return NextResponse.json(
-    settings.map((s) => ({ id: s.key, key: s.key, value: s.value }))
-  );
+  // Merge defaults with stored values so all settings always appear
+  const settings = Object.entries(DEFAULTS).map(([key, defaultValue]) => ({
+    id: key,
+    key,
+    value: storedMap.get(key) ?? String(defaultValue),
+  }));
+
+  return NextResponse.json(settings);
 }
 
 export async function PUT(request: NextRequest) {
@@ -31,9 +36,10 @@ export async function PUT(request: NextRequest) {
   }
 
   for (const setting of settings) {
-    await db.appSettings.update({
+    await db.appSettings.upsert({
       where: { key: setting.key },
-      data: { value: String(setting.value) },
+      update: { value: String(setting.value) },
+      create: { key: setting.key, value: String(setting.value) },
     });
   }
 

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getFlagSettings, unexpiredCutoff, isBanActive } from "@/lib/flags";
 import { RegistrationManager } from "@/components/dashboard/registration-manager";
 
 export default async function RegistrationsPage({
@@ -10,6 +11,7 @@ export default async function RegistrationsPage({
 }) {
   const { id } = await params;
   const t = await getTranslations("dashboard.activities");
+  const flagSettings = await getFlagSettings();
 
   const activity = await db.activity.findUnique({
     where: { id },
@@ -28,8 +30,9 @@ export default async function RegistrationsPage({
                 take: 1,
               },
               flags: {
-                where: { expiresAt: { gt: new Date() } },
+                where: { issuedAt: { gt: unexpiredCutoff(flagSettings) } },
                 orderBy: { issuedAt: "desc" },
+                include: { activity: true, issuer: true },
               },
             },
           },
@@ -45,7 +48,7 @@ export default async function RegistrationsPage({
   const registrations = activity.registrations
     .filter((r) => {
       // Shadow ban: hide registrations from users with active bans
-      const hasActiveBan = r.user.flags.some((f) => f.banUntil > now);
+      const hasActiveBan = r.user.flags.some((f) => isBanActive(f, flagSettings, now));
       return !hasActiveBan;
     })
     .map((r) => {
@@ -68,6 +71,13 @@ export default async function RegistrationsPage({
         hasValidWaiver: r.user.waivers.length > 0,
         yellowFlags: yellowCount,
         redFlags: redCount,
+        flagHistory: activeFlags.map((f) => ({
+          flagType: f.flagType,
+          reason: f.reason,
+          issuedAt: f.issuedAt.toISOString(),
+          activityTitle: f.activity.title,
+          issuerName: f.issuer.name,
+        })),
         isBanned: false, // filtered out above, but keep for UI consistency
         pendingFlag: r.pendingFlag || null,
         pendingFlagReason: r.pendingFlagReason || null,

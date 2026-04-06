@@ -8,6 +8,7 @@ import {
   sendPromotionVoteEmail,
 } from "@/lib/email";
 import { getSetting } from "@/lib/settings";
+import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
 import type { PromotionStatus } from "@/generated/prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -125,13 +126,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Must have no active flags
-    const activeFlag = await db.userFlag.findFirst({
+    const flagSettings = await getFlagSettings();
+    const now = new Date();
+    const candidateFlags = await db.userFlag.findMany({
       where: {
         userEmail: email,
-        banUntil: { gt: new Date() },
-        expiresAt: { gt: new Date() },
+        issuedAt: { gt: banActiveCutoff(flagSettings, now) },
       },
     });
+    const activeFlag = candidateFlags.find(
+      (f) => isBanActive(f, flagSettings, now) && !isFlagExpired(f, flagSettings, now)
+    );
     if (activeFlag) {
       return NextResponse.json(
         { error: "Cannot promote with active flags" },
