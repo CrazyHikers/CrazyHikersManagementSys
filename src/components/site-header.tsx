@@ -15,7 +15,7 @@ export function SiteHeader({ user }: { user?: SiteHeaderUser }) {
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <span className="text-green-700">⛰</span>
+          <img src="/logo.jpg" alt="" className="h-8" />
           {t("appName")}
         </Link>
         <div className="flex items-center gap-4">

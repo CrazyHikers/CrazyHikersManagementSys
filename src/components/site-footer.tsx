@@ -9,7 +9,7 @@ export function SiteFooter() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="text-green-700">⛰</span>
+            <img src="/logo.jpg" alt="" className="h-6" />
             {t("appName")}
           </div>
           <p className="text-sm text-muted-foreground">

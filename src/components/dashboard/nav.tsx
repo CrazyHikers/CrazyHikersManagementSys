@@ -104,8 +104,9 @@ export function DashboardNav({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r bg-white">
         <div className="flex h-14 items-center border-b px-4">
-          <Link href="/" className="font-bold text-lg text-green-700">
-            ⛰ {t("appName")}
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-green-700">
+            <img src="/logo.jpg" alt="" className="h-8" />
+            {t("appName")}
           </Link>
         </div>
         <nav className="flex-1 p-3 space-y-1">
@@ -130,8 +131,9 @@ export function DashboardNav({
 
       {/* Mobile header + sheet */}
       <div className="md:hidden sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-white px-4">
-        <Link href="/" className="font-bold text-green-700">
-          ⛰ {t("appName")}
+        <Link href="/" className="flex items-center gap-2 font-bold text-green-700">
+          <img src="/logo.jpg" alt="" className="h-7" />
+          {t("appName")}
         </Link>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 hover:bg-accent hover:text-accent-foreground">
@@ -139,8 +141,9 @@ export function DashboardNav({
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <div className="flex h-14 items-center border-b px-4">
-              <span className="font-bold text-green-700">
-                ⛰ {t("appName")}
+              <span className="flex items-center gap-2 font-bold text-green-700">
+                <img src="/logo.jpg" alt="" className="h-7" />
+                {t("appName")}
               </span>
             </div>
             <nav className="p-3 space-y-1">

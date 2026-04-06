@@ -75,7 +75,7 @@ export default function ComanagerInvitationPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">⛰</div>
+          <img src="/logo.jpg" alt="Crazy Hikers" className="h-20 mx-auto mb-2" />
           <CardTitle>
             {responded
               ? responded === "confirmed"
