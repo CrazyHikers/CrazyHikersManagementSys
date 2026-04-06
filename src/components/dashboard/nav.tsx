@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Button } from "@/components/ui/button";
@@ -116,11 +117,13 @@ export function DashboardNav({
           </div>
           <div className="flex items-center justify-between">
             <LocaleSwitcher />
-            <form action="/api/auth/signout" method="POST">
-              <Button variant="ghost" size="sm" type="submit">
-                {t("signOut")}
-              </Button>
-            </form>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              {t("signOut")}
+            </Button>
           </div>
         </div>
       </aside>

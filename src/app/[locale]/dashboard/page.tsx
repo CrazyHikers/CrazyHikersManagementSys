@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
+import { getUserRole, can } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -82,11 +82,14 @@ export default async function DashboardPage() {
 
   // Manager / Admin view
   const stats = await getManagerStats();
+  const isAdmin = can(session!, "waivers.approve");
   const cards = [
     { label: t("openActivities"), value: stats.openActivities, color: "text-green-600" },
     { label: t("totalMembers"), value: stats.totalMembers, color: "text-blue-600" },
     { label: t("totalManagers"), value: stats.totalManagers, color: "text-purple-600" },
-    { label: t("pendingWaivers"), value: stats.pendingWaivers, color: "text-orange-600" },
+    ...(isAdmin
+      ? [{ label: t("pendingWaivers"), value: stats.pendingWaivers, color: "text-orange-600" }]
+      : []),
   ];
 
   return (
