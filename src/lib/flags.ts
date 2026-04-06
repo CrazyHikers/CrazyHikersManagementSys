@@ -7,11 +7,12 @@ export interface FlagSettings {
 }
 
 export async function getFlagSettings(): Promise<FlagSettings> {
-  return getSettings([
+  const settings = await getSettings([
     "ban_duration_yellow",
     "ban_duration_red",
     "flag_expiry_days",
-  ]) as Promise<FlagSettings>;
+  ]);
+  return settings as unknown as FlagSettings;
 }
 
 export function computeBanUntil(
