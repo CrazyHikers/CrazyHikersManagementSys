@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     const { start: seasonStart, end: seasonEnd } = await getCurrentSeason();
     const internMaxSeasons = await getSetting("intern_max_seasons");
     const seasonStartMonth = await getSetting("kpi_season_start_month");
+    const qualifiedMinManaged = await getSetting("qualified_min_managed_per_season");
     const monthIndex = seasonStartMonth - 1;
 
     // 1. Find qualified managers who did NOT main-manage any completed activity in the past season
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (managedInSeason === 0) {
+      if (managedInSeason < qualifiedMinManaged) {
         // Demote to intern
         await db.managerProfile.update({
           where: { userEmail: mp.userEmail },

@@ -318,6 +318,7 @@
       "kpi_comanager_points": "副领队每次活动KPI积分（分）",
       "kpi_season_start_month": "徒步季开始月份（1-12）",
       "intern_max_seasons": "见习领队最长期限（徒步季）",
+      "qualified_min_managed_per_season": "正式领队每季最低主领次数（次）",
       "rate_limit_signin_max": "登录频率限制（最大次数）",
       "rate_limit_signin_window_minutes": "登录频率限制窗口（分钟）",
       "rate_limit_signup_max": "注册频率限制（最大次数）",

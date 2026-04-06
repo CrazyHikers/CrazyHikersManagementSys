@@ -27,6 +27,7 @@ export const DEFAULTS: Record<string, number> = {
   kpi_comanager_points: 1,
   kpi_season_start_month: 11, // November (1-indexed)
   intern_max_seasons: 2,
+  qualified_min_managed_per_season: 1,
 
   // Rate limiting
   rate_limit_signin_max: 3,

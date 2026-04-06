@@ -318,6 +318,7 @@
       "kpi_comanager_points": "KPI points per co-managed activity (points)",
       "kpi_season_start_month": "Hiking season start month (1-12)",
       "intern_max_seasons": "Max seasons as intern before removal (seasons)",
+      "qualified_min_managed_per_season": "Min managed activities per season for qualified managers (count)",
       "rate_limit_signin_max": "Sign-in rate limit (max attempts)",
       "rate_limit_signin_window_minutes": "Sign-in rate limit window (minutes)",
       "rate_limit_signup_max": "Sign-up rate limit (max attempts)",
