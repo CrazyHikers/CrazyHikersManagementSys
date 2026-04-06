@@ -24,7 +24,7 @@ export default async function DashboardLayout({
     "User";
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row overflow-hidden">
       <DashboardNav role={role} userName={userName} />
       <main className="flex-1 overflow-y-auto bg-gray-50">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
