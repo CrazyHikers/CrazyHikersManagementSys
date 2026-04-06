@@ -195,14 +195,26 @@ export default async function ActivityViewPage({
             {managers.map((am) => (
               <div key={am.userEmail} className="flex items-center gap-2">
                 <Badge>Manager</Badge>
-                <span>{am.user.name}</span>
+                {isAdmin ? (
+                  <Link href={`/dashboard/managers/${am.user.uid}`} className="hover:underline text-green-700">
+                    {am.user.name}
+                  </Link>
+                ) : (
+                  <span>{am.user.name}</span>
+                )}
                 <span className="text-sm text-muted-foreground">({am.user.email})</span>
               </div>
             ))}
             {comanagers.map((am) => (
               <div key={am.userEmail} className="flex items-center gap-2">
                 <Badge variant="secondary">Co-manager</Badge>
-                <span>{am.user.name}</span>
+                {isAdmin ? (
+                  <Link href={`/dashboard/managers/${am.user.uid}`} className="hover:underline text-green-700">
+                    {am.user.name}
+                  </Link>
+                ) : (
+                  <span>{am.user.name}</span>
+                )}
                 <span className="text-sm text-muted-foreground">({am.user.email})</span>
               </div>
             ))}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 
 type Manager = {
   email: string;
+  uid: string;
   name: string;
   managerProfile: {
     tag: string;
@@ -178,12 +180,13 @@ export default function ManagersPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {managers.map((m) => (
-          <div key={m.email} className="bg-white rounded-lg border p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-medium">{m.name}</div>
-                <div className="text-sm text-muted-foreground">{m.email}</div>
-              </div>
+          <Link key={m.email} href={`/dashboard/managers/${m.uid}`}>
+            <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="font-medium">{m.name}</div>
+                  <div className="text-sm text-muted-foreground">{m.email}</div>
+                </div>
               <Badge
                 className={
                   m.managerProfile?.intern
@@ -202,6 +205,7 @@ export default function ManagersPage() {
               </span>
             </div>
           </div>
+          </Link>
         ))}
       </div>
 
@@ -220,8 +224,12 @@ export default function ManagersPage() {
           </TableHeader>
           <TableBody>
             {managers.map((m) => (
-              <TableRow key={m.email}>
-                <TableCell className="font-medium">{m.name}</TableCell>
+              <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
+                <TableCell>
+                  <Link href={`/dashboard/managers/${m.uid}`} className="font-medium hover:underline">
+                    {m.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{m.email}</TableCell>
                 <TableCell>{m.managerProfile?.tag || "—"}</TableCell>
                 <TableCell>
