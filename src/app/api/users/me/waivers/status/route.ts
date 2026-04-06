@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const validityDays = await getSetting("waiver_validity_days");
+
+  const waiver = await db.userWaiver.findFirst({
+    where: {
+      userEmail: session.user.email,
+      status: { in: ["approved", "expiring"] },
+    },
+    orderBy: { signedAt: "desc" },
+  });
+
+  if (!waiver) {
+    return NextResponse.json({
+      hasValidWaiver: false,
+      expiresAt: null,
+      validityDays,
+    });
+  }
+
+  const expiresAt = new Date(waiver.signedAt);
+  expiresAt.setDate(expiresAt.getDate() + validityDays);
+
+  return NextResponse.json({
+    hasValidWaiver: true,
+    expiresAt: expiresAt.toISOString(),
+    validityDays,
+  });
+}

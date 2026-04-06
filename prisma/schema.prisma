@@ -105,10 +105,12 @@ enum WaiverStatus {
 }
 
 model UserWaiver {
-  fileId    String       @id @map("file_id") @db.VarChar(255)
-  userEmail String       @map("user_email") @db.VarChar(255)
-  signedAt  DateTime     @default(now()) @map("signed_at")
-  status    WaiverStatus @default(pending_approval)
+  fileId        String       @id @map("file_id") @db.VarChar(255)
+  userEmail     String       @map("user_email") @db.VarChar(255)
+  signedAt      DateTime     @default(now()) @map("signed_at")
+  status        WaiverStatus @default(pending_approval)
+  signedVersion Int?         @map("signed_version")
+  signedName    String?      @map("signed_name") @db.VarChar(255)
 
   user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 

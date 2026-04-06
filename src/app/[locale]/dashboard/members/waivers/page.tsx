@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { WaiverApprovalList } from "@/components/dashboard/waiver-approval";
+import { WaiverAuditLog } from "@/components/dashboard/waiver-approval";
 
 export default async function WaiversPage() {
   const session = await auth();
@@ -12,24 +12,26 @@ export default async function WaiversPage() {
   }
   const t = await getTranslations("dashboard.members");
 
-  const pendingWaivers = await db.userWaiver.findMany({
-    where: { status: "pending_approval" },
+  const allWaivers = await db.userWaiver.findMany({
     include: { user: true },
     orderBy: { signedAt: "desc" },
+    take: 100,
   });
 
-  const waivers = pendingWaivers.map((w) => ({
+  const waivers = allWaivers.map((w) => ({
     fileId: w.fileId,
     userEmail: w.userEmail,
     userName: w.user.name,
     userEmailDisplay: w.user.email,
     signedAt: w.signedAt.toISOString(),
+    status: w.status,
+    signedVersion: w.signedVersion,
   }));
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">{t("pendingApproval")}</h1>
-      <WaiverApprovalList initialWaivers={waivers} />
+      <h1 className="text-2xl font-bold mb-6">{t("waiverHistory")}</h1>
+      <WaiverAuditLog waivers={waivers} />
     </div>
   );
 }

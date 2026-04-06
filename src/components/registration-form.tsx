@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { WaiverSignInline } from "@/components/waiver-sign-inline";
 
 type SessionUser = {
   name?: string | null;
@@ -34,6 +35,8 @@ export function RegistrationForm({
   const [loading, setLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
   const [checking, setChecking] = useState(!!session?.email);
+  const [needsWaiver, setNeedsWaiver] = useState(false);
+  const [waiverValidityDays, setWaiverValidityDays] = useState(365);
 
   // Per-registration form state
   const [transportTicket, setTransportTicket] = useState("");
@@ -42,14 +45,22 @@ export function RegistrationForm({
   const [willPostSocialMedia, setWillPostSocialMedia] = useState("");
   const [willingToBePhotographed, setWillingToBePhotographed] = useState("");
 
-  // Check if user is already registered
+  // Check registration status and waiver status
   useEffect(() => {
     if (!session?.email) return;
-    fetch(`/api/activities/${activityId}/register/status`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status) setRegistrationStatus(data.status);
-      })
+    Promise.all([
+      fetch(`/api/activities/${activityId}/register/status`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status) setRegistrationStatus(data.status);
+        }),
+      fetch("/api/users/me/waivers/status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.hasValidWaiver) setNeedsWaiver(true);
+          if (data.validityDays) setWaiverValidityDays(data.validityDays);
+        }),
+    ])
       .catch(() => {})
       .finally(() => setChecking(false));
   }, [activityId, session?.email]);
@@ -121,6 +132,21 @@ export function RegistrationForm({
 
   if (checking) {
     return <div className="text-center py-4 text-muted-foreground">...</div>;
+  }
+
+  // Needs waiver — show inline signing before registration
+  if (needsWaiver && !registrationStatus) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+          {t("waiverRequired")}
+        </div>
+        <WaiverSignInline
+          onSigned={() => setNeedsWaiver(false)}
+          validityDays={waiverValidityDays}
+        />
+      </div>
+    );
   }
 
   // Already registered — show status and withdraw button

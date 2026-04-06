@@ -68,13 +68,13 @@ export async function POST(
       });
     }
 
-    // Check for approved waiver (required to register)
-    const approvedWaiver = await db.userWaiver.findFirst({
-      where: { userEmail: user.email, status: "approved" },
+    // Check for valid waiver (approved or expiring)
+    const validWaiver = await db.userWaiver.findFirst({
+      where: { userEmail: user.email, status: { in: ["approved", "expiring"] } },
     });
-    if (!approvedWaiver) {
+    if (!validWaiver) {
       return NextResponse.json(
-        { error: "You must have an approved waiver before registering for activities. Please submit your waiver first." },
+        { error: "NO_VALID_WAIVER" },
         { status: 403 }
       );
     }

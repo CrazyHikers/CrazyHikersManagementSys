@@ -5,147 +5,111 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { WaiverSignInline } from "@/components/waiver-sign-inline";
 
 type Waiver = {
   fileId: string;
   status: string;
   signedAt: string;
+  signedVersion?: number | null;
+};
+
+type WaiverStatus = {
+  hasValidWaiver: boolean;
+  expiresAt: string | null;
+  validityDays: number;
 };
 
 const statusColors: Record<string, string> = {
   approved: "bg-green-100 text-green-800",
   pending_approval: "bg-yellow-100 text-yellow-800",
-  declined: "bg-red-100 text-red-800",
+  rejected: "bg-red-100 text-red-800",
+  expiring: "bg-orange-100 text-orange-800",
+  expired: "bg-gray-100 text-gray-600",
 };
 
 export default function MyWaiversPage() {
   const t = useTranslations("dashboard.myWaivers");
   const [waivers, setWaivers] = useState<Waiver[]>([]);
+  const [waiverStatus, setWaiverStatus] = useState<WaiverStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [showSignForm, setShowSignForm] = useState(false);
 
   useEffect(() => {
-    fetchWaivers();
+    fetchAll();
   }, []);
 
-  async function fetchWaivers() {
+  async function fetchAll() {
     try {
-      const res = await fetch("/api/users/me/waivers");
-      if (res.ok) {
-        const data = await res.json();
-        setWaivers(data);
-      }
+      const [waiversRes, statusRes] = await Promise.all([
+        fetch("/api/users/me/waivers"),
+        fetch("/api/users/me/waivers/status"),
+      ]);
+      if (waiversRes.ok) setWaivers(await waiversRes.json());
+      if (statusRes.ok) setWaiverStatus(await statusRes.json());
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setUploading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const file = formData.get("waiver") as File;
-
-    if (!file || file.size === 0) {
-      toast.error("Please select a file");
-      setUploading(false);
-      return;
-    }
-
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-    uploadData.append("folder", "waivers");
-
-    try {
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadData,
-      });
-
-      if (!uploadRes.ok) throw new Error("Upload failed");
-
-      const { key } = await uploadRes.json();
-
-      const res = await fetch("/api/users/me/waivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: key }),
-      });
-
-      if (!res.ok) throw new Error("Failed to submit waiver");
-
-      toast.success(t("uploadSuccess"));
-      (e.target as HTMLFormElement).reset();
-      fetchWaivers();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error");
-    } finally {
-      setUploading(false);
-    }
+  function handleSigned() {
+    setShowSignForm(false);
+    setLoading(true);
+    fetchAll();
   }
 
   if (loading) {
     return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
   }
 
+  const hasValid = waiverStatus?.hasValidWaiver;
+  const validityDays = waiverStatus?.validityDays ?? 365;
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
 
-      {/* Download template */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium">{t("downloadTemplate")}</div>
-              <div className="text-sm text-muted-foreground">{t("downloadTemplateDesc")}</div>
+      {/* Current waiver status */}
+      {hasValid && !showSignForm ? (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium">{t("currentStatus")}</span>
+                  <Badge className="bg-green-100 text-green-800">{t("valid")}</Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t("validUntil", {
+                    date: new Date(waiverStatus!.expiresAt!).toLocaleDateString(),
+                  })}
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => setShowSignForm(true)}>
+                {t("reSign")}
+              </Button>
             </div>
-            <a href="/waiver-template.pdf" download>
-              <Button variant="outline">{t("download")}</Button>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">{t("signWaiver")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WaiverSignInline onSigned={handleSigned} validityDays={validityDays} />
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Upload form */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg">{t("uploadWaiver")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpload} className="flex items-end gap-3 flex-wrap">
-            <div className="space-y-1 flex-1 min-w-48">
-              <Label htmlFor="waiver">{t("selectFile")}</Label>
-              <Input
-                id="waiver"
-                name="waiver"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                required
-              />
-            </div>
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700"
-              disabled={uploading}
-            >
-              {uploading ? "..." : t("submit")}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Waiver list */}
+      {/* Waiver history */}
       {waivers.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           {t("noWaivers")}
         </div>
       ) : (
         <div className="space-y-3">
+          <h2 className="text-lg font-semibold">{t("history")}</h2>
           {waivers.map((w) => (
             <Card key={w.fileId}>
               <CardContent className="pt-4">
@@ -154,20 +118,27 @@ export default function MyWaiversPage() {
                     <div className="text-sm text-muted-foreground">
                       {t("submittedOn")}: {new Date(w.signedAt).toLocaleDateString()}
                     </div>
+                    {w.signedVersion && (
+                      <div className="text-xs text-muted-foreground">
+                        {t("eSigned", { version: w.signedVersion })}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusColors[w.status] || ""}>
                       {w.status}
                     </Badge>
-                    <a
-                      href={`/api/waivers/view/${w.fileId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
-                    </a>
+                    {!w.fileId.startsWith("esign-") && (
+                      <a
+                        href={`/api/waivers/view/${w.fileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </a>
+                    )}
                   </div>
                 </div>
               </CardContent>

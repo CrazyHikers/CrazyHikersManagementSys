@@ -6,15 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 async function getManagerStats() {
-  const [openActivities, totalMembers, totalManagers, pendingWaivers] =
+  const [openActivities, totalMembers, totalManagers, expiringWaivers] =
     await Promise.all([
       db.activity.count({ where: { status: "open" } }),
       db.user.count({ where: { role: "member" } }),
       db.user.count({ where: { role: { in: ["manager", "admin", "dev"] } } }),
-      db.userWaiver.count({ where: { status: "pending_approval" } }),
+      db.userWaiver.count({ where: { status: "expiring" } }),
     ]);
 
-  return { openActivities, totalMembers, totalManagers, pendingWaivers };
+  return { openActivities, totalMembers, totalManagers, expiringWaivers };
 }
 
 async function getMemberStats(email: string) {
@@ -28,7 +28,7 @@ async function getMemberStats(email: string) {
       },
     }),
     db.userWaiver.findFirst({
-      where: { userEmail: email, status: "approved" },
+      where: { userEmail: email, status: { in: ["approved", "expiring"] } },
       orderBy: { signedAt: "desc" },
     }),
   ]);
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
     { label: t("totalMembers"), value: stats.totalMembers, color: "text-blue-600" },
     { label: t("totalManagers"), value: stats.totalManagers, color: "text-purple-600" },
     ...(isAdmin
-      ? [{ label: t("pendingWaivers"), value: stats.pendingWaivers, color: "text-orange-600" }]
+      ? [{ label: t("expiringWaivers"), value: stats.expiringWaivers, color: "text-orange-600" }]
       : []),
   ];
 
