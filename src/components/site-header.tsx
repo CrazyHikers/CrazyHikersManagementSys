@@ -32,20 +32,12 @@ export function SiteHeader({ user }: { user?: SiteHeaderUser }) {
               </Link>
             </>
           ) : (
-            <>
-              <Link
-                href="/signin"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {nav("signIn")}
-              </Link>
-              <Link
-                href="/signup"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {nav("signUp")}
-              </Link>
-            </>
+            <Link
+              href="/signin"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {nav("signIn")}
+            </Link>
           )}
           <LocaleSwitcher />
         </div>

@@ -282,7 +282,7 @@
   },
   "auth": {
     "signInTitle": "Sign In",
-    "signInDescription": "Enter your email to receive a magic link",
+    "signInDescription": "Enter your email to sign in or create an account",
     "emailPlaceholder": "you@example.com",
     "sendMagicLink": "Send Magic Link",
     "checkEmail": "Check your email for a sign-in link!",

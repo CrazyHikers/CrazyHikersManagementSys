@@ -9,14 +9,24 @@ import type { NextAuthConfig } from "next-auth";
 // Adapter: maps Auth.js user operations to our unified User table (email PK)
 const userAdapter: Adapter = {
   async createUser(user) {
-    // Don't auto-create — users must self-register via /signup
     if (!user.email) throw new Error("Email required");
+    // Find existing user or auto-create on first magic link click
     const existing = await db.user.findUnique({ where: { email: user.email } });
-    if (!existing) throw new Error("User not found. Please sign up first.");
+    if (existing) {
+      return {
+        id: existing.email,
+        email: existing.email,
+        name: existing.name,
+        emailVerified: null,
+      };
+    }
+    const created = await db.user.create({
+      data: { email: user.email, name: user.email, role: "member" },
+    });
     return {
-      id: existing.email,
-      email: existing.email,
-      name: existing.name,
+      id: created.email,
+      email: created.email,
+      name: created.name,
       emailVerified: null,
     };
   },
@@ -98,9 +108,8 @@ export const authConfig: NextAuthConfig = {
     async signIn({ user }) {
       console.log("[AUTH] signIn callback for:", user.email);
       if (!user.email) return false;
-      const dbUser = await db.user.findUnique({ where: { email: user.email } });
-      console.log("[AUTH] signIn user found:", !!dbUser);
-      return !!dbUser;
+      // Allow both existing users and new signups (user will be created by adapter)
+      return true;
     },
     async jwt({ token, user }) {
       // On first sign-in, `user` is present. On subsequent requests, only `token` is.

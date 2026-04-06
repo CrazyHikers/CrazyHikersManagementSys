@@ -282,7 +282,7 @@
   },
   "auth": {
     "signInTitle": "登录",
-    "signInDescription": "输入你的邮箱以接收登录链接",
+    "signInDescription": "输入你的邮箱登录或创建账号",
     "emailPlaceholder": "you@example.com",
     "sendMagicLink": "发送登录链接",
     "checkEmail": "请查看你的邮箱以获取登录链接！",

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,12 +59,6 @@ export default function SignInPage() {
               >
                 {loading ? "..." : t("sendMagicLink")}
               </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                {t("noAccount")}{" "}
-                <Link href="/signup" className="text-green-600 hover:underline">
-                  {t("signUp")}
-                </Link>
-              </div>
             </form>
           )}
         </CardContent>
