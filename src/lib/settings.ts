@@ -5,7 +5,8 @@ export const DEFAULTS: Record<string, number> = {
   // Flag system
   ban_duration_yellow: 7,
   ban_duration_red: 30,
-  flag_expiry_days: 180,
+  flag_expiry_days_yellow: 180,
+  flag_expiry_days_red: 365,
   yellow_to_red_threshold: 3,
 
   // Waivers
