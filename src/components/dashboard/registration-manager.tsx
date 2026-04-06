@@ -13,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 type RegistrationFormData = {
@@ -329,14 +339,38 @@ export function RegistrationManager({
                     >
                       🚫 Red
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground"
-                      onClick={() => deregister(reg.userEmail)}
-                    >
-                      ✕
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground"
+                          />
+                        }
+                      >
+                        ✕
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{t("deregisterConfirmTitle")}</DialogTitle>
+                          <DialogDescription>
+                            {t("deregisterConfirmDescription", { name: reg.userName })}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <DialogClose render={<Button variant="outline" />}>
+                            {t("cancelAction")}
+                          </DialogClose>
+                          <Button
+                            variant="destructive"
+                            onClick={() => deregister(reg.userEmail)}
+                          >
+                            {t("confirmDeregister")}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               )}
