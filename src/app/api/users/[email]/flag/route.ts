@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { getSetting } from "@/lib/settings";
 
+// SET a pending flag on a registration (not finalized until activity completion)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ email: string }> }
@@ -23,65 +23,72 @@ export async function POST(
   if (!flagType || !["yellow", "red"].includes(flagType)) {
     return NextResponse.json({ error: "Invalid flag type" }, { status: 400 });
   }
-
   if (!activityId) {
+    return NextResponse.json({ error: "Activity ID required" }, { status: 400 });
+  }
+  if (!reason || typeof reason !== "string" || !reason.trim()) {
+    return NextResponse.json({ error: "Reason is required" }, { status: 400 });
+  }
+
+  // Verify registration exists and is confirmed or attended
+  const registration = await db.registration.findUnique({
+    where: { activityId_userEmail: { activityId, userEmail: decodedEmail } },
+  });
+  if (!registration) {
+    return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+  }
+  if (!["registration_confirmed", "attended"].includes(registration.status)) {
     return NextResponse.json(
-      { error: "Activity ID required" },
+      { error: "Can only flag users with confirmed or attended registrations" },
       { status: 400 }
     );
   }
 
-  const issuedByEmail = session.user.email || "unknown";
+  // Toggle: if same flag type already set, clear it; otherwise set new flag
+  const isClearing = registration.pendingFlag === flagType;
 
-  const flagExpiryDays = await getSetting("flag_expiry_days");
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + flagExpiryDays);
-
-  let effectiveFlagType = flagType as "yellow" | "red";
-
-  // Check if this yellow flag should auto-escalate to red
-  if (flagType === "yellow") {
-    const threshold = await getSetting("yellow_to_red_threshold");
-    const activeYellowCount = await db.userFlag.count({
-      where: {
-        userEmail: decodedEmail,
-        flagType: "yellow",
-        expiresAt: { gt: new Date() }, // only count non-expired flags
-      },
-    });
-
-    // If adding this yellow would reach/exceed threshold, escalate to red
-    if (activeYellowCount + 1 >= threshold) {
-      effectiveFlagType = "red";
-    }
-  }
-
-  const banDays = await getSetting(`ban_duration_${effectiveFlagType}`);
-  const banUntil = new Date();
-  banUntil.setDate(banUntil.getDate() + banDays);
-
-  // Create the flag
-  await db.userFlag.create({
+  await db.registration.update({
+    where: { activityId_userEmail: { activityId, userEmail: decodedEmail } },
     data: {
-      userEmail: decodedEmail,
-      activityId,
-      flagType: effectiveFlagType,
-      reason: reason || null,
-      banUntil,
-      expiresAt,
-      issuedBy: issuedByEmail,
+      pendingFlag: isClearing ? null : flagType,
+      pendingFlagReason: isClearing ? null : reason.trim(),
     },
   });
 
-  // No need to update registrations -- shadow ban is checked at query time
-  // when managers view the registrations list
-
   return NextResponse.json({
     success: true,
-    effectiveFlagType,
-    escalated: effectiveFlagType !== flagType,
-    banUntil: banUntil.toISOString(),
+    pendingFlag: isClearing ? null : flagType,
+    pendingFlagReason: isClearing ? null : reason.trim(),
   });
+}
+
+// CLEAR a pending flag
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ email: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!can(session, "registrations.flag")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { email: userEmail } = await params;
+  const decodedEmail = decodeURIComponent(userEmail);
+  const { activityId } = await request.json();
+
+  if (!activityId) {
+    return NextResponse.json({ error: "Activity ID required" }, { status: 400 });
+  }
+
+  await db.registration.update({
+    where: { activityId_userEmail: { activityId, userEmail: decodedEmail } },
+    data: { pendingFlag: null, pendingFlagReason: null },
+  });
+
+  return NextResponse.json({ success: true });
 }
 
 // GET: Retrieve flag history for a user (manager-only)
@@ -102,7 +109,7 @@ export async function GET(
   const flags = await db.userFlag.findMany({
     where: {
       userEmail: decodedEmail,
-      expiresAt: { gt: new Date() }, // only active (non-expired) flags
+      expiresAt: { gt: new Date() },
     },
     orderBy: { issuedAt: "desc" },
   });

@@ -23,6 +23,8 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 type RegistrationFormData = {
@@ -50,6 +52,8 @@ type Registration = {
   yellowFlags: number;
   redFlags: number;
   isBanned: boolean;
+  pendingFlag: string | null;
+  pendingFlagReason: string | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -65,6 +69,84 @@ const statusLabels: Record<string, string> = {
   attended: "Attended",
   absent: "Absent",
 };
+
+function FlagButton({
+  flagType,
+  userName,
+  disabled,
+  onSubmit,
+}: {
+  flagType: "yellow" | "red";
+  userName: string;
+  disabled: boolean;
+  onSubmit: (reason: string) => void;
+}) {
+  const t = useTranslations("dashboard.activities");
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const isYellow = flagType === "yellow";
+
+  function handleSubmit() {
+    if (!reason.trim()) return;
+    onSubmit(reason.trim());
+    setOpen(false);
+    setReason("");
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setReason(""); }}>
+      <DialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className={`h-7 text-xs ${
+              isYellow
+                ? "text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                : "text-red-600 border-red-300 hover:bg-red-50"
+            }`}
+            disabled={disabled}
+          />
+        }
+      >
+        {isYellow ? "⚠ Yellow" : "🚫 Red"}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("flagDialogTitle", { type: flagType, name: userName })}
+          </DialogTitle>
+          <DialogDescription>
+            {t("flagDialogDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="flag-reason">{t("flagReasonLabel")}</Label>
+          <Textarea
+            id="flag-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t("flagReasonPlaceholder")}
+            rows={3}
+          />
+        </div>
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            {t("cancelAction")}
+          </DialogClose>
+          <Button
+            className={isYellow ? "bg-yellow-600 hover:bg-yellow-700" : "bg-red-600 hover:bg-red-700"}
+            onClick={handleSubmit}
+            disabled={!reason.trim()}
+          >
+            {t("confirmFlag")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function RegistrationManager({
   activityId,
@@ -122,27 +204,67 @@ export function RegistrationManager({
     [activityId]
   );
 
-  // Flag a user (yellow or red)
+  // Set or clear a pending flag on a registration
   const flagUser = useCallback(
-    async (userEmail: string, flagType: "yellow" | "red") => {
+    async (userEmail: string, flagType: "yellow" | "red", reason: string) => {
       setFlagging(userEmail);
       try {
         const res = await fetch(`/api/users/${encodeURIComponent(userEmail)}/flag`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flagType, activityId }),
+          body: JSON.stringify({ flagType, activityId, reason }),
         });
-        if (!res.ok) throw new Error("Failed to flag");
-        toast.success(
-          `${flagType === "yellow" ? "Yellow" : "Red"} flag applied`
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed");
+        }
+        setRegistrations((prev) =>
+          prev.map((r) =>
+            r.userEmail === userEmail
+              ? { ...r, pendingFlag: data.pendingFlag, pendingFlagReason: data.pendingFlagReason }
+              : r
+          )
         );
-      } catch {
-        toast.error("Failed to flag user");
+        toast.success(
+          data.pendingFlag
+            ? t("flagPending", { type: data.pendingFlag })
+            : t("flagCleared")
+        );
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to flag user");
       } finally {
         setFlagging(null);
       }
     },
-    [activityId]
+    [activityId, t]
+  );
+
+  // Clear a pending flag
+  const clearFlag = useCallback(
+    async (userEmail: string) => {
+      setFlagging(userEmail);
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent(userEmail)}/flag`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ activityId }),
+        });
+        if (!res.ok) throw new Error("Failed");
+        setRegistrations((prev) =>
+          prev.map((r) =>
+            r.userEmail === userEmail
+              ? { ...r, pendingFlag: null, pendingFlagReason: null }
+              : r
+          )
+        );
+        toast.success(t("flagCleared"));
+      } catch {
+        toast.error("Failed to clear flag");
+      } finally {
+        setFlagging(null);
+      }
+    },
+    [activityId, t]
   );
 
   const deregister = useCallback(
@@ -220,6 +342,18 @@ export function RegistrationManager({
                 {reg.notes && (
                   <div className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-600">
                     {reg.notes}
+                  </div>
+                )}
+                {reg.pendingFlag && reg.pendingFlagReason && (
+                  <div className={`text-sm mt-2 p-2 rounded ${
+                    reg.pendingFlag === "yellow"
+                      ? "bg-yellow-50 border border-yellow-200 text-yellow-800"
+                      : "bg-red-50 border border-red-200 text-red-800"
+                  }`}>
+                    <span className="font-medium">
+                      {reg.pendingFlag === "yellow" ? "⚠" : "🚫"} {t("pendingFlagLabel")}:
+                    </span>{" "}
+                    {reg.pendingFlagReason}
                   </div>
                 )}
                 {(reg.formData || reg.userProfile) && (
@@ -301,44 +435,67 @@ export function RegistrationManager({
 
               {isEditable && (
                 <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                  {/* Status change dropdown — auto-saves */}
-                  <Select
-                    value={reg.status}
-                    onValueChange={(val) => val && updateStatus(reg.userEmail, val)}
-                  >
-                    <SelectTrigger className="w-36 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="registered">Registered</SelectItem>
-                      <SelectItem value="registration_confirmed">
-                        Confirmed
-                      </SelectItem>
-                      <SelectItem value="attended">Attended</SelectItem>
-                      <SelectItem value="absent">Absent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {/* Status controls */}
+                  {reg.status === "registered" ? (
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs bg-green-600 hover:bg-green-700"
+                      onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
+                      disabled={saving === reg.userEmail}
+                    >
+                      {saving === reg.userEmail ? "..." : t("confirmRegistration")}
+                    </Button>
+                  ) : (
+                    <Select
+                      value={["attended", "absent"].includes(reg.status) ? reg.status : ""}
+                      onValueChange={(val) => val && updateStatus(reg.userEmail, val)}
+                    >
+                      <SelectTrigger className="w-36 h-8 text-xs">
+                        <SelectValue placeholder={t("selectStatus")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="attended">{t("markAttended")}</SelectItem>
+                        <SelectItem value="absent">{t("markAbsent")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
 
-                  {/* Flag buttons */}
+                  {/* Flag buttons — only for confirmed/attended */}
                   <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs text-yellow-600 border-yellow-300 hover:bg-yellow-50"
-                      onClick={() => flagUser(reg.userEmail, "yellow")}
-                      disabled={flagging === reg.userEmail}
-                    >
-                      ⚠ Yellow
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
-                      onClick={() => flagUser(reg.userEmail, "red")}
-                      disabled={flagging === reg.userEmail}
-                    >
-                      🚫 Red
-                    </Button>
+                    {["registration_confirmed", "attended"].includes(reg.status) && (
+                      <>
+                        {reg.pendingFlag ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-7 text-xs ${
+                              reg.pendingFlag === "yellow"
+                                ? "bg-yellow-200 text-yellow-800 border-yellow-400"
+                                : "bg-red-200 text-red-800 border-red-400"
+                            }`}
+                            onClick={() => clearFlag(reg.userEmail)}
+                            disabled={flagging === reg.userEmail}
+                          >
+                            {reg.pendingFlag === "yellow" ? "⚠ Yellow" : "🚫 Red"} ✕
+                          </Button>
+                        ) : (
+                          <>
+                            <FlagButton
+                              flagType="yellow"
+                              userName={reg.userName}
+                              disabled={flagging === reg.userEmail}
+                              onSubmit={(reason) => flagUser(reg.userEmail, "yellow", reason)}
+                            />
+                            <FlagButton
+                              flagType="red"
+                              userName={reg.userName}
+                              disabled={flagging === reg.userEmail}
+                              onSubmit={(reason) => flagUser(reg.userEmail, "red", reason)}
+                            />
+                          </>
+                        )}
+                      </>
+                    )}
                     <Dialog>
                       <DialogTrigger
                         render={

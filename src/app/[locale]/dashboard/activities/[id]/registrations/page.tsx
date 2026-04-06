@@ -69,6 +69,8 @@ export default async function RegistrationsPage({
         yellowFlags: yellowCount,
         redFlags: redCount,
         isBanned: false, // filtered out above, but keep for UI consistency
+        pendingFlag: r.pendingFlag || null,
+        pendingFlagReason: r.pendingFlagReason || null,
       };
     });
 

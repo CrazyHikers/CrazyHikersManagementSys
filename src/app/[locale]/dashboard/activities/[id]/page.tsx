@@ -8,13 +8,14 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { ActivityActions } from "@/components/dashboard/activity-actions";
 import { EditButton } from "@/components/dashboard/activity-detail-client";
+import { ShareButton } from "@/components/share-button";
 
 export default async function ActivityDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const t = await getTranslations("dashboard.activities");
 
   const activity = await db.activity.findUnique({
@@ -52,7 +53,10 @@ export default async function ActivityDetailPage({
           </Badge>
         </div>
         {["open", "closed"].includes(activity.status) && (
-          <div className="flex gap-2 flex-wrap items-start">
+        <div className="flex gap-2 flex-wrap items-start">
+          {activity.status === "open" && (
+            <ShareButton path={`/${locale}/activities/${activity.id}`} />
+          )}
             <EditButton
               activity={{
                 id: activity.id,
@@ -66,7 +70,7 @@ export default async function ActivityDetailPage({
               }}
             />
             <ActivityActions activityId={activity.id} status={activity.status} />
-          </div>
+        </div>
         )}
       </div>
 

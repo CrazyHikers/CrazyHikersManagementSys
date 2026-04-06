@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { RegistrationForm } from "@/components/registration-form";
+import { ShareButton } from "@/components/share-button";
 
 async function getActivity(id: string) {
   return db.activity.findUnique({
@@ -37,7 +38,7 @@ export default async function ActivityDetailPage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const t = await getTranslations("activity");
   const session = await auth();
   const activity = await getActivity(id);
@@ -78,16 +79,21 @@ export default async function ActivityDetailPage({
           )}
 
           <div className="mb-6">
-            <div className="flex items-start gap-3 mb-2">
-              <h1 className="text-2xl font-bold">{activity.title}</h1>
-              <Badge
-                variant={isOpen && !isFull ? "default" : "secondary"}
-                className={
-                  isOpen && !isFull ? "bg-green-600" : ""
-                }
-              >
-                {activity.status}
-              </Badge>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-start gap-3">
+                <h1 className="text-2xl font-bold">{activity.title}</h1>
+                <Badge
+                  variant={isOpen && !isFull ? "default" : "secondary"}
+                  className={
+                    isOpen && !isFull ? "bg-green-600" : ""
+                  }
+                >
+                  {activity.status}
+                </Badge>
+              </div>
+              {activity.status === "open" && new Date(activity.deadline) > new Date() && (
+                <ShareButton path={`/${locale}/activities/${activity.id}`} />
+              )}
             </div>
             <p className="text-muted-foreground whitespace-pre-wrap">
               {activity.description}
