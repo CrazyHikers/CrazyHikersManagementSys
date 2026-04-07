@@ -4,13 +4,13 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 // Auth.js tables for magic link verification
 model VerificationToken {
-  identifier String   @db.VarChar(255)
-  token      String   @unique @db.VarChar(255)
+  identifier String
+  token      String   @unique
   expires    DateTime
 
   @@id([identifier, token])
@@ -29,12 +29,12 @@ enum UserRole {
 }
 
 model User {
-  email        String   @id @db.VarChar(255)
-  uid          String   @unique @default(uuid()) @db.VarChar(255)
-  name         String   @db.VarChar(255)
+  email        String   @id
+  uid          String   @unique @default(uuid())
+  name         String
   role         UserRole @default(member)
-  passwordHash String?  @map("password_hash") @db.VarChar(255)
-  profile      Json?    @db.Json
+  passwordHash String?  @map("password_hash")
+  profile      Json?    @db.JsonB
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -53,8 +53,8 @@ model User {
 }
 
 model ManagerProfile {
-  userEmail   String    @id @map("user_email") @db.VarChar(255)
-  tag         String    @unique @db.VarChar(255)
+  userEmail   String    @id @map("user_email")
+  tag         String    @unique
   intern      Boolean   @default(true)
   internSince DateTime? @map("intern_since")
 
@@ -73,12 +73,12 @@ enum FlagType {
 }
 
 model UserFlag {
-  id         String   @id @default(uuid()) @db.VarChar(255)
-  userEmail  String   @map("user_email") @db.VarChar(255)
-  activityId String   @map("activity_id") @db.VarChar(255)
+  id         String   @id @default(uuid())
+  userEmail  String   @map("user_email")
+  activityId String   @map("activity_id")
   flagType   FlagType @map("flag_type")
-  reason     String?  @db.Text
-  issuedBy   String   @map("issued_by") @db.VarChar(255)
+  reason     String?
+  issuedBy   String   @map("issued_by")
   issuedAt   DateTime @default(now()) @map("issued_at")
 
   user     User     @relation("flaggedUser", fields: [userEmail], references: [email], onDelete: Cascade)
@@ -101,12 +101,12 @@ enum WaiverStatus {
 }
 
 model UserWaiver {
-  fileId        String       @id @map("file_id") @db.VarChar(255)
-  userEmail     String       @map("user_email") @db.VarChar(255)
+  fileId        String       @id @map("file_id")
+  userEmail     String       @map("user_email")
   signedAt      DateTime     @default(now()) @map("signed_at")
   status        WaiverStatus @default(approved)
   signedVersion Int?         @map("signed_version")
-  signedName    String?      @map("signed_name") @db.VarChar(255)
+  signedName    String?      @map("signed_name")
 
   user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
 
@@ -115,12 +115,12 @@ model UserWaiver {
 }
 
 model WaiverTemplate {
-  id         String   @id @default(uuid()) @db.VarChar(255)
+  id         String   @id @default(uuid())
   version    Int      @unique @default(autoincrement())
-  r2Key      String   @map("r2_key") @db.VarChar(500)
-  filename   String   @db.VarChar(255)
+  r2Key      String   @map("r2_key")
+  filename   String
   uploadedAt DateTime @default(now()) @map("uploaded_at")
-  uploadedBy String   @map("uploaded_by") @db.VarChar(255)
+  uploadedBy String   @map("uploaded_by")
 
   @@map("waiver_templates")
 }
@@ -137,15 +137,15 @@ enum ActivityStatus {
 }
 
 model Activity {
-  id                  String         @id @default(uuid()) @db.VarChar(255)
-  title               String         @db.VarChar(500)
-  description         String         @db.Text
-  coverImgId          String         @map("cover_img_id") @db.VarChar(255)
+  id                  String         @id @default(uuid())
+  title               String
+  description         String
+  coverImgId          String         @map("cover_img_id")
   deadline            DateTime
   date                DateTime
   capacity            Int
   maximumRegistration Int?           @map("maximum_registration")
-  metadata            Json?          @db.Json
+  metadata            Json?          @db.JsonB
   status              ActivityStatus @default(open)
   createdAt           DateTime       @default(now()) @map("created_at")
   updatedAt           DateTime       @default(now()) @updatedAt @map("updated_at")
@@ -177,13 +177,13 @@ enum ActivityManagerStatus {
 }
 
 model ActivityManager {
-  activityId  String                @map("activity_id") @db.VarChar(255)
-  userEmail   String                @map("user_email") @db.VarChar(255)
+  activityId  String                @map("activity_id")
+  userEmail   String                @map("user_email")
   role        ActivityManagerRole
   status      ActivityManagerStatus @default(confirmed)
   invitedAt   DateTime              @default(now()) @map("invited_at")
   respondedAt DateTime?             @map("responded_at")
-  token       String?               @unique @db.VarChar(255)
+  token       String?               @unique
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
@@ -204,15 +204,15 @@ enum RegistrationStatus {
 }
 
 model Registration {
-  activityId   String             @map("activity_id") @db.VarChar(255)
-  userEmail    String             @map("user_email") @db.VarChar(255)
+  activityId   String             @map("activity_id")
+  userEmail    String             @map("user_email")
   status       RegistrationStatus @default(registered)
   registeredAt DateTime           @default(now()) @map("registered_at")
   confirmedAt  DateTime?          @map("confirmed_at")
-  notes        String?            @db.Text
-  formData     Json?              @map("form_data") @db.Json
-  pendingFlag       String?            @map("pending_flag") @db.VarChar(10)
-  pendingFlagReason String?            @map("pending_flag_reason") @db.Text
+  notes        String?
+  formData     Json?              @map("form_data") @db.JsonB
+  pendingFlag       String?            @map("pending_flag")
+  pendingFlagReason String?            @map("pending_flag_reason")
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
@@ -225,11 +225,11 @@ model Registration {
 }
 
 model ActivityUpdate {
-  id         String   @id @default(uuid()) @db.VarChar(255)
-  activityId String   @map("activity_id") @db.VarChar(255)
-  title      String   @db.VarChar(500)
-  content    String?  @db.Text
-  postedBy   String   @map("posted_by") @db.VarChar(255)
+  id         String   @id @default(uuid())
+  activityId String   @map("activity_id")
+  title      String
+  content    String?
+  postedBy   String   @map("posted_by")
   createdAt  DateTime @default(now()) @map("created_at")
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
@@ -258,11 +258,11 @@ enum PromotionStatus {
 }
 
 model PromotionRequest {
-  id              String          @id @default(uuid()) @db.VarChar(255)
-  userEmail       String          @map("user_email") @db.VarChar(255)
+  id              String          @id @default(uuid())
+  userEmail       String          @map("user_email")
   type            PromotionType
   status          PromotionStatus @default(pending)
-  applicationText String?         @map("application_text") @db.Text
+  applicationText String?         @map("application_text")
   requestedAt     DateTime        @default(now()) @map("requested_at")
   expiresAt       DateTime        @map("expires_at")
   resolvedAt      DateTime?       @map("resolved_at")
@@ -277,13 +277,13 @@ model PromotionRequest {
 }
 
 model PromotionVote {
-  id         String   @id @default(uuid()) @db.VarChar(255)
-  requestId  String   @map("request_id") @db.VarChar(255)
-  voterEmail String   @map("voter_email") @db.VarChar(255)
+  id         String   @id @default(uuid())
+  requestId  String   @map("request_id")
+  voterEmail String   @map("voter_email")
   approved   Boolean?
-  reason     String?  @db.Text
+  reason     String?
   votedAt    DateTime? @map("voted_at")
-  token      String   @unique @db.VarChar(255)
+  token      String   @unique
 
   request PromotionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
@@ -311,13 +311,13 @@ enum AuditAction {
 }
 
 model AuditLog {
-  id          String          @id @default(uuid()) @db.VarChar(255)
+  id          String          @id @default(uuid())
   entityType  AuditEntityType @map("entity_type")
-  entityId    String          @map("entity_id") @db.VarChar(255)
+  entityId    String          @map("entity_id")
   action      AuditAction
-  performedBy String?         @map("performed_by") @db.VarChar(255)
-  oldValues   Json?           @map("old_values")
-  newValues   Json?           @map("new_values")
+  performedBy String?         @map("performed_by")
+  oldValues   Json?           @map("old_values") @db.JsonB
+  newValues   Json?           @map("new_values") @db.JsonB
   createdAt   DateTime        @default(now()) @map("created_at")
 
   @@index([entityType, entityId])
@@ -326,8 +326,8 @@ model AuditLog {
 }
 
 model AppSettings {
-  key   String @id @db.VarChar(255)
-  value String @db.Text
+  key   String @id
+  value String
 
   @@map("app_settings")
 }
