@@ -75,12 +75,32 @@ export function WaiverSignInline({
               Loading...
             </div>
           ) : (
-            <iframe
-              src={templateUrl || "/waiver-template.pdf"}
-              className="w-full border-0"
-              style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
-              title={t("title")}
-            />
+            <>
+              <div
+                className="w-full overflow-auto"
+                style={{
+                  height: "calc(100vh - 200px)",
+                  minHeight: "400px",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                <iframe
+                  src={templateUrl || "/api/waiver-templates/view"}
+                  className="w-full h-full border-0"
+                  title={t("title")}
+                />
+              </div>
+              <div className="p-2 text-center border-t">
+                <a
+                  href={templateUrl || "/api/waiver-templates/view"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  {t("openPdf")}
+                </a>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

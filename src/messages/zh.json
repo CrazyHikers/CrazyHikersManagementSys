@@ -237,6 +237,7 @@
       "history": "签署历史",
       "eSigned": "电子签署 (v{version})",
       "signedAs": "签署人: {name}",
+      "openPdf": "在新标签页中打开PDF",
       "newVersionNotice": "免责声明已更新为新版本，请阅读并签署最新版免责声明以继续参加活动。"
     },
     "myProfile": {

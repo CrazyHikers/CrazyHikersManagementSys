@@ -237,6 +237,7 @@
       "history": "Waiver History",
       "eSigned": "E-Signed (v{version})",
       "signedAs": "Signed as: {name}",
+      "openPdf": "Open PDF in new tab",
       "newVersionNotice": "A new waiver version has been released. Please review and sign the updated waiver to continue participating in activities."
     },
     "myProfile": {
