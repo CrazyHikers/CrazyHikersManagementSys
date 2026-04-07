@@ -29,17 +29,11 @@ export function WaiverSignInline({
         const res = await fetch("/api/waiver-templates");
         if (res.ok) {
           const data = await res.json();
-          if (data.version) {
-            setCurrentVersion(data.version);
-            setTemplateUrl("/api/waiver-templates/view");
-          } else {
-            // Fallback to static PDF if no template uploaded yet
-            setTemplateUrl("/waiver-template.pdf");
-          }
+          setCurrentVersion(data.version);
+          setTemplateUrl("/api/waiver-templates/view");
         }
       } catch {
-        // Fallback to static PDF on error
-        setTemplateUrl("/waiver-template.pdf");
+        // ignore
       } finally {
         setLoadingTemplate(false);
       }

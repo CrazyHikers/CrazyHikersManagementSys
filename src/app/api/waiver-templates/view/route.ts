@@ -26,9 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!template) {
-    // Fallback to static PDF for legacy waivers signed before template versioning
-    const baseUrl = new URL(request.url).origin;
-    return NextResponse.redirect(`${baseUrl}/waiver-template.pdf`);
+    return NextResponse.json({ error: "Template not found" }, { status: 404 });
   }
 
   try {
