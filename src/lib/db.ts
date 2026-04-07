@@ -13,6 +13,9 @@ function createPrismaClient() {
     password: process.env.DATABASE_PASSWORD!,
     database: process.env.DATABASE_NAME!,
     connectionLimit: 1,
+    minimumIdle: 0,
+    idleTimeout: 10000,
+    acquireTimeout: 10000,
     ssl: { rejectUnauthorized: false },
   });
 
