@@ -5,7 +5,8 @@ import bcrypt from "bcryptjs";
 import { sendMagicLinkEmail } from "./email";
 import { db } from "./db";
 import { rateLimit } from "./rate-limit";
-import { verifyTurnstile } from "./turnstile";
+import { verifyTurnstile, verifyTurnstileCookie } from "./turnstile";
+import { cookies } from "next/headers";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
 
@@ -94,6 +95,14 @@ export const authConfig: NextAuthConfig = {
       server: { host: "smtp.placeholder.com", port: 587, auth: { user: "", pass: "" } },
       from: "noreply@crazyhiker.com",
       sendVerificationRequest: async ({ identifier: email, url }) => {
+        // Verify Turnstile cookie (set by /api/auth/verify-turnstile)
+        const cookieStore = await cookies();
+        const turnstileCookie = cookieStore.get("turnstile-verified")?.value;
+        if (!verifyTurnstileCookie(turnstileCookie)) {
+          console.warn(`[AUTH] Turnstile cookie missing/invalid for ${email}`);
+          throw new Error("Bot verification required. Please try again.");
+        }
+
         // Rate limit: max 3 magic links per email per 15 minutes
         const { allowed } = rateLimit(`signin:${email}`, { maxAttempts: 3, windowMs: 15 * 60 * 1000 });
         if (!allowed) {

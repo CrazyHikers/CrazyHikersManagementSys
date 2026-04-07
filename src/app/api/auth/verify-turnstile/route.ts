@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyTurnstile } from "@/lib/turnstile";
+import { verifyTurnstile, createTurnstileCookie } from "@/lib/turnstile";
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +20,16 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    const cookie = createTurnstileCookie();
+    const res = NextResponse.json({ success: true });
+    res.cookies.set(cookie.name, cookie.value, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: cookie.maxAge,
+      path: "/",
+    });
+    return res;
   } catch {
     return NextResponse.json(
       { success: false, error: "Internal error" },
