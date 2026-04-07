@@ -289,6 +289,7 @@
       "noWaivers": "暂无免责声明",
       "submitted": "提交于",
       "legalName": "法定姓名",
+      "viewWaiverDoc": "查看免责声明文件 (v{version})",
       "view": "查看",
       "activityHistory": "活动记录",
       "noActivities": "暂无活动参与记录",
@@ -335,7 +336,18 @@
       "rate_limit_signup_max": "注册频率限制（最大次数）",
       "rate_limit_signup_window_minutes": "注册频率限制窗口（分钟）",
       "rate_limit_register_max": "报名频率限制（最大次数）",
-      "rate_limit_register_window_minutes": "报名频率限制窗口（分钟）"
+      "rate_limit_register_window_minutes": "报名频率限制窗口（分钟）",
+      "waiverTemplate": "免责声明模板",
+      "waiverCurrentVersion": "当前版本",
+      "waiverFilename": "文件名",
+      "waiverUploadedAt": "上传时间",
+      "waiverUploadedBy": "上传者",
+      "waiverNoTemplate": "尚未上传免责声明模板，正在使用默认模板。",
+      "waiverUploadWarning": "上传新的免责声明模板将使所有已签署的免责声明失效，所有用户需要重新签署。",
+      "waiverUploadConfirm": "确定要上传吗？上传新模板将使所有已签署的免责声明失效，每位用户都需要重新签署新版本。",
+      "waiverUploadButton": "上传新模板",
+      "waiverUploadSuccess": "免责声明模板已更新，所有已签署的免责声明已失效。",
+      "waiverPdfOnly": "仅允许上传PDF文件"
     }
   },
   "auth": {

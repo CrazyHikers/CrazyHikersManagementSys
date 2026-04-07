@@ -114,6 +114,17 @@ model UserWaiver {
   @@map("user_waivers")
 }
 
+model WaiverTemplate {
+  id         String   @id @default(uuid()) @db.VarChar(255)
+  version    Int      @unique @default(autoincrement())
+  r2Key      String   @map("r2_key") @db.VarChar(500)
+  filename   String   @db.VarChar(255)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  uploadedBy String   @map("uploaded_by") @db.VarChar(255)
+
+  @@map("waiver_templates")
+}
+
 // ============================================================================
 // ACTIVITIES
 // ============================================================================

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { WaiverTemplateUpload } from "@/components/dashboard/waiver-template-upload";
 
 type Setting = {
   id: string;
@@ -70,6 +71,8 @@ export default function SettingsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
+
+      <WaiverTemplateUpload />
 
       <Card>
         <CardHeader>

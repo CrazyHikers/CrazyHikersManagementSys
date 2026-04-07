@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-const WAIVER_VERSION = 2;
 
 export function WaiverSignInline({
   onSigned,
@@ -21,6 +19,33 @@ export function WaiverSignInline({
   const [agreed, setAgreed] = useState(false);
   const [legalName, setLegalName] = useState("");
   const [signing, setSigning] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState<number | null>(null);
+  const [templateUrl, setTemplateUrl] = useState<string | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState(true);
+
+  useEffect(() => {
+    async function fetchTemplate() {
+      try {
+        const res = await fetch("/api/waiver-templates");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.version) {
+            setCurrentVersion(data.version);
+            setTemplateUrl("/api/waiver-templates/view");
+          } else {
+            // Fallback to static PDF if no template uploaded yet
+            setTemplateUrl("/waiver-template.pdf");
+          }
+        }
+      } catch {
+        // Fallback to static PDF on error
+        setTemplateUrl("/waiver-template.pdf");
+      } finally {
+        setLoadingTemplate(false);
+      }
+    }
+    fetchTemplate();
+  }, []);
 
   async function handleSign() {
     setSigning(true);
@@ -28,7 +53,11 @@ export function WaiverSignInline({
       const res = await fetch("/api/users/me/waivers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "esign", version: WAIVER_VERSION, signedName: legalName.trim() }),
+        body: JSON.stringify({
+          type: "esign",
+          version: currentVersion,
+          signedName: legalName.trim(),
+        }),
       });
       if (!res.ok) throw new Error("Failed to sign waiver");
       toast.success(t("signSuccess"));
@@ -44,12 +73,21 @@ export function WaiverSignInline({
     <div className="space-y-4">
       <Card className="overflow-hidden">
         <CardContent className="p-0">
-          <iframe
-            src="/waiver-template.pdf"
-            className="w-full border-0"
-            style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
-            title={t("title")}
-          />
+          {loadingTemplate ? (
+            <div
+              className="w-full flex items-center justify-center text-muted-foreground"
+              style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
+            >
+              Loading...
+            </div>
+          ) : (
+            <iframe
+              src={templateUrl || "/waiver-template.pdf"}
+              className="w-full border-0"
+              style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
+              title={t("title")}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -86,7 +124,7 @@ export function WaiverSignInline({
 
       <Button
         onClick={handleSign}
-        disabled={!agreed || !legalName.trim() || signing}
+        disabled={!agreed || !legalName.trim() || signing || loadingTemplate}
         className="w-full bg-green-600 hover:bg-green-700"
       >
         {signing ? "..." : t("signButton")}

@@ -289,6 +289,7 @@
       "noWaivers": "No waivers submitted",
       "submitted": "Submitted",
       "legalName": "Legal name",
+      "viewWaiverDoc": "View Waiver Document (v{version})",
       "view": "View",
       "activityHistory": "Activity History",
       "noActivities": "No activity participation",
@@ -335,7 +336,18 @@
       "rate_limit_signup_max": "Sign-up rate limit (max attempts)",
       "rate_limit_signup_window_minutes": "Sign-up rate limit window (minutes)",
       "rate_limit_register_max": "Registration rate limit (max attempts)",
-      "rate_limit_register_window_minutes": "Registration rate limit window (minutes)"
+      "rate_limit_register_window_minutes": "Registration rate limit window (minutes)",
+      "waiverTemplate": "Waiver Template",
+      "waiverCurrentVersion": "Current Version",
+      "waiverFilename": "Filename",
+      "waiverUploadedAt": "Uploaded",
+      "waiverUploadedBy": "Uploaded By",
+      "waiverNoTemplate": "No waiver template uploaded yet. The default template is being used.",
+      "waiverUploadWarning": "Uploading a new waiver template will expire all existing approved waivers. All users will need to re-sign.",
+      "waiverUploadConfirm": "Are you sure? Uploading a new waiver template will invalidate ALL currently signed waivers. Every user will be required to sign the new version.",
+      "waiverUploadButton": "Upload New Template",
+      "waiverUploadSuccess": "Waiver template updated. All existing signed waivers have been invalidated.",
+      "waiverPdfOnly": "Only PDF files are allowed"
     }
   },
   "auth": {

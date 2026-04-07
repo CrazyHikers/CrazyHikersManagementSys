@@ -208,6 +208,18 @@ export default async function UserDetailPage({
                         {w.signedName}
                       </div>
                     )}
+                    {w.signedVersion && (
+                      <div>
+                        <a
+                          href={`/api/waiver-templates/view?version=${w.signedVersion}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {t("viewWaiverDoc", { version: w.signedVersion })}
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <Badge className={waiverStatusColors[w.status] || ""}>
                     {w.status}
