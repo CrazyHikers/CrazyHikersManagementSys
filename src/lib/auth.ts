@@ -1,8 +1,11 @@
 import NextAuth from "next-auth";
 import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { sendMagicLinkEmail } from "./email";
 import { db } from "./db";
 import { rateLimit } from "./rate-limit";
+import { verifyTurnstile } from "./turnstile";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
 
@@ -103,6 +106,50 @@ export const authConfig: NextAuthConfig = {
         });
       },
     }),
+    CredentialsProvider({
+      id: "credentials",
+      credentials: {
+        email: { type: "email" },
+        password: { type: "password" },
+        turnstileToken: { type: "text" },
+      },
+      async authorize(credentials) {
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+        const turnstileToken = credentials.turnstileToken as string;
+
+        if (!email || !password) return null;
+
+        // Rate limit password attempts
+        const { allowed } = rateLimit(`password:${email}`, {
+          maxAttempts: 5,
+          windowMs: 15 * 60 * 1000,
+        });
+        if (!allowed) {
+          console.warn(`[AUTH] Rate limited password attempt for ${email}`);
+          return null;
+        }
+
+        // Verify Turnstile
+        if (turnstileToken) {
+          const valid = await verifyTurnstile(turnstileToken);
+          if (!valid) {
+            console.warn(`[AUTH] Turnstile verification failed for ${email}`);
+            return null;
+          }
+        }
+
+        // Look up user
+        const user = await db.user.findUnique({ where: { email } });
+        if (!user || !user.passwordHash) return null;
+
+        // Verify password
+        const match = await bcrypt.compare(password, user.passwordHash);
+        if (!match) return null;
+
+        return { id: user.email, email: user.email, name: user.name };
+      },
+    }),
   ],
   callbacks: {
     async signIn({ user }) {
@@ -129,6 +176,7 @@ export const authConfig: NextAuthConfig = {
             token.role = dbUser.role;
             token.tag = dbUser.managerProfile?.tag;
             token.isIntern = dbUser.managerProfile?.intern;
+            token.hasPassword = !!dbUser.passwordHash;
             console.log("[AUTH] jwt token.role set to:", token.role);
           }
         } catch (err) {
@@ -153,6 +201,7 @@ export const authConfig: NextAuthConfig = {
           user.role = dbUser.role;
           user.tag = dbUser.managerProfile?.tag;
           user.isIntern = dbUser.managerProfile?.intern;
+          user.hasPassword = !!dbUser.passwordHash;
         }
       }
       return session;
