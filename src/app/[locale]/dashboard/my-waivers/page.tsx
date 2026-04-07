@@ -19,6 +19,8 @@ type WaiverStatus = {
   hasValidWaiver: boolean;
   expiresAt: string | null;
   validityDays: number;
+  latestVersion: number | null;
+  signedVersion: number | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -63,10 +65,21 @@ export default function MyWaiversPage() {
 
   const hasValid = waiverStatus?.hasValidWaiver;
   const validityDays = waiverStatus?.validityDays ?? 365;
+  const needsResign =
+    waiverStatus?.latestVersion != null &&
+    (waiverStatus.signedVersion == null ||
+      waiverStatus.signedVersion < waiverStatus.latestVersion);
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
+
+      {/* New waiver version notice */}
+      {needsResign && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-4">
+          {t("newVersionNotice")}
+        </div>
+      )}
 
       {/* Current waiver status */}
       {hasValid && !showSignForm ? (

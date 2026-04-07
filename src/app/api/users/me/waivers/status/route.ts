@@ -11,19 +11,29 @@ export async function GET() {
 
   const validityDays = await getSetting("waiver_validity_days");
 
-  const waiver = await db.userWaiver.findFirst({
-    where: {
-      userEmail: session.user.email,
-      status: { in: ["approved", "expiring"] },
-    },
-    orderBy: { signedAt: "desc" },
-  });
+  const [waiver, latestTemplate] = await Promise.all([
+    db.userWaiver.findFirst({
+      where: {
+        userEmail: session.user.email,
+        status: { in: ["approved", "expiring"] },
+      },
+      orderBy: { signedAt: "desc" },
+    }),
+    db.waiverTemplate.findFirst({
+      orderBy: { version: "desc" },
+      select: { version: true },
+    }),
+  ]);
+
+  const latestVersion = latestTemplate?.version ?? null;
 
   if (!waiver) {
     return NextResponse.json({
       hasValidWaiver: false,
       expiresAt: null,
       validityDays,
+      latestVersion,
+      signedVersion: null,
     });
   }
 
@@ -34,5 +44,7 @@ export async function GET() {
     hasValidWaiver: true,
     expiresAt: expiresAt.toISOString(),
     validityDays,
+    latestVersion,
+    signedVersion: waiver.signedVersion,
   });
 }

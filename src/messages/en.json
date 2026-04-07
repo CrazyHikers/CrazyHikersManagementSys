@@ -236,7 +236,8 @@
       "noWaivers": "No waivers submitted yet",
       "history": "Waiver History",
       "eSigned": "E-Signed (v{version})",
-      "signedAs": "Signed as: {name}"
+      "signedAs": "Signed as: {name}",
+      "newVersionNotice": "A new waiver version has been released. Please review and sign the updated waiver to continue participating in activities."
     },
     "myProfile": {
       "title": "My Profile",
