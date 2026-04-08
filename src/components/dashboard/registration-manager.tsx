@@ -61,6 +61,12 @@ type Registration = {
   isBanned: boolean;
   pendingFlag: string | null;
   pendingFlagReason: string | null;
+  activityHistory: {
+    activityId: string;
+    activityTitle: string;
+    activityDate: string;
+    status: string;
+  }[];
 };
 
 const statusColors: Record<string, string> = {
@@ -159,10 +165,14 @@ export function RegistrationManager({
   activityId,
   activityStatus,
   initialRegistrations,
+  canViewMemberDetail,
+  capacity,
 }: {
   activityId: string;
   activityStatus: string;
   initialRegistrations: Registration[];
+  canViewMemberDetail: boolean;
+  capacity: number;
 }) {
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
@@ -171,6 +181,11 @@ export function RegistrationManager({
   const [saving, setSaving] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
   const [expandedFormData, setExpandedFormData] = useState<Set<string>>(new Set());
+
+  const confirmedCount = registrations.filter((r) =>
+    ["registration_confirmed", "attended"].includes(r.status)
+  ).length;
+  const isAtCapacity = capacity > 0 && confirmedCount >= capacity;
 
   function toggleFormData(userEmail: string) {
     setExpandedFormData((prev) => {
@@ -194,7 +209,10 @@ export function RegistrationManager({
             body: JSON.stringify({ userEmail, status: newStatus }),
           }
         );
-        if (!res.ok) throw new Error("Failed to update");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to update");
+        }
 
         setRegistrations((prev) =>
           prev.map((r) =>
@@ -202,8 +220,8 @@ export function RegistrationManager({
           )
         );
         toast.success(`${statusLabels[newStatus]}`);
-      } catch {
-        toast.error("Failed to update");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update");
       } finally {
         setSaving(null);
       }
@@ -302,7 +320,12 @@ export function RegistrationManager({
   return (
     <div className="space-y-3">
       <div className="text-sm text-muted-foreground mb-4">
-        {registrations.length} registrations · Changes save automatically
+        {registrations.length} registrations
+        {capacity > 0 && ` · ${confirmedCount} / ${capacity} ${t("confirmed")}`}
+        {isAtCapacity && (
+          <span className="text-orange-600 font-medium"> · {t("capacityReached")}</span>
+        )}
+        {" · "}Changes save automatically
       </div>
 
       {registrations.map((reg) => (
@@ -314,7 +337,11 @@ export function RegistrationManager({
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Link href={`/dashboard/members/${reg.userUid}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
+                  {canViewMemberDetail ? (
+                    <Link href={`/dashboard/members/${reg.userUid}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
+                  ) : (
+                    <span className="font-medium">{reg.userName}</span>
+                  )}
                   <Badge className={statusColors[reg.status]}>
                     {statusLabels[reg.status]}
                   </Badge>
@@ -363,7 +390,7 @@ export function RegistrationManager({
                     {reg.pendingFlagReason}
                   </div>
                 )}
-                {(reg.formData || reg.userProfile || reg.flagHistory.length > 0) && (
+                {(reg.formData || reg.userProfile || reg.flagHistory.length > 0 || reg.activityHistory.length > 0) && (
                   <div className="mt-2">
                     <button
                       type="button"
@@ -465,6 +492,30 @@ export function RegistrationManager({
                             ))}
                           </div>
                         )}
+                        {/* Activity history */}
+                        {reg.activityHistory.length > 0 && (
+                          <div className="p-3 bg-green-50 rounded text-sm space-y-1">
+                            <div className="font-medium text-green-800 text-xs mb-2">{t("activityHistoryLabel")}</div>
+                            {reg.activityHistory.map((ah) => (
+                              <div key={ah.activityId} className="flex items-center justify-between gap-2">
+                                <Link
+                                  href={`/dashboard/activity-view/${ah.activityId}`}
+                                  className="text-green-700 hover:underline truncate"
+                                >
+                                  {ah.activityTitle}
+                                </Link>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className="text-muted-foreground text-xs">
+                                    {new Date(ah.activityDate).toLocaleDateString()}
+                                  </span>
+                                  <Badge className={statusColors[ah.status] || "bg-gray-100 text-gray-800"}>
+                                    {statusLabels[ah.status] || ah.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -475,14 +526,19 @@ export function RegistrationManager({
                 <div className="flex flex-col gap-2 items-end flex-shrink-0">
                   {/* Status controls */}
                   {reg.status === "registered" ? (
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs bg-green-600 hover:bg-green-700"
-                      onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
-                      disabled={saving === reg.userEmail}
-                    >
-                      {saving === reg.userEmail ? "..." : t("confirmRegistration")}
-                    </Button>
+                    <div className="flex flex-col items-end gap-1">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-green-600 hover:bg-green-700"
+                        onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
+                        disabled={saving === reg.userEmail || isAtCapacity}
+                      >
+                        {saving === reg.userEmail ? "..." : t("confirmRegistration")}
+                      </Button>
+                      {isAtCapacity && (
+                        <span className="text-xs text-orange-600">{t("capacityReached")}</span>
+                      )}
+                    </div>
                   ) : (
                     <Select
                       value={["attended", "absent"].includes(reg.status) ? reg.status : ""}

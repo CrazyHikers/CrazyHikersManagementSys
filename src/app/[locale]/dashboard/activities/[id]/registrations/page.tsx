@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { getFlagSettings, unexpiredCutoff, isBanActive } from "@/lib/flags";
 import { RegistrationManager } from "@/components/dashboard/registration-manager";
 
@@ -12,6 +14,8 @@ export default async function RegistrationsPage({
   const { id } = await params;
   const t = await getTranslations("dashboard.activities");
   const flagSettings = await getFlagSettings();
+  const session = await auth();
+  const canViewMemberDetail = session?.user ? can(session, "members.viewDetail") : false;
 
   const activity = await db.activity.findUnique({
     where: { id },
@@ -21,8 +25,8 @@ export default async function RegistrationsPage({
           user: {
             include: {
               registrations: {
-                where: { status: "attended" },
-                select: { activityId: true },
+                include: { activity: { select: { id: true, title: true, date: true } } },
+                orderBy: { registeredAt: "desc" },
               },
               waivers: {
                 where: { status: "approved" },
@@ -67,7 +71,7 @@ export default async function RegistrationsPage({
         notes: r.notes,
         formData: r.formData ? JSON.parse(JSON.stringify(r.formData)) : null,
         userProfile: r.user.profile ? JSON.parse(JSON.stringify(r.user.profile)) : null,
-        totalAttended: r.user.registrations.length,
+        totalAttended: r.user.registrations.filter((reg) => reg.status === "attended").length,
         hasValidWaiver: r.user.waivers.length > 0,
         yellowFlags: yellowCount,
         redFlags: redCount,
@@ -81,6 +85,14 @@ export default async function RegistrationsPage({
         isBanned: false, // filtered out above, but keep for UI consistency
         pendingFlag: r.pendingFlag || null,
         pendingFlagReason: r.pendingFlagReason || null,
+        activityHistory: r.user.registrations
+          .filter((reg) => reg.activityId !== id)
+          .map((reg) => ({
+            activityId: reg.activityId,
+            activityTitle: reg.activity.title,
+            activityDate: reg.activity.date.toISOString(),
+            status: reg.status,
+          })),
       };
     });
 
@@ -92,6 +104,8 @@ export default async function RegistrationsPage({
         activityId={activity.id}
         activityStatus={activity.status}
         initialRegistrations={registrations}
+        canViewMemberDetail={canViewMemberDetail}
+        capacity={activity.capacity}
       />
     </div>
   );

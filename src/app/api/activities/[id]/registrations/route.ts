@@ -52,6 +52,22 @@ export async function PATCH(
         where: { id: activityId },
       });
 
+      // Check capacity before confirming
+      if (activity && activity.capacity > 0) {
+        const confirmedCount = await db.registration.count({
+          where: {
+            activityId,
+            status: { in: ["registration_confirmed", "attended"] },
+          },
+        });
+        if (confirmedCount >= activity.capacity) {
+          return NextResponse.json(
+            { error: "Activity has reached maximum capacity" },
+            { status: 409 }
+          );
+        }
+      }
+
       await db.$transaction([
         db.registration.update({
           where: {

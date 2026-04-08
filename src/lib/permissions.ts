@@ -56,7 +56,7 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
 
   // Members
   "members.list": ["admin", "dev"],
-  "members.viewDetail": ["manager", "admin", "dev"],
+  "members.viewDetail": ["admin", "dev"],
   "members.delete": ["admin", "dev"],
 
   // Waivers
