@@ -46,6 +46,7 @@ model User {
   registrations     Registration[]
   flags             UserFlag[]          @relation("flaggedUser")
   issuedFlags       UserFlag[]          @relation("flagIssuer")
+  invalidatedFlags  UserFlag[]          @relation("flagInvalidator")
   promotionRequests PromotionRequest[]
 
   @@index([role])
@@ -73,17 +74,21 @@ enum FlagType {
 }
 
 model UserFlag {
-  id         String   @id @default(uuid())
-  userEmail  String   @map("user_email")
-  activityId String   @map("activity_id")
-  flagType   FlagType @map("flag_type")
-  reason     String?
-  issuedBy   String   @map("issued_by")
-  issuedAt   DateTime @default(now()) @map("issued_at")
+  id            String    @id @default(uuid())
+  userEmail     String    @map("user_email")
+  activityId    String    @map("activity_id")
+  flagType      FlagType  @map("flag_type")
+  reason        String?
+  issuedBy      String    @map("issued_by")
+  issuedAt      DateTime  @default(now()) @map("issued_at")
+  invalidated   Boolean   @default(false)
+  invalidatedBy String?   @map("invalidated_by")
+  invalidatedAt DateTime? @map("invalidated_at")
 
-  user     User     @relation("flaggedUser", fields: [userEmail], references: [email], onDelete: Cascade)
-  issuer   User     @relation("flagIssuer", fields: [issuedBy], references: [email], onDelete: Cascade)
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user        User     @relation("flaggedUser", fields: [userEmail], references: [email], onDelete: Cascade)
+  issuer      User     @relation("flagIssuer", fields: [issuedBy], references: [email], onDelete: Cascade)
+  invalidator User?    @relation("flagInvalidator", fields: [invalidatedBy], references: [email], onDelete: SetNull)
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@index([userEmail])
   @@index([issuedAt])

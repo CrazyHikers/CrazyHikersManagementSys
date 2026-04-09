@@ -45,6 +45,7 @@ export async function GET() {
   const candidateFlags = await db.userFlag.findMany({
     where: {
       userEmail: email,
+      invalidated: false,
       issuedAt: { gt: banActiveCutoff(flagSettings, now) },
     },
   });

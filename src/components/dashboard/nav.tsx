@@ -30,6 +30,7 @@ const adminItems: NavItem[] = [
   { key: "allActivities", href: "/dashboard/all-activities" },
   { key: "members", href: "/dashboard/members" },
   { key: "waivers", href: "/dashboard/members/waivers" },
+  { key: "flags", href: "/dashboard/flags" },
   { key: "managers", href: "/dashboard/managers" },
   { key: "settings", href: "/dashboard/settings" },
 ];

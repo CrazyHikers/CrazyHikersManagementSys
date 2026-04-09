@@ -35,7 +35,7 @@ export default async function MembersPage() {
         take: 1,
       },
       flags: {
-        where: { issuedAt: { gt: banActiveCutoff(flagSettings) } },
+        where: { issuedAt: { gt: banActiveCutoff(flagSettings) }, invalidated: false },
         orderBy: { issuedAt: "desc" },
       },
     },

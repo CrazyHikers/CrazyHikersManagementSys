@@ -82,6 +82,7 @@ export async function PATCH(
                 where: {
                   userEmail: reg.userEmail,
                   flagType: "yellow",
+                  invalidated: false,
                   issuedAt: { gt: unexpiredCutoff(flagSettings, now) },
                 },
               });

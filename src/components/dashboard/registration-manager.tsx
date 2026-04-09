@@ -143,6 +143,7 @@ function FlagButton({
             placeholder={t("flagReasonPlaceholder")}
             rows={3}
           />
+          <p className="text-xs text-orange-600">{t("flagAuditWarning")}</p>
         </div>
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>

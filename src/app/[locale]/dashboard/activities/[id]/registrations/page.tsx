@@ -34,7 +34,7 @@ export default async function RegistrationsPage({
                 take: 1,
               },
               flags: {
-                where: { issuedAt: { gt: unexpiredCutoff(flagSettings) } },
+                where: { issuedAt: { gt: unexpiredCutoff(flagSettings) }, invalidated: false },
                 orderBy: { issuedAt: "desc" },
                 include: { activity: true, issuer: true },
               },

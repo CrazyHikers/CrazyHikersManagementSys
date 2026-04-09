@@ -61,6 +61,7 @@ export default async function UserDetailPage({
         orderBy: { registeredAt: "desc" },
       },
       flags: {
+        where: { invalidated: false },
         orderBy: { issuedAt: "desc" },
         include: { activity: true, issuer: true },
       },

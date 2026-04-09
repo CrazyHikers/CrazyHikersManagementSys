@@ -67,6 +67,7 @@ export default async function ManagerDetailPage({
       db.userFlag.findMany({
         where: {
           issuedBy: user.email,
+          invalidated: false,
           issuedAt: { gt: unexpiredCutoff(flagSettings) },
         },
         include: { user: true, activity: true },

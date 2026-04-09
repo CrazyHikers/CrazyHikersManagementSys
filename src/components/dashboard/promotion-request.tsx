@@ -131,127 +131,94 @@ export function PromotionRequest({
     const eligible =
       attendedCount >= 3 && distinctManagerCount >= 2 && !hasActiveFlag;
 
+    // Only show when the member is eligible — no requirement details exposed
+    if (!eligible) return null;
+
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Promotion to Intern Manager
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span>{attendedCount >= 3 ? "+" : "-"}</span>
-              <span>
-                Activities attended: {attendedCount} / 3 required
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>{distinctManagerCount >= 2 ? "+" : "-"}</span>
-              <span>
-                Different main managers: {distinctManagerCount} / 2 required
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>{!hasActiveFlag ? "+" : "-"}</span>
-              <span>
-                {hasActiveFlag
-                  ? "Active flag on account"
-                  : "No active flags"}
-              </span>
-            </div>
-          </div>
-
-          {eligible && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Select 2 non-intern managers as referrals:
-              </p>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {availableReferrals.map((ref) => (
-                  <label
-                    key={ref.email}
-                    className="flex items-center gap-2 text-sm cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedReferrals.includes(ref.email)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          if (selectedReferrals.length < 2) {
-                            setSelectedReferrals([
-                              ...selectedReferrals,
-                              ref.email,
-                            ]);
-                          }
-                        } else {
-                          setSelectedReferrals(
-                            selectedReferrals.filter(
-                              (email) => email !== ref.email
-                            )
-                          );
-                        }
-                      }}
-                      disabled={
-                        !selectedReferrals.includes(ref.email) &&
-                        selectedReferrals.length >= 2
-                      }
-                    />
-                    {ref.name} ({ref.email})
-                  </label>
-                ))}
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">
-                  Application text (optional)
-                </label>
-                <Textarea
-                  placeholder="Tell us why you want to become an intern manager..."
-                  value={applicationText}
-                  onChange={(e) => setApplicationText(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                disabled={selectedReferrals.length !== 2 || submitting}
-                onClick={async () => {
-                  setSubmitting(true);
-                  try {
-                    const res = await fetch("/api/promotions", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        referralEmails: selectedReferrals,
-                        applicationText: applicationText || undefined,
-                      }),
-                    });
-                    if (!res.ok) {
-                      const err = await res.json();
-                      toast.error(err.error || "Failed to submit request");
-                      return;
-                    }
-                    toast.success(
-                      "Promotion request submitted! Your referrals will be notified."
-                    );
-                    window.location.reload();
-                  } catch {
-                    toast.error("Failed to submit request");
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-              >
-                {submitting ? "Submitting..." : "Request Promotion"}
-              </Button>
-            </div>
-          )}
-
-          {!eligible && (
+        <CardContent className="pt-6 space-y-4">
+          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              You do not yet meet the eligibility requirements for promotion.
+              Select 2 non-intern managers as referrals:
             </p>
-          )}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {availableReferrals.map((ref) => (
+                <label
+                  key={ref.email}
+                  className="flex items-center gap-2 text-sm cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedReferrals.includes(ref.email)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        if (selectedReferrals.length < 2) {
+                          setSelectedReferrals([
+                            ...selectedReferrals,
+                            ref.email,
+                          ]);
+                        }
+                      } else {
+                        setSelectedReferrals(
+                          selectedReferrals.filter(
+                            (email) => email !== ref.email
+                          )
+                        );
+                      }
+                    }}
+                    disabled={
+                      !selectedReferrals.includes(ref.email) &&
+                      selectedReferrals.length >= 2
+                    }
+                  />
+                  {ref.name} ({ref.email})
+                </label>
+              ))}
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">
+                Application text (optional)
+              </label>
+              <Textarea
+                placeholder="Tell us why you want to become an intern manager..."
+                value={applicationText}
+                onChange={(e) => setApplicationText(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              disabled={selectedReferrals.length !== 2 || submitting}
+              onClick={async () => {
+                setSubmitting(true);
+                try {
+                  const res = await fetch("/api/promotions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      referralEmails: selectedReferrals,
+                      applicationText: applicationText || undefined,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    toast.error(err.error || "Failed to submit request");
+                    return;
+                  }
+                  toast.success(
+                    "Promotion request submitted! Your referrals will be notified."
+                  );
+                  window.location.reload();
+                } catch {
+                  toast.error("Failed to submit request");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {submitting ? "Submitting..." : "Request to be an Intern Manager"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

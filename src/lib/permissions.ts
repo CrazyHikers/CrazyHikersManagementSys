@@ -17,6 +17,8 @@ export type Permission =
   | "members.list"
   | "members.viewDetail"
   | "members.delete"
+  // Flags
+  | "flags.manage"
   // Waivers
   | "waivers.approve"
   // Managers
@@ -58,6 +60,9 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   "members.list": ["admin", "dev"],
   "members.viewDetail": ["admin", "dev"],
   "members.delete": ["admin", "dev"],
+
+  // Flags
+  "flags.manage": ["admin", "dev"],
 
   // Waivers
   "waivers.approve": ["admin", "dev"],

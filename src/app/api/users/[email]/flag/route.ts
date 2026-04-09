@@ -111,6 +111,7 @@ export async function GET(
   const flags = await db.userFlag.findMany({
     where: {
       userEmail: decodedEmail,
+      invalidated: false,
       issuedAt: { gt: unexpiredCutoff(flagSettings) },
     },
     orderBy: { issuedAt: "desc" },
