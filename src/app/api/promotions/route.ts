@@ -7,6 +7,7 @@ import {
   sendPromotionReferralEmail,
   sendPromotionVoteEmail,
 } from "@/lib/email";
+import type { CandidateActivities } from "@/lib/email";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
 import type { PromotionStatus } from "@/generated/prisma/client";
@@ -228,8 +229,34 @@ export async function POST(request: NextRequest) {
       include: { votes: true },
     });
 
-    // Send emails
+    // Fetch candidate activity history for emails
     const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+
+    const [managedActivities, attendedRegistrations] = await Promise.all([
+      db.activityManager.findMany({
+        where: { userEmail: email, status: "confirmed" },
+        include: { activity: { select: { id: true, title: true } } },
+      }),
+      db.registration.findMany({
+        where: { userEmail: email, status: "attended" },
+        include: { activity: { select: { id: true, title: true } } },
+      }),
+    ]);
+
+    const managedIds = new Set(managedActivities.map((am) => am.activityId));
+    const candidateActivities: CandidateActivities = {
+      managed: managedActivities
+        .filter((am) => am.role === "manager")
+        .map((am) => ({ title: am.activity.title, url: `${baseUrl}/dashboard/activity-view/${am.activityId}` })),
+      comanaged: managedActivities
+        .filter((am) => am.role === "comanager")
+        .map((am) => ({ title: am.activity.title, url: `${baseUrl}/dashboard/activity-view/${am.activityId}` })),
+      attended: attendedRegistrations
+        .filter((r) => !managedIds.has(r.activityId))
+        .map((r) => ({ title: r.activity.title, url: `${baseUrl}/dashboard/activity-view/${r.activityId}` })),
+    };
+
+    // Send emails
     for (const vote of promotionRequest.votes) {
       const voteUrl = `${baseUrl}/promotions/vote/${vote.token}`;
       const voter = await db.user.findUnique({
@@ -243,14 +270,16 @@ export async function POST(request: NextRequest) {
           vote.voterEmail,
           voterName,
           requesterName,
-          voteUrl
+          voteUrl,
+          candidateActivities
         );
       } else {
         await sendPromotionVoteEmail(
           vote.voterEmail,
           voterName,
           requesterName,
-          voteUrl
+          voteUrl,
+          candidateActivities
         );
       }
     }

@@ -126,11 +126,41 @@ export async function sendComanagerInvitation(
   });
 }
 
+export type ActivityLink = {
+  title: string;
+  url: string;
+};
+
+export type CandidateActivities = {
+  managed: ActivityLink[];
+  comanaged: ActivityLink[];
+  attended: ActivityLink[];
+};
+
+function renderActivitySection(label: string, activities: ActivityLink[]): string {
+  if (activities.length === 0) return "";
+  const items = activities
+    .map((a) => `<li><a href="${a.url}" style="color: #16a34a;">${a.title}</a></li>`)
+    .join("");
+  return `<p style="margin-bottom: 4px;"><strong>${label}:</strong></p><ul style="margin-top: 0;">${items}</ul>`;
+}
+
+function renderCandidateActivities(activities: CandidateActivities): string {
+  const sections = [
+    renderActivitySection("Managed", activities.managed),
+    renderActivitySection("Co-managed", activities.comanaged),
+    renderActivitySection("Attended", activities.attended),
+  ].filter(Boolean);
+  if (sections.length === 0) return "";
+  return `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" /><p><strong>Activity History:</strong></p>${sections.join("")}`;
+}
+
 export async function sendPromotionReferralEmail(
   voterEmail: string,
   voterName: string,
   requesterName: string,
-  voteUrl: string
+  voteUrl: string,
+  activities: CandidateActivities
 ) {
   return sendEmail({
     to: voterEmail,
@@ -144,6 +174,7 @@ export async function sendPromotionReferralEmail(
         <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Review Request
         </a>
+        ${renderCandidateActivities(activities)}
         <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,
@@ -154,7 +185,8 @@ export async function sendPromotionVoteEmail(
   voterEmail: string,
   voterName: string,
   requesterName: string,
-  voteUrl: string
+  voteUrl: string,
+  activities: CandidateActivities
 ) {
   return sendEmail({
     to: voterEmail,
@@ -168,6 +200,7 @@ export async function sendPromotionVoteEmail(
         <a href="${voteUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Cast Your Vote
         </a>
+        ${renderCandidateActivities(activities)}
         <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>
     `,

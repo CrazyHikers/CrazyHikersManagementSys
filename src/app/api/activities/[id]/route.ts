@@ -55,6 +55,20 @@ export async function PATCH(
       }
 
       if (body.status === "completed") {
+        // Require at least one confirmed/attended member to finish
+        const confirmedCount = await db.registration.count({
+          where: {
+            activityId: id,
+            status: { in: ["registration_confirmed", "attended"] },
+          },
+        });
+        if (confirmedCount === 0) {
+          return NextResponse.json(
+            { error: "Cannot finish activity without confirmed members" },
+            { status: 400 }
+          );
+        }
+
         // Finalize pending flags before completion
         const flaggedRegistrations = await db.registration.findMany({
           where: {

@@ -19,9 +19,11 @@ import { toast } from "sonner";
 export function ActivityActions({
   activityId,
   status,
+  hasConfirmedMembers,
 }: {
   activityId: string;
   status: string;
+  hasConfirmedMembers: boolean;
 }) {
   const t = useTranslations("dashboard.activities");
   const router = useRouter();
@@ -69,7 +71,7 @@ export function ActivityActions({
       <Dialog open={finishOpen} onOpenChange={setFinishOpen}>
         <DialogTrigger
           render={
-            <Button size="sm" className="bg-green-600 hover:bg-green-700" />
+            <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={!hasConfirmedMembers} />
           }
         >
           {t("finishActivity")}

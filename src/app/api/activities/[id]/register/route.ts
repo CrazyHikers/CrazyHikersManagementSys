@@ -88,6 +88,17 @@ export async function POST(
       );
     }
 
+    // Check if user is a manager/comanager of this activity
+    const isManager = await db.activityManager.findUnique({
+      where: { activityId_userEmail: { activityId, userEmail: user.email } },
+    });
+    if (isManager) {
+      return NextResponse.json(
+        { error: "Activity managers cannot register for their own activity" },
+        { status: 400 }
+      );
+    }
+
     // Check if already registered
     const existing = await db.registration.findUnique({
       where: {

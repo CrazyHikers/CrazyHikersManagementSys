@@ -90,7 +90,7 @@ export default async function ActivityDetailPage({
                 metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
-            <ActivityActions activityId={activity.id} status={activity.status} />
+            <ActivityActions activityId={activity.id} status={activity.status} hasConfirmedMembers={activity._count.registrations > 0} />
         </div>
         )}
       </div>
