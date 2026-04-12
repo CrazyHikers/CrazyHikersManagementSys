@@ -21,6 +21,10 @@ type ActivityMetadata = {
   notes?: string;
 };
 
+type ActivityMetadataFull = ActivityMetadata & {
+  qrCodeUrl?: string;
+};
+
 type ActivityData = {
   id: string;
   title: string;
@@ -29,7 +33,8 @@ type ActivityData = {
   date: string;
   capacity: number;
   maximumRegistration: number | null;
-  metadata?: ActivityMetadata | null;
+  coverImgId: string;
+  metadata?: ActivityMetadataFull | null;
 };
 
 export function ActivityEditForm({
@@ -48,6 +53,48 @@ export function ActivityEditForm({
     setSaving(true);
 
     const formData = new FormData(e.currentTarget);
+    const coverFile = formData.get("coverImage") as File;
+    const qrFile = formData.get("qrCode") as File;
+
+    // Upload cover image if a new one is selected
+    let coverImgId = activity.coverImgId;
+    if (coverFile && coverFile.size > 0) {
+      const uploadData = new FormData();
+      uploadData.append("file", coverFile);
+      uploadData.append("folder", "covers");
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+      });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        toast.error(err.error || "Cover image upload failed");
+        setSaving(false);
+        return;
+      }
+      const { key } = await uploadRes.json();
+      coverImgId = key;
+    }
+
+    // Upload QR code if a new one is selected
+    let qrCodeUrl = activity.metadata?.qrCodeUrl || "";
+    if (qrFile && qrFile.size > 0) {
+      const uploadData = new FormData();
+      uploadData.append("file", qrFile);
+      uploadData.append("folder", "qrcodes");
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+      });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        toast.error(err.error || "QR code upload failed");
+        setSaving(false);
+        return;
+      }
+      const { url } = await uploadRes.json();
+      qrCodeUrl = url;
+    }
 
     // Build hiking metadata
     const metadata: Record<string, unknown> = {};
@@ -69,9 +116,13 @@ export function ActivityEditForm({
     if (enduranceDifficulty) metadata.enduranceDifficulty = Number(enduranceDifficulty);
     if (hikingNotes) metadata.notes = hikingNotes;
 
+    // Preserve qrCodeUrl in metadata
+    if (qrCodeUrl) metadata.qrCodeUrl = qrCodeUrl;
+
     const body = {
       title: formData.get("title"),
       description: formData.get("description"),
+      coverImgId,
       deadline: new Date(formData.get("deadline") as string + "T23:59:59").toISOString(),
       date: new Date(formData.get("date") as string + "T06:00:00").toISOString(),
       capacity: Number(formData.get("capacity")) || 0,
@@ -119,6 +170,22 @@ export function ActivityEditForm({
               rows={4}
               defaultValue={activity.description}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="coverImage">{t("coverImage")}</Label>
+            {activity.coverImgId && (
+              <p className="text-xs text-muted-foreground">{t("currentImageKept")}</p>
+            )}
+            <Input id="coverImage" name="coverImage" type="file" accept="image/*" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="qrCode">{t("qrCode")}</Label>
+            {activity.metadata?.qrCodeUrl && (
+              <p className="text-xs text-muted-foreground">{t("currentImageKept")}</p>
+            )}
+            <Input id="qrCode" name="qrCode" type="file" accept="image/*" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

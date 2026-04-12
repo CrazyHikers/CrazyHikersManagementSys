@@ -42,10 +42,14 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
         method: "POST",
         body: uploadData,
       });
-      if (uploadRes.ok) {
-        const { key } = await uploadRes.json();
-        coverImgId = key;
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        toast.error(err.error || "Cover image upload failed");
+        setLoading(false);
+        return;
       }
+      const { key } = await uploadRes.json();
+      coverImgId = key;
     }
 
     if (qrFile && qrFile.size > 0) {
@@ -56,10 +60,14 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
         method: "POST",
         body: uploadData,
       });
-      if (uploadRes.ok) {
-        const { url } = await uploadRes.json();
-        qrCodeUrl = url;
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        toast.error(err.error || "QR code upload failed");
+        setLoading(false);
+        return;
       }
+      const { url } = await uploadRes.json();
+      qrCodeUrl = url;
     }
 
     // Build hiking metadata (only include fields with values)

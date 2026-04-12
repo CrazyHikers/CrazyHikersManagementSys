@@ -29,6 +29,9 @@ export const DEFAULTS: Record<string, number> = {
   intern_max_seasons: 2,
   qualified_min_managed_per_season: 1,
 
+  // Upload
+  max_upload_size_mb: 5,
+
   // Rate limiting
   rate_limit_signin_max: 3,
   rate_limit_signin_window_minutes: 15,

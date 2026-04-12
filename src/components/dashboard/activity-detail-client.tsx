@@ -13,6 +13,7 @@ type ActivityData = {
   date: string;
   capacity: number;
   maximumRegistration: number | null;
+  coverImgId: string;
   metadata?: Record<string, unknown> | null;
 };
 

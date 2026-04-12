@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { uploadFile } from "@/lib/r2";
 import { randomUUID } from "crypto";
+import { getSetting } from "@/lib/settings";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -16,6 +17,16 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    // Check file size against configurable limit
+    const maxSizeMb = await getSetting("max_upload_size_mb");
+    const maxSizeBytes = maxSizeMb * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size is ${maxSizeMb} MB.` },
+        { status: 413 }
+      );
     }
 
     const ext = file.name.split(".").pop() || "bin";

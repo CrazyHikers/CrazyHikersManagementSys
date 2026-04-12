@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ActivityActions } from "@/components/dashboard/activity-actions";
 import { EditButton } from "@/components/dashboard/activity-detail-client";
 import { ShareButton } from "@/components/share-button";
+import { InviteComanager } from "@/components/dashboard/invite-comanager";
 
 export default async function ActivityDetailPage({
   params,
@@ -35,6 +36,25 @@ export default async function ActivityDetailPage({
   });
 
   if (!activity) notFound();
+
+  const isEditable = ["open", "closed"].includes(activity.status);
+  const existingEmails = new Set(activity.activityManagers.map((am) => am.userEmail));
+
+  // Fetch available managers for co-manager invitations
+  const allManagers = isEditable
+    ? await db.user.findMany({
+        where: { role: { in: ["manager", "admin", "dev"] } },
+        include: { managerProfile: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
+  const availableManagers = allManagers
+    .filter((m) => !existingEmails.has(m.email))
+    .map((m) => ({
+      email: m.email,
+      name: m.name,
+      intern: m.managerProfile?.intern ?? false,
+    }));
 
   const statusColors: Record<string, string> = {
     open: "bg-green-100 text-green-800",
@@ -66,6 +86,7 @@ export default async function ActivityDetailPage({
                 date: activity.date.toISOString(),
                 capacity: activity.capacity,
                 maximumRegistration: activity.maximumRegistration,
+                coverImgId: activity.coverImgId,
                 metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
@@ -214,8 +235,32 @@ export default async function ActivityDetailPage({
               </div>
             ))}
           </div>
+          {isEditable && (
+            <div className="mt-4">
+              <InviteComanager activityId={activity.id} availableManagers={availableManagers} />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {(() => {
+        const qrCodeUrl = (activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as string | undefined;
+        if (!qrCodeUrl) return null;
+        return (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>{t("qrCode")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <img
+                src={qrCodeUrl}
+                alt={t("qrCode")}
+                className="max-w-64 rounded-lg"
+              />
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {["open", "closed"].includes(activity.status) && (
         <Link href={`/dashboard/activities/${activity.id}/registrations`}>
