@@ -317,6 +317,7 @@
       "selectGender": "选择性别",
       "yes": "是",
       "no": "否",
+      "profileConsent": "我同意将以上信息分享给Crazy Hikers团队用于活动管理目的。",
       "personalDetailsSaved": "个人详情已更新",
       "basicInfo": "基本信息",
       "email": "邮箱",
@@ -425,5 +426,9 @@
     "passwordMinLength": "密码至少需要8个字符。",
     "passwordsMustMatch": "两次输入的密码不一致。",
     "turnstileError": "人机验证失败，请重试。"
+  },
+  "cookieBanner": {
+    "message": "本网站仅使用必要的身份验证和会话管理Cookie，不使用任何追踪或分析Cookie。",
+    "accept": "知道了"
   }
 }

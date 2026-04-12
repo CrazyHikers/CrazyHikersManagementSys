@@ -94,6 +94,7 @@ export default function MyProfilePage() {
   const [tag, setTag] = useState("");
   const [saving, setSaving] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileConsent, setProfileConsent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile>(emptyUserProfile);
   const [promotionEligibility, setPromotionEligibility] =
@@ -514,10 +515,20 @@ export default function MyProfilePage() {
               </div>
             </div>
 
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={profileConsent}
+                onChange={(e) => setProfileConsent(e.target.checked)}
+                className="h-4 w-4 mt-0.5"
+              />
+              <span className="text-muted-foreground">{t("profileConsent")}</span>
+            </label>
+
             <Button
               type="submit"
               className="bg-green-600 hover:bg-green-700"
-              disabled={savingProfile}
+              disabled={savingProfile || !profileConsent}
             >
               {savingProfile ? "..." : t("save")}
             </Button>

@@ -317,6 +317,7 @@
       "selectGender": "Select gender",
       "yes": "Yes",
       "no": "No",
+      "profileConsent": "I consent to sharing the information above with the Crazy Hikers team for activity management purposes.",
       "personalDetailsSaved": "Personal details updated",
       "basicInfo": "Basic Info",
       "email": "Email",
@@ -425,5 +426,9 @@
     "passwordMinLength": "Password must be at least 8 characters.",
     "passwordsMustMatch": "Passwords do not match.",
     "turnstileError": "Bot verification failed. Please try again."
+  },
+  "cookieBanner": {
+    "message": "This website uses essential cookies for authentication and session management. No tracking or analytics cookies are used.",
+    "accept": "Got it"
   }
 }
