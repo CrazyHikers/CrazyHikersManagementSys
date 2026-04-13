@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
+import { deleteFile, getKeyFromUrl } from "@/lib/r2";
 
 export async function GET(
   _req: NextRequest,
@@ -117,6 +118,11 @@ export async function PATCH(
           }
         }
 
+        // Clean up QR code URL from metadata
+        const meta = (activity.metadata as Record<string, unknown> | null) ?? {};
+        const qrCodeUrl = meta.qrCodeUrl;
+        const { qrCodeUrl: _, ...cleanedMetadata } = meta;
+
         // Mark unconfirmed registrations as absent, remove pending
         await db.$transaction([
           db.registration.updateMany({
@@ -132,10 +138,21 @@ export async function PATCH(
           }),
           db.activity.update({
             where: { id },
-            data: { status: "completed" },
+            data: { status: "completed", metadata: cleanedMetadata },
           }),
         ]);
+
+        // Delete QR code file from R2
+        if (typeof qrCodeUrl === "string") {
+          const key = getKeyFromUrl(qrCodeUrl);
+          if (key) await deleteFile(key).catch(() => {});
+        }
       } else if (body.status === "cancelled") {
+        // Clean up QR code URL from metadata
+        const meta = (activity.metadata as Record<string, unknown> | null) ?? {};
+        const qrCodeUrl = meta.qrCodeUrl;
+        const { qrCodeUrl: _, ...cleanedMetadata } = meta;
+
         await db.$transaction([
           db.registration.deleteMany({ where: { activityId: id } }),
           // Invalidate pending comanager invitation tokens
@@ -145,9 +162,15 @@ export async function PATCH(
           }),
           db.activity.update({
             where: { id },
-            data: { status: "cancelled" },
+            data: { status: "cancelled", metadata: cleanedMetadata },
           }),
         ]);
+
+        // Delete QR code file from R2
+        if (typeof qrCodeUrl === "string") {
+          const key = getKeyFromUrl(qrCodeUrl);
+          if (key) await deleteFile(key).catch(() => {});
+        }
       } else {
         await db.activity.update({
           where: { id },
@@ -175,10 +198,28 @@ export async function PATCH(
       }
 
       if (Object.keys(updateData).length > 0) {
+        // Fetch current activity to compare old images
+        const current = await db.activity.findUnique({ where: { id } });
+
         await db.activity.update({
           where: { id },
           data: updateData,
         });
+
+        // Clean up replaced images from R2
+        if (current) {
+          // Cover image changed
+          if (body.coverImgId && current.coverImgId && body.coverImgId !== current.coverImgId) {
+            await deleteFile(current.coverImgId).catch(() => {});
+          }
+          // QR code changed
+          const oldQr = (current.metadata as Record<string, unknown> | null)?.qrCodeUrl;
+          const newQr = (body.metadata as Record<string, unknown> | null)?.qrCodeUrl;
+          if (typeof oldQr === "string" && typeof newQr === "string" && oldQr !== newQr) {
+            const key = getKeyFromUrl(oldQr);
+            if (key) await deleteFile(key).catch(() => {});
+          }
+        }
       }
     }
 

@@ -57,3 +57,8 @@ export async function getSignedDownloadUrl(
 export function getPublicUrl(key: string): string {
   return `${PUBLIC_URL}/${key}`;
 }
+
+export function getKeyFromUrl(url: string): string | null {
+  if (!url.startsWith(PUBLIC_URL)) return null;
+  return url.slice(PUBLIC_URL.length + 1);
+}
