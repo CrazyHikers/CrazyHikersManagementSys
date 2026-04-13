@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
 import { deleteFile, getKeyFromUrl } from "@/lib/r2";
+import type { Prisma } from "@/generated/prisma/client";
 
 export async function GET(
   _req: NextRequest,
@@ -138,7 +139,7 @@ export async function PATCH(
           }),
           db.activity.update({
             where: { id },
-            data: { status: "completed", metadata: cleanedMetadata },
+            data: { status: "completed", metadata: cleanedMetadata as Prisma.InputJsonValue },
           }),
         ]);
 
@@ -162,7 +163,7 @@ export async function PATCH(
           }),
           db.activity.update({
             where: { id },
-            data: { status: "cancelled", metadata: cleanedMetadata },
+            data: { status: "cancelled", metadata: cleanedMetadata as Prisma.InputJsonValue },
           }),
         ]);
 
