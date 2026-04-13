@@ -63,6 +63,21 @@ export default async function ActivityDetailPage({
     ? { name: session.user.name, email: session.user.email }
     : null;
 
+  const isManager = session?.user?.email
+    ? activity.activityManagers.some((am) => am.user.email === session.user!.email)
+    : false;
+
+  const existingRegistration = session?.user?.email
+    ? await db.registration.findFirst({
+        where: {
+          activityId: activity.id,
+          userEmail: session.user.email,
+          status: { in: ["registered", "registration_confirmed"] },
+        },
+        select: { status: true },
+      })
+    : null;
+
   return (
     <>
       <SiteHeader user={session?.user ?? null} />
@@ -217,7 +232,30 @@ export default async function ActivityDetailPage({
           </div>
 
           {isOpen && !isFull ? (
-            session?.user ? (
+            !session?.user ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground mb-4">{t("signInToRegister")}</p>
+                  <Link href="/signin">
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      {t("signIn")}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : isManager ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  {t("youAreManaging")}
+                </CardContent>
+              </Card>
+            ) : existingRegistration ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  {t("alreadyRegistered")}
+                </CardContent>
+              </Card>
+            ) : (
               <Card>
                 <CardHeader>
                   <CardTitle>{t("registrationForm")}</CardTitle>
@@ -227,17 +265,6 @@ export default async function ActivityDetailPage({
                     activityId={activity.id}
                     session={sessionUser}
                   />
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground mb-4">{t("signInToRegister")}</p>
-                  <Link href="/signin">
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      {t("signIn")}
-                    </Button>
-                  </Link>
                 </CardContent>
               </Card>
             )

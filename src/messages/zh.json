@@ -61,6 +61,8 @@
     "registerButton": "报名参加",
     "registrationSuccess": "报名提交成功！",
     "signInToRegister": "请先登录后再报名参加活动",
+    "youAreManaging": "你是这次活动的领队，无需报名。",
+    "alreadyRegistered": "你已经报名了这次活动。",
     "signIn": "登录",
     "yourStatus": "你的报名状态",
     "statusRegistered": "待审核",
