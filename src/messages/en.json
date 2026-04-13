@@ -43,6 +43,8 @@
     "subtitle": "Join us on our next adventure!",
     "noActivities": "No activities available at the moment. Check back soon!",
     "register": "Register",
+    "registered": "Registered",
+    "managing": "Managing",
     "deadline": "Registration deadline",
     "activityDate": "Activity date",
     "spotsLeft": "{count} spots left",

@@ -65,15 +65,15 @@ export default async function ActivityDetailPage({
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
           <h1 className="text-2xl font-bold">{activity.title}</h1>
-          <Badge className={`mt-1 ${statusColors[activity.status]}`}>
+          <Badge className={`${statusColors[activity.status]}`}>
             {activity.status}
           </Badge>
         </div>
         {["open", "closed"].includes(activity.status) && (
-        <div className="flex gap-2 flex-wrap items-start">
+        <div className="flex gap-2 flex-wrap items-center">
           {activity.status === "open" && (
             <ShareButton path={`/${locale}/activities/${activity.id}`} />
           )}

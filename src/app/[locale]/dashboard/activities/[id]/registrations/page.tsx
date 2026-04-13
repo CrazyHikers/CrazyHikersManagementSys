@@ -51,7 +51,10 @@ export default async function RegistrationsPage({
   const now = new Date();
   const registrations = activity.registrations
     .filter((r) => {
-      // Shadow ban: hide registrations from users with active bans
+      // Shadow ban: hide unconfirmed registrations from users with active bans.
+      // Already-confirmed registrations are always visible so managers can still
+      // manage attendance for members who were confirmed before a flag was issued.
+      if (r.status !== "registered") return true;
       const hasActiveBan = r.user.flags.some((f) => isBanActive(f, flagSettings, now));
       return !hasActiveBan;
     })

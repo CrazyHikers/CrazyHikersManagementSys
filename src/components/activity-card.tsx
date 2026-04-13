@@ -20,6 +20,8 @@ type ActivityCardProps = {
   capacity: number;
   currentRegistrations: number;
   managerNames: string;
+  registered?: boolean;
+  managing?: boolean;
 };
 
 export function ActivityCard({
@@ -32,6 +34,8 @@ export function ActivityCard({
   capacity,
   currentRegistrations,
   managerNames,
+  registered,
+  managing,
 }: ActivityCardProps) {
   const t = useTranslations("home");
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
@@ -79,9 +83,19 @@ export function ActivityCard({
               </div>
             </div>
             <Link href={`/activities/${id}`}>
-              <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                {t("register")}
-              </Button>
+              {managing ? (
+                <Button size="sm" variant="outline">
+                  {t("managing")}
+                </Button>
+              ) : registered ? (
+                <Button size="sm" variant="outline" className="text-green-700 border-green-600">
+                  {t("registered")}
+                </Button>
+              ) : (
+                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                  {t("register")}
+                </Button>
+              )}
             </Link>
           </CardContent>
         </div>

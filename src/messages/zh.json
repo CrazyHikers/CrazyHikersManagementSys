@@ -43,6 +43,8 @@
     "subtitle": "加入我们的下一次冒险！",
     "noActivities": "暂时没有可报名的活动，请稍后再来看看！",
     "register": "报名",
+    "registered": "已报名",
+    "managing": "我带的队",
     "deadline": "报名截止时间",
     "activityDate": "活动日期",
     "spotsLeft": "剩余 {count} 个名额",

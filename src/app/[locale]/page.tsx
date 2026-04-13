@@ -43,6 +43,19 @@ export default async function HomePage() {
   const session = await auth();
   const activities = await getOpenActivities();
 
+  // Fetch the current user's registrations to show status on activity cards
+  const userRegistrations = session?.user?.email
+    ? await db.registration.findMany({
+        where: {
+          userEmail: session.user.email,
+          activityId: { in: activities.map((a) => a.id) },
+          status: { in: ["registered", "registration_confirmed"] },
+        },
+        select: { activityId: true },
+      })
+    : [];
+  const registeredActivityIds = new Set(userRegistrations.map((r) => r.activityId));
+
   return (
     <>
       <SiteHeader user={session?.user ?? null} />
@@ -72,6 +85,10 @@ export default async function HomePage() {
                   .filter(Boolean)
                   .join(", ");
 
+                const isManaging = session?.user?.email
+                  ? activity.activityManagers.some((am) => am.user.email === session.user!.email)
+                  : false;
+
                 return (
                   <ActivityCard
                     key={activity.id}
@@ -88,6 +105,8 @@ export default async function HomePage() {
                     capacity={activity.capacity}
                     currentRegistrations={activity._count.registrations}
                     managerNames={allNames}
+                    registered={registeredActivityIds.has(activity.id)}
+                    managing={isManaging}
                   />
                 );
               })}
