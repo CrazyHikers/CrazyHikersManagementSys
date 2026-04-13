@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
 import { auth } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
+import { isProfileComplete } from "@/lib/profile";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +69,44 @@ export default async function ActivityDetailPage({
     ? activity.activityManagers.some((am) => am.user.email === session.user!.email)
     : false;
 
+  // Server-side preflight: check registration status, profile, and waiver in one go
+  // This replaces 3 separate client-side API calls
+  let preflight: {
+    registrationStatus: string | null;
+    needsProfile: boolean;
+    needsWaiver: boolean;
+    waiverValidityDays: number;
+  } | undefined;
+
+  if (session?.user?.email && !isManager) {
+    const [registration, user, waiver, waiverValidityDays] = await Promise.all([
+      db.registration.findUnique({
+        where: {
+          activityId_userEmail: { activityId: activity.id, userEmail: session.user.email },
+        },
+        select: { status: true },
+      }),
+      db.user.findUnique({
+        where: { email: session.user.email },
+        select: { profile: true },
+      }),
+      db.userWaiver.findFirst({
+        where: {
+          userEmail: session.user.email,
+          status: { in: ["approved", "expiring"] },
+        },
+        orderBy: { signedAt: "desc" },
+      }),
+      getSetting("waiver_validity_days"),
+    ]);
+
+    preflight = {
+      registrationStatus: registration?.status || null,
+      needsProfile: !isProfileComplete(user?.profile),
+      needsWaiver: !waiver,
+      waiverValidityDays: waiverValidityDays,
+    };
+  }
 
   return (
     <>
@@ -248,6 +288,7 @@ export default async function ActivityDetailPage({
                   <RegistrationForm
                     activityId={activity.id}
                     session={sessionUser}
+                    preflight={preflight}
                   />
                 </CardContent>
               </Card>

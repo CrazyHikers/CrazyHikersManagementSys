@@ -25,20 +25,29 @@ type SessionUser = {
 
 const cameraEquipmentOptions = ["微单或单反", "无人机", "运动相机", "其他"];
 
+type Preflight = {
+  registrationStatus: string | null;
+  needsProfile: boolean;
+  needsWaiver: boolean;
+  waiverValidityDays: number;
+};
+
 export function RegistrationForm({
   activityId,
   session,
+  preflight,
 }: {
   activityId: string;
   session?: SessionUser;
+  preflight?: Preflight;
 }) {
   const t = useTranslations("activity");
   const [loading, setLoading] = useState(false);
-  const [registrationStatus, setRegistrationStatus] = useState<string | null>(null);
-  const [checking, setChecking] = useState(!!session?.email);
-  const [needsProfile, setNeedsProfile] = useState(false);
-  const [needsWaiver, setNeedsWaiver] = useState(false);
-  const [waiverValidityDays, setWaiverValidityDays] = useState(365);
+  const [registrationStatus, setRegistrationStatus] = useState<string | null>(preflight?.registrationStatus ?? null);
+  const [checking, setChecking] = useState(!preflight && !!session?.email);
+  const [needsProfile, setNeedsProfile] = useState(preflight?.needsProfile ?? false);
+  const [needsWaiver, setNeedsWaiver] = useState(preflight?.needsWaiver ?? false);
+  const [waiverValidityDays, setWaiverValidityDays] = useState(preflight?.waiverValidityDays ?? 365);
 
   // Per-registration form state
   const [transportTicket, setTransportTicket] = useState("");
@@ -47,9 +56,9 @@ export function RegistrationForm({
   const [willPostSocialMedia, setWillPostSocialMedia] = useState("");
   const [willingToBePhotographed, setWillingToBePhotographed] = useState("");
 
-  // Check registration status and waiver status
+  // Fallback: fetch from API only if preflight data was not provided
   useEffect(() => {
-    if (!session?.email) return;
+    if (preflight || !session?.email) return;
     Promise.all([
       fetch(`/api/activities/${activityId}/register/status`)
         .then((res) => res.json())
@@ -70,7 +79,7 @@ export function RegistrationForm({
     ])
       .catch(() => {})
       .finally(() => setChecking(false));
-  }, [activityId, session?.email]);
+  }, [activityId, session?.email, preflight]);
 
   function toggleCameraEquipment(opt: string, checked: boolean) {
     setCameraEquipment((prev) =>
