@@ -242,6 +242,7 @@
       "noManagedActivities": "No managed activities",
       "noComanagedActivities": "No co-managed activities",
       "noIssuedFlags": "No issued flags",
+      "invalidated": "Invalidated",
       "activity": "Activity",
       "date": "Date",
       "status": "Status",

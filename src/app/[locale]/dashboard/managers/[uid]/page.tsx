@@ -67,7 +67,6 @@ export default async function ManagerDetailPage({
       db.userFlag.findMany({
         where: {
           issuedBy: user.email,
-          invalidated: false,
           issuedAt: { gt: unexpiredCutoff(flagSettings) },
         },
         include: { user: true, activity: true },
@@ -237,11 +236,16 @@ export default async function ManagerDetailPage({
           ) : (
             <div className="space-y-3">
               {issuedFlags.map((f) => (
-                <div key={f.id} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={flagColors[f.flagType]}>
+                <div key={f.id} className={`p-3 rounded-lg ${f.invalidated ? "bg-red-50 border border-red-200" : "bg-gray-50"}`}>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <Badge className={f.invalidated ? "bg-gray-200 text-gray-500 line-through" : flagColors[f.flagType]}>
                       {f.flagType}
                     </Badge>
+                    {f.invalidated && (
+                      <Badge variant="outline" className="text-red-600 border-red-300">
+                        {t("invalidated")}
+                      </Badge>
+                    )}
                     <Link href={`/dashboard/members/${f.user.uid}`} className="text-sm font-medium hover:underline text-green-700">
                       {f.user.name}
                     </Link>

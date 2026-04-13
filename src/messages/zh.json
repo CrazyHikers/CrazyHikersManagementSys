@@ -242,6 +242,7 @@
       "noManagedActivities": "暂无主领活动",
       "noComanagedActivities": "暂无副领活动",
       "noIssuedFlags": "暂无发出的标记",
+      "invalidated": "已撤销",
       "activity": "活动",
       "date": "日期",
       "status": "状态",
