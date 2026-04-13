@@ -1,15 +1,15 @@
+"use client";
+
+import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "./locale-switcher";
 
-type SiteHeaderUser = {
-  name?: string | null;
-  email?: string | null;
-} | null;
-
-export function SiteHeader({ user }: { user?: SiteHeaderUser }) {
+export function SiteHeader() {
+  const { data: session } = useSession();
   const t = useTranslations("common");
   const nav = useTranslations("nav");
+  const user = session?.user;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">

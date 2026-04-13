@@ -110,7 +110,7 @@ export default async function ActivityDetailPage({
 
   return (
     <>
-      <SiteHeader user={session?.user ?? null} />
+      <SiteHeader />
       <main className="flex-1 bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
           {activity.coverImgId && (

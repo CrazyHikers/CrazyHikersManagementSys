@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/cookie-banner";
+import { SessionProvider } from "@/components/session-provider";
 
 export default async function LocaleLayout({
   children,
@@ -20,10 +21,12 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      {children}
-      <Toaster />
-      <CookieBanner />
-    </NextIntlClientProvider>
+    <SessionProvider>
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        {children}
+        <Toaster />
+        <CookieBanner />
+      </NextIntlClientProvider>
+    </SessionProvider>
   );
 }
