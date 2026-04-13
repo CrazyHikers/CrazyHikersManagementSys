@@ -67,16 +67,6 @@ export default async function ActivityDetailPage({
     ? activity.activityManagers.some((am) => am.user.email === session.user!.email)
     : false;
 
-  const existingRegistration = session?.user?.email
-    ? await db.registration.findFirst({
-        where: {
-          activityId: activity.id,
-          userEmail: session.user.email,
-          status: { in: ["registered", "registration_confirmed"] },
-        },
-        select: { status: true },
-      })
-    : null;
 
   return (
     <>
@@ -247,12 +237,6 @@ export default async function ActivityDetailPage({
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   {t("youAreManaging")}
-                </CardContent>
-              </Card>
-            ) : existingRegistration ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  {t("alreadyRegistered")}
                 </CardContent>
               </Card>
             ) : (
