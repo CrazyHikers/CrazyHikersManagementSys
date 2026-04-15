@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 async function getManagerStats() {
+  const now = new Date();
   const [openActivities, totalMembers, totalManagers, expiringWaivers] =
     await Promise.all([
-      db.activity.count({ where: { status: "open" } }),
+      db.activity.count({ where: { status: "open", deadline: { gt: now } } }),
       db.user.count({ where: { role: "member" } }),
       db.user.count({ where: { role: { in: ["manager", "admin", "dev"] } } }),
       db.userWaiver.count({ where: { status: "expiring" } }),
