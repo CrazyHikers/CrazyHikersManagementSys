@@ -356,7 +356,6 @@ export default async function ActivityDetailPage({
           initialRegistrations={registrations}
           canViewMemberDetail={canViewMemberDetail}
           capacity={activity.capacity}
-          hasConfirmedMembers={activity._count.registrations > 0}
         />
       )}
     </div>

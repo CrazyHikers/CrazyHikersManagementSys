@@ -176,14 +176,12 @@ export function RegistrationManager({
   initialRegistrations,
   canViewMemberDetail,
   capacity,
-  hasConfirmedMembers,
 }: {
   activityId: string;
   activityStatus: string;
   initialRegistrations: Registration[];
   canViewMemberDetail: boolean;
   capacity: number;
-  hasConfirmedMembers: boolean;
 }) {
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
@@ -518,7 +516,7 @@ export function RegistrationManager({
                     <Button
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
-                      disabled={!hasConfirmedMembers}
+                      disabled={confirmedCount === 0}
                     />
                   }
                 >
