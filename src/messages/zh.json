@@ -144,6 +144,7 @@
       "cancelAction": "返回",
       "registrationClosed": "报名已关闭",
       "registrations": "报名管理",
+      "attendanceCount": "出席人数",
       "allActivities": "所有活动（只读）",
       "edit": "编辑",
       "editActivity": "编辑活动",

@@ -98,7 +98,7 @@ export default async function ActivityViewPage({
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">Registrations</div>
+            <div className="text-sm text-muted-foreground">Attendance</div>
             <div className="font-medium">
               {activity._count.registrations}
               {activity.capacity > 0 && ` / ${activity.capacity}`}

@@ -203,7 +203,7 @@ export default async function ActivityDetailPage({
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">{t("registrations")}</div>
+            <div className="text-sm text-muted-foreground">{t("attendanceCount")}</div>
             <div className="font-medium">
               <RegistrationCountDisplay maximumRegistration={activity.maximumRegistration} />
             </div>
