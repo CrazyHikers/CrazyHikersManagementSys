@@ -1,15 +1,17 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
+import { getFlagSettings, unexpiredCutoff, isBanActive } from "@/lib/flags";
 import { getPublicUrl } from "@/lib/r2";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
 import { ActivityActions } from "@/components/dashboard/activity-actions";
 import { EditButton } from "@/components/dashboard/activity-detail-client";
 import { ShareButton } from "@/components/share-button";
 import { InviteComanager } from "@/components/dashboard/invite-comanager";
+import { RegistrationManager } from "@/components/dashboard/registration-manager";
 import { getDisplayStatus } from "@/lib/activity";
 
 export default async function ActivityDetailPage({
@@ -19,12 +21,38 @@ export default async function ActivityDetailPage({
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("dashboard.activities");
+  const session = await auth();
+  const canViewMemberDetail = session?.user ? can(session, "members.viewDetail") : false;
+  const flagSettings = await getFlagSettings();
 
   const activity = await db.activity.findUnique({
     where: { id },
     include: {
       activityManagers: {
         include: { user: true },
+      },
+      registrations: {
+        include: {
+          user: {
+            include: {
+              registrations: {
+                include: { activity: { select: { id: true, title: true, date: true } } },
+                orderBy: { registeredAt: "desc" },
+              },
+              waivers: {
+                where: { status: "approved" },
+                orderBy: { signedAt: "desc" },
+                take: 1,
+              },
+              flags: {
+                where: { issuedAt: { gt: unexpiredCutoff(flagSettings) }, invalidated: false },
+                orderBy: { issuedAt: "desc" },
+                include: { activity: true, issuer: true },
+              },
+            },
+          },
+        },
+        orderBy: { registeredAt: "asc" },
       },
       _count: {
         select: {
@@ -41,6 +69,65 @@ export default async function ActivityDetailPage({
   const isEditable = activity.status === "open";
   const displayStatus = getDisplayStatus(activity);
   const existingEmails = new Set(activity.activityManagers.map((am) => am.userEmail));
+
+  // Build the registration list for the RegistrationManager. Filter out
+  // shadow-banned pending registrations and sort so confirmed/attended/absent
+  // land on top; still-pending `registered` rows sink to the bottom.
+  const now = new Date();
+  const registrations = activity.registrations
+    .filter((r) => {
+      if (r.status !== "registered") return true;
+      const hasActiveBan = r.user.flags.some((f) => isBanActive(f, flagSettings, now));
+      return !hasActiveBan;
+    })
+    .map((r) => {
+      const activeFlags = r.user.flags;
+      const yellowCount = activeFlags.filter((f) => f.flagType === "yellow").length;
+      const redCount = activeFlags.filter((f) => f.flagType === "red").length;
+
+      return {
+        userEmail: r.userEmail,
+        userUid: r.user.uid,
+        userName: r.user.name,
+        userEmailDisplay: r.user.email,
+        status: r.status,
+        registeredAt: r.registeredAt.toISOString(),
+        confirmedAt: r.confirmedAt?.toISOString() || null,
+        notes: r.notes,
+        formData: r.formData ? JSON.parse(JSON.stringify(r.formData)) : null,
+        userProfile: r.user.profile ? JSON.parse(JSON.stringify(r.user.profile)) : null,
+        totalAttended: r.user.registrations.filter((reg) => reg.status === "attended").length,
+        hasValidWaiver: r.user.waivers.length > 0,
+        yellowFlags: yellowCount,
+        redFlags: redCount,
+        flagHistory: activeFlags.map((f) => ({
+          flagType: f.flagType,
+          reason: f.reason,
+          issuedAt: f.issuedAt.toISOString(),
+          activityTitle: f.activity.title,
+          issuerName: f.issuer.name,
+        })),
+        isBanned: false,
+        pendingFlag: r.pendingFlag || null,
+        pendingFlagReason: r.pendingFlagReason || null,
+        activityHistory: r.user.registrations
+          .filter((reg) => reg.activityId !== id)
+          .map((reg) => ({
+            activityId: reg.activityId,
+            activityTitle: reg.activity.title,
+            activityDate: reg.activity.date.toISOString(),
+            status: reg.status,
+          })),
+      };
+    })
+    .sort((a, b) => {
+      // Pending (`registered`) sink below everything else; within each group
+      // preserve registration order.
+      const aPending = a.status === "registered" ? 1 : 0;
+      const bPending = b.status === "registered" ? 1 : 0;
+      if (aPending !== bPending) return aPending - bPending;
+      return new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime();
+    });
 
   // Fetch available managers for co-manager invitations
   const allManagers = isEditable
@@ -92,7 +179,6 @@ export default async function ActivityDetailPage({
                 metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
-            <ActivityActions activityId={activity.id} hasConfirmedMembers={activity._count.registrations > 0} />
         </div>
         )}
       </div>
@@ -265,11 +351,26 @@ export default async function ActivityDetailPage({
       })()}
 
       {isEditable && (
-        <Link href={`/dashboard/activities/${activity.id}/registrations`}>
-          <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
-            {t("registrations")}
-          </Button>
-        </Link>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>{t("registrationsTitle")}</CardTitle>
+              <ActivityActions
+                activityId={activity.id}
+                hasConfirmedMembers={activity._count.registrations > 0}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <RegistrationManager
+              activityId={activity.id}
+              activityStatus={activity.status}
+              initialRegistrations={registrations}
+              canViewMemberDetail={canViewMemberDetail}
+              capacity={activity.capacity}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

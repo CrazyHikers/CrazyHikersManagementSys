@@ -133,7 +133,21 @@ export async function DELETE(
   }
 
   const { id: activityId } = await params;
-  const { userEmail } = await request.json();
+  const body = await request.json();
+
+  // Bulk remove all unconfirmed (status="registered") registrations
+  if (body.all === "unconfirmed") {
+    const result = await db.registration.deleteMany({
+      where: { activityId, status: "registered" },
+    });
+    return NextResponse.json({ success: true, removed: result.count });
+  }
+
+  // Single removal
+  const { userEmail } = body;
+  if (!userEmail) {
+    return NextResponse.json({ error: "Missing userEmail" }, { status: 400 });
+  }
 
   await db.registration.delete({
     where: {

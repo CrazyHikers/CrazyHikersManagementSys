@@ -316,17 +316,80 @@ export function RegistrationManager({
     [activityId]
   );
 
+  const [bulkRemoveOpen, setBulkRemoveOpen] = useState(false);
+  const [bulkRemoving, setBulkRemoving] = useState(false);
+  const unconfirmedCount = registrations.filter((r) => r.status === "registered").length;
+
+  const removeAllUnconfirmed = useCallback(async () => {
+    setBulkRemoving(true);
+    try {
+      const res = await fetch(`/api/activities/${activityId}/registrations`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: "unconfirmed" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setRegistrations((prev) => prev.filter((r) => r.status !== "registered"));
+      toast.success(t("removedUnconfirmed", { count: data.removed ?? 0 }));
+      setBulkRemoveOpen(false);
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setBulkRemoving(false);
+    }
+  }, [activityId, t]);
+
   const isEditable = activityStatus === "open";
 
   return (
     <div className="space-y-3">
-      <div className="text-sm text-muted-foreground mb-4">
-        {registrations.length} registrations
-        {capacity > 0 && ` · ${confirmedCount} / ${capacity} ${t("confirmed")}`}
-        {isAtCapacity && (
-          <span className="text-orange-600 font-medium"> · {t("capacityReached")}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="text-sm text-muted-foreground">
+          {t("registrationCount", { count: registrations.length })}
+          {capacity > 0 && ` · ${confirmedCount} / ${capacity} ${t("confirmed")}`}
+          {isAtCapacity && (
+            <span className="text-orange-600 font-medium"> · {t("capacityReached")}</span>
+          )}
+          {" · "}{t("autoSaveHint")}
+        </div>
+        {isEditable && (
+          <Dialog open={bulkRemoveOpen} onOpenChange={setBulkRemoveOpen}>
+            <DialogTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  disabled={unconfirmedCount === 0 || bulkRemoving}
+                />
+              }
+            >
+              {t("removeUnconfirmed")}
+              {unconfirmedCount > 0 ? ` (${unconfirmedCount})` : ""}
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("removeUnconfirmedConfirmTitle")}</DialogTitle>
+                <DialogDescription>
+                  {t("removeUnconfirmedConfirmDescription", { count: unconfirmedCount })}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose render={<Button variant="outline" />}>
+                  {t("cancelAction")}
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={removeAllUnconfirmed}
+                  disabled={bulkRemoving}
+                >
+                  {bulkRemoving ? "..." : t("removeUnconfirmed")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
-        {" · "}Changes save automatically
       </div>
 
       {registrations.map((reg) => (
@@ -633,7 +696,7 @@ export function RegistrationManager({
 
       {registrations.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          No registrations yet
+          {t("noRegistrations")}
         </div>
       )}
     </div>
