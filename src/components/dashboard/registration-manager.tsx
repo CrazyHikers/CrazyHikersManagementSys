@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Loader2Icon, CheckIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -162,26 +164,48 @@ function FlagButton({
   );
 }
 
+// Debounce window for attendance auto-save. All pending modifications
+// accumulate in a single buffer and flush together in one network request
+// after the manager has been idle for this long. Flush on unmount /
+// beforeunload so no changes are lost.
+const AUTO_SAVE_DELAY_MS = 5000;
+
 export function RegistrationManager({
   activityId,
   activityStatus,
   initialRegistrations,
   canViewMemberDetail,
   capacity,
+  hasConfirmedMembers,
 }: {
   activityId: string;
   activityStatus: string;
   initialRegistrations: Registration[];
   canViewMemberDetail: boolean;
   capacity: number;
+  hasConfirmedMembers: boolean;
 }) {
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
   const ta = useTranslations("activity");
+  const router = useRouter();
   const [registrations, setRegistrations] = useState(initialRegistrations);
   const [saving, setSaving] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
   const [expandedFormData, setExpandedFormData] = useState<Set<string>>(new Set());
+  // 'idle' = nothing ever saved or pending in this session
+  // 'pending' = changes buffered or in-flight (not yet confirmed by server)
+  // 'saved' = most recent batch confirmed by server; sticks until next change
+  const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
+  const [finishOpen, setFinishOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [activityActionProcessing, setActivityActionProcessing] = useState(false);
+
+  // Global buffer of pending attendance changes (keyed by userEmail, value
+  // = desired status). A single debounce timer flushes the whole buffer in
+  // one batch request.
+  const pendingChangesRef = useRef<Map<string, string>>(new Map());
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const confirmedCount = registrations.filter((r) =>
     ["registration_confirmed", "attended"].includes(r.status)
@@ -197,7 +221,30 @@ export function RegistrationManager({
     });
   }
 
-  // Auto-save on status change
+  // Send a batch of attendance updates in a single request. Used by both
+  // the debounced flush and the Finish/Cancel pre-action flush. Attendance
+  // transitions (`attended` / `absent`) have no server-side side effects,
+  // so the server just does a transactional updateMany.
+  const sendBatch = useCallback(
+    async (entries: [string, string][]) => {
+      if (entries.length === 0) return;
+      const res = await fetch(`/api/activities/${activityId}/registrations`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          updates: entries.map(([userEmail, status]) => ({ userEmail, status })),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to update");
+      }
+    },
+    [activityId]
+  );
+
+  // Immediate save — used by the "Confirm Registration" button. Has
+  // capacity/email side effects, so it stays network-first (not batched).
   const updateStatus = useCallback(
     async (userEmail: string, newStatus: string) => {
       setSaving(userEmail);
@@ -214,7 +261,6 @@ export function RegistrationManager({
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || "Failed to update");
         }
-
         setRegistrations((prev) =>
           prev.map((r) =>
             r.userEmail === userEmail ? { ...r, status: newStatus } : r
@@ -229,6 +275,94 @@ export function RegistrationManager({
     },
     [activityId]
   );
+
+  // Drain whatever is currently in the pending buffer and send it as a
+  // single batch. On success, transition to 'saved' only if the buffer is
+  // still empty (i.e. the user didn't queue new changes while the request
+  // was in flight). On failure, re-queue the dropped entries (without
+  // clobbering any newer user choice) so they get retried on the next
+  // flush cycle.
+  const drainAndSend = useCallback(async () => {
+    const entries = [...pendingChangesRef.current.entries()];
+    pendingChangesRef.current.clear();
+    if (entries.length === 0) return;
+    try {
+      await sendBatch(entries);
+      if (pendingChangesRef.current.size === 0 && !pendingTimerRef.current) {
+        setSaveState("saved");
+      }
+    } catch (err) {
+      for (const [email, status] of entries) {
+        if (!pendingChangesRef.current.has(email)) {
+          pendingChangesRef.current.set(email, status);
+        }
+      }
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+      // Stay in 'pending' — the user knows from the toast and the indicator
+      // that the save did not complete.
+    }
+  }, [sendBatch]);
+
+  // Debounced save — buffers every attendance toggle in a global map and
+  // fires one batch request once the manager has been idle for
+  // AUTO_SAVE_DELAY_MS. Optimistic UI is immediate.
+  const scheduleAttendanceSave = useCallback(
+    (userEmail: string, newStatus: string) => {
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          r.userEmail === userEmail ? { ...r, status: newStatus } : r
+        )
+      );
+      pendingChangesRef.current.set(userEmail, newStatus);
+      setSaveState("pending");
+
+      if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = setTimeout(() => {
+        pendingTimerRef.current = null;
+        void drainAndSend();
+      }, AUTO_SAVE_DELAY_MS);
+    },
+    [drainAndSend]
+  );
+
+  // Synchronous flush for explicit actions (Finish / Cancel). Awaitable.
+  // Cancels the pending timer and immediately drains the buffer.
+  const flushPendingSaves = useCallback(async () => {
+    if (pendingTimerRef.current) {
+      clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+    }
+    await drainAndSend();
+  }, [drainAndSend]);
+
+  // Fire-and-forget flush for tab close / hard reloads. `keepalive: true`
+  // lets the request finish even after the document is torn down.
+  const flushPendingSavesBeacon = useCallback(() => {
+    if (pendingTimerRef.current) {
+      clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+    }
+    const entries = [...pendingChangesRef.current.entries()];
+    if (entries.length === 0) return;
+    pendingChangesRef.current.clear();
+    fetch(`/api/activities/${activityId}/registrations`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        updates: entries.map(([userEmail, status]) => ({ userEmail, status })),
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [activityId]);
+
+  useEffect(() => {
+    const handler = () => flushPendingSavesBeacon();
+    window.addEventListener("beforeunload", handler);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+      flushPendingSavesBeacon();
+    };
+  }, [flushPendingSavesBeacon]);
 
   // Set or clear a pending flag on a registration
   const flagUser = useCallback(
@@ -320,6 +454,35 @@ export function RegistrationManager({
   const [bulkRemoving, setBulkRemoving] = useState(false);
   const unconfirmedCount = registrations.filter((r) => r.status === "registered").length;
 
+  // Finish / Cancel the activity. Flushes all pending attendance saves first
+  // so debounced "attended" marks don't get overwritten back to "absent" by
+  // the server-side finish transaction.
+  const runActivityAction = useCallback(
+    async (newStatus: "completed" | "cancelled") => {
+      setActivityActionProcessing(true);
+      try {
+        await flushPendingSaves();
+        const res = await fetch(`/api/activities/${activityId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!res.ok) throw new Error("Failed");
+        toast.success(
+          newStatus === "completed" ? t("activityFinished") : t("activityCancelled")
+        );
+        router.refresh();
+      } catch {
+        toast.error("Failed");
+      } finally {
+        setActivityActionProcessing(false);
+        setFinishOpen(false);
+        setCancelOpen(false);
+      }
+    },
+    [activityId, flushPendingSaves, router, t]
+  );
+
   const removeAllUnconfirmed = useCallback(async () => {
     setBulkRemoving(true);
     try {
@@ -343,15 +506,100 @@ export function RegistrationManager({
   const isEditable = activityStatus === "open";
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="text-sm text-muted-foreground">
-          {t("registrationCount", { count: registrations.length })}
-          {capacity > 0 && ` · ${confirmedCount} / ${capacity} ${t("confirmed")}`}
-          {isAtCapacity && (
-            <span className="text-orange-600 font-medium"> · {t("capacityReached")}</span>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{t("registrationsTitle")}</CardTitle>
+          {isEditable && (
+            <div className="flex gap-2 flex-wrap">
+              <Dialog open={finishOpen} onOpenChange={setFinishOpen}>
+                <DialogTrigger
+                  render={
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={!hasConfirmedMembers}
+                    />
+                  }
+                >
+                  {t("finishActivity")}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("finishConfirmTitle")}</DialogTitle>
+                    <DialogDescription>
+                      {t("finishConfirmDescription")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose render={<Button variant="outline" />}>
+                      {t("cancelAction")}
+                    </DialogClose>
+                    <Button
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => runActivityAction("completed")}
+                      disabled={activityActionProcessing}
+                    >
+                      {activityActionProcessing ? "..." : t("confirmFinish")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+                <DialogTrigger
+                  render={<Button variant="destructive" size="sm" />}
+                >
+                  {t("cancelActivity")}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("cancelConfirmTitle")}</DialogTitle>
+                    <DialogDescription>
+                      {t("cancelConfirmDescription")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose render={<Button variant="outline" />}>
+                      {t("cancelAction")}
+                    </DialogClose>
+                    <Button
+                      variant="destructive"
+                      onClick={() => runActivityAction("cancelled")}
+                      disabled={activityActionProcessing}
+                    >
+                      {activityActionProcessing ? "..." : t("confirmCancel")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           )}
-          {" · "}{t("autoSaveHint")}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-1">
+          <span>
+            {t("registrationCount", { count: registrations.length })}
+            {capacity > 0 && ` · ${confirmedCount} / ${capacity} ${t("confirmed")}`}
+            {isAtCapacity && (
+              <span className="text-orange-600 font-medium"> · {t("capacityReached")}</span>
+            )}
+            {" · "}{t("autoSaveHint")}
+          </span>
+          {saveState === "pending" && (
+            <span className="inline-flex items-center gap-1 text-gray-400">
+              <Loader2Icon className="size-3 animate-spin" />
+              {t("pendingSave")}
+            </span>
+          )}
+          {saveState === "saved" && (
+            <span className="inline-flex items-center gap-1 text-gray-400">
+              <CheckIcon className="size-3" />
+              {t("savedAutomatically")}
+            </span>
+          )}
         </div>
         {isEditable && (
           <Dialog open={bulkRemoveOpen} onOpenChange={setBulkRemoveOpen}>
@@ -606,7 +854,7 @@ export function RegistrationManager({
                   ) : (
                     <Select
                       value={["attended", "absent"].includes(reg.status) ? reg.status : ""}
-                      onValueChange={(val) => val && updateStatus(reg.userEmail, val)}
+                      onValueChange={(val) => val && scheduleAttendanceSave(reg.userEmail, val)}
                     >
                       <SelectTrigger className="w-36 h-8 text-xs">
                         <SelectValue placeholder="Select status" />
@@ -699,6 +947,7 @@ export function RegistrationManager({
           {t("noRegistrations")}
         </div>
       )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

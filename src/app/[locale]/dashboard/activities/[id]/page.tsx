@@ -7,7 +7,6 @@ import { getFlagSettings, unexpiredCutoff, isBanActive } from "@/lib/flags";
 import { getPublicUrl } from "@/lib/r2";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ActivityActions } from "@/components/dashboard/activity-actions";
 import { EditButton } from "@/components/dashboard/activity-detail-client";
 import { ShareButton } from "@/components/share-button";
 import { InviteComanager } from "@/components/dashboard/invite-comanager";
@@ -351,26 +350,14 @@ export default async function ActivityDetailPage({
       })()}
 
       {isEditable && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle>{t("registrationsTitle")}</CardTitle>
-              <ActivityActions
-                activityId={activity.id}
-                hasConfirmedMembers={activity._count.registrations > 0}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <RegistrationManager
-              activityId={activity.id}
-              activityStatus={activity.status}
-              initialRegistrations={registrations}
-              canViewMemberDetail={canViewMemberDetail}
-              capacity={activity.capacity}
-            />
-          </CardContent>
-        </Card>
+        <RegistrationManager
+          activityId={activity.id}
+          activityStatus={activity.status}
+          initialRegistrations={registrations}
+          canViewMemberDetail={canViewMemberDetail}
+          capacity={activity.capacity}
+          hasConfirmedMembers={activity._count.registrations > 0}
+        />
       )}
     </div>
   );

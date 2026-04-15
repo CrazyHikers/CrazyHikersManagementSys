@@ -181,6 +181,8 @@
       "registrationsTitle": "Registrations",
       "registrationCount": "{count, plural, =0 {No registrations} =1 {1 registration} other {# registrations}}",
       "autoSaveHint": "Changes save automatically",
+      "pendingSave": "Pending save",
+      "savedAutomatically": "Auto-saved",
       "route": "Route",
       "distance": "Distance (km)",
       "elevationGain": "Elevation Gain (m)",

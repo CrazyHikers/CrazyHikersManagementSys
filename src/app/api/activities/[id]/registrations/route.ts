@@ -39,7 +39,40 @@ export async function PATCH(
   }
 
   const { id: activityId } = await params;
-  const { userEmail, status } = await request.json();
+  const body = await request.json();
+
+  // Batch attendance updates — used by the debounced auto-save. Only
+  // `attended` / `absent` transitions are allowed in batch mode, so this
+  // path skips capacity checks and confirmation emails.
+  if (Array.isArray(body.updates)) {
+    const updates = (body.updates as { userEmail?: string; status?: string }[])
+      .filter(
+        (u): u is { userEmail: string; status: "attended" | "absent" } =>
+          !!u.userEmail && (u.status === "attended" || u.status === "absent")
+      );
+    if (updates.length === 0) {
+      return NextResponse.json({ success: true, updated: 0 });
+    }
+    try {
+      await db.$transaction(
+        updates.map((u) =>
+          db.registration.update({
+            where: { activityId_userEmail: { activityId, userEmail: u.userEmail } },
+            data: { status: u.status },
+          })
+        )
+      );
+      return NextResponse.json({ success: true, updated: updates.length });
+    } catch (error) {
+      console.error("Batch registration update error:", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
+  }
+
+  const { userEmail, status } = body;
 
   if (!userEmail || !status) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
