@@ -11,6 +11,8 @@ import { EditButton } from "@/components/dashboard/activity-detail-client";
 import { ShareButton } from "@/components/share-button";
 import { InviteComanager } from "@/components/dashboard/invite-comanager";
 import { RegistrationManager } from "@/components/dashboard/registration-manager";
+import { RegistrationsStore } from "@/components/dashboard/registrations-store";
+import { RegistrationCountDisplay } from "@/components/dashboard/registration-count-display";
 import { getDisplayStatus } from "@/lib/activity";
 
 export default async function ActivityDetailPage({
@@ -52,13 +54,6 @@ export default async function ActivityDetailPage({
           },
         },
         orderBy: { registeredAt: "asc" },
-      },
-      _count: {
-        select: {
-          registrations: {
-            where: { status: { in: ["registration_confirmed", "attended"] } },
-          },
-        },
       },
     },
   });
@@ -152,6 +147,7 @@ export default async function ActivityDetailPage({
   };
 
   return (
+    <RegistrationsStore initialRegistrations={registrations}>
     <div>
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
@@ -209,8 +205,7 @@ export default async function ActivityDetailPage({
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("registrations")}</div>
             <div className="font-medium">
-              {activity._count.registrations}
-              {activity.maximumRegistration ? ` / ${activity.maximumRegistration}` : ""}
+              <RegistrationCountDisplay maximumRegistration={activity.maximumRegistration} />
             </div>
           </CardContent>
         </Card>
@@ -353,11 +348,11 @@ export default async function ActivityDetailPage({
         <RegistrationManager
           activityId={activity.id}
           activityStatus={activity.status}
-          initialRegistrations={registrations}
           canViewMemberDetail={canViewMemberDetail}
           capacity={activity.capacity}
         />
       )}
     </div>
+    </RegistrationsStore>
   );
 }

@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRegistrationsStore } from "./registrations-store";
 import {
   Select,
   SelectContent,
@@ -29,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-type RegistrationFormData = {
+export type RegistrationFormData = {
   transportTicket?: string;
   departureCity?: string;
   cameraEquipment?: string[];
@@ -38,7 +39,7 @@ type RegistrationFormData = {
   confirmInfo?: boolean;
 };
 
-type Registration = {
+export type Registration = {
   userEmail: string;
   userUid: string;
   userName: string;
@@ -173,13 +174,11 @@ const AUTO_SAVE_DELAY_MS = 5000;
 export function RegistrationManager({
   activityId,
   activityStatus,
-  initialRegistrations,
   canViewMemberDetail,
   capacity,
 }: {
   activityId: string;
   activityStatus: string;
-  initialRegistrations: Registration[];
   canViewMemberDetail: boolean;
   capacity: number;
 }) {
@@ -187,7 +186,7 @@ export function RegistrationManager({
   const tp = useTranslations("dashboard.myProfile");
   const ta = useTranslations("activity");
   const router = useRouter();
-  const [registrations, setRegistrations] = useState(initialRegistrations);
+  const { registrations, setRegistrations } = useRegistrationsStore();
   const [saving, setSaving] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
   const [expandedFormData, setExpandedFormData] = useState<Set<string>>(new Set());
