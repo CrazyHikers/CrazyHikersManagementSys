@@ -24,12 +24,12 @@ export async function POST(
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  // Validate activity exists and is open/closed
+  // Validate activity exists and is still open
   const activity = await db.activity.findUnique({ where: { id: activityId } });
   if (!activity) {
     return NextResponse.json({ error: "Activity not found" }, { status: 404 });
   }
-  if (!["open", "closed"].includes(activity.status)) {
+  if (activity.status !== "open") {
     return NextResponse.json(
       { error: "Cannot invite co-managers for completed or cancelled activities" },
       { status: 400 }

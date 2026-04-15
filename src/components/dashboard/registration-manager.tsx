@@ -316,7 +316,7 @@ export function RegistrationManager({
     [activityId]
   );
 
-  const isEditable = ["open", "closed"].includes(activityStatus);
+  const isEditable = activityStatus === "open";
 
   return (
     <div className="space-y-3">

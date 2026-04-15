@@ -18,11 +18,9 @@ import { toast } from "sonner";
 
 export function ActivityActions({
   activityId,
-  status,
   hasConfirmedMembers,
 }: {
   activityId: string;
-  status: string;
   hasConfirmedMembers: boolean;
 }) {
   const t = useTranslations("dashboard.activities");
@@ -41,9 +39,7 @@ export function ActivityActions({
       });
       if (!res.ok) throw new Error("Failed");
       toast.success(
-        newStatus === "closed" ? t("registrationClosed") :
-        newStatus === "completed" ? t("activityFinished") :
-        t("activityCancelled")
+        newStatus === "completed" ? t("activityFinished") : t("activityCancelled")
       );
       router.refresh();
     } catch {
@@ -57,17 +53,6 @@ export function ActivityActions({
 
   return (
     <div className="flex gap-2 flex-wrap">
-      {status === "open" && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleAction("closed")}
-          disabled={processing}
-        >
-          {t("closeRegistration")}
-        </Button>
-      )}
-
       <Dialog open={finishOpen} onOpenChange={setFinishOpen}>
         <DialogTrigger
           render={

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getPublicUrl } from "@/lib/r2";
+import { getDisplayStatus } from "@/lib/activity";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,7 @@ export default async function ActivityViewPage({
 
   if (!activity) notFound();
 
+  const displayStatus = getDisplayStatus(activity);
   const managers = activity.activityManagers.filter((am) => am.role === "manager");
   const comanagers = activity.activityManagers.filter((am) => am.role === "comanager");
 
@@ -68,7 +70,7 @@ export default async function ActivityViewPage({
     <div>
       <div className="flex items-start gap-3 mb-6">
         <h1 className="text-2xl font-bold">{activity.title}</h1>
-        <Badge className={statusColors[activity.status]}>{activity.status}</Badge>
+        <Badge className={statusColors[displayStatus]}>{displayStatus}</Badge>
       </div>
 
       {activity.coverImgId && (

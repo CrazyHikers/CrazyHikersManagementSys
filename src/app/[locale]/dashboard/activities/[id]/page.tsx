@@ -10,6 +10,7 @@ import { ActivityActions } from "@/components/dashboard/activity-actions";
 import { EditButton } from "@/components/dashboard/activity-detail-client";
 import { ShareButton } from "@/components/share-button";
 import { InviteComanager } from "@/components/dashboard/invite-comanager";
+import { getDisplayStatus } from "@/lib/activity";
 
 export default async function ActivityDetailPage({
   params,
@@ -37,7 +38,8 @@ export default async function ActivityDetailPage({
 
   if (!activity) notFound();
 
-  const isEditable = ["open", "closed"].includes(activity.status);
+  const isEditable = activity.status === "open";
+  const displayStatus = getDisplayStatus(activity);
   const existingEmails = new Set(activity.activityManagers.map((am) => am.userEmail));
 
   // Fetch available managers for co-manager invitations
@@ -68,13 +70,13 @@ export default async function ActivityDetailPage({
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <h1 className="text-2xl font-bold">{activity.title}</h1>
-          <Badge className={`${statusColors[activity.status]}`}>
-            {activity.status}
+          <Badge className={`${statusColors[displayStatus]}`}>
+            {displayStatus}
           </Badge>
         </div>
-        {["open", "closed"].includes(activity.status) && (
+        {isEditable && (
         <div className="flex gap-2 flex-wrap items-center">
-          {activity.status === "open" && (
+          {displayStatus === "open" && (
             <ShareButton path={`/${locale}/activities/${activity.id}`} />
           )}
             <EditButton
@@ -90,7 +92,7 @@ export default async function ActivityDetailPage({
                 metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
-            <ActivityActions activityId={activity.id} status={activity.status} hasConfirmedMembers={activity._count.registrations > 0} />
+            <ActivityActions activityId={activity.id} hasConfirmedMembers={activity._count.registrations > 0} />
         </div>
         )}
       </div>
@@ -262,7 +264,7 @@ export default async function ActivityDetailPage({
         );
       })()}
 
-      {["open", "closed"].includes(activity.status) && (
+      {isEditable && (
         <Link href={`/dashboard/activities/${activity.id}/registrations`}>
           <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
             {t("registrations")}

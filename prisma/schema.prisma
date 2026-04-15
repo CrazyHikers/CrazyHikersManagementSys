@@ -136,7 +136,6 @@ model WaiverTemplate {
 
 enum ActivityStatus {
   open
-  closed
   completed
   cancelled
 }

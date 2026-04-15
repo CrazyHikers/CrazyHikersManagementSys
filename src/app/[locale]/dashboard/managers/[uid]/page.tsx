@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { computeKpi } from "@/lib/kpi";
 import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
+import { getDisplayStatus } from "@/lib/activity";
 
 const flagColors: Record<string, string> = {
   yellow: "bg-yellow-100 text-yellow-800",
@@ -153,13 +154,14 @@ export default async function ManagerDetailPage({
                       {am.activity.date.toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={
-                          activityStatusColors[am.activity.status] || ""
-                        }
-                      >
-                        {am.activity.status}
-                      </Badge>
+                      {(() => {
+                        const ds = getDisplayStatus(am.activity);
+                        return (
+                          <Badge className={activityStatusColors[ds] || ""}>
+                            {ds}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -205,13 +207,14 @@ export default async function ManagerDetailPage({
                       {am.activity.date.toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={
-                          activityStatusColors[am.activity.status] || ""
-                        }
-                      >
-                        {am.activity.status}
-                      </Badge>
+                      {(() => {
+                        const ds = getDisplayStatus(am.activity);
+                        return (
+                          <Badge className={activityStatusColors[ds] || ""}>
+                            {ds}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
+import { getDisplayStatus } from "@/lib/activity";
 import {
   Table,
   TableBody,
@@ -58,7 +59,10 @@ export default async function AllActivitiesPage() {
             <div key={a.id} className="bg-white rounded-lg border p-4">
               <div className="flex items-start justify-between gap-2">
                 <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
-                <Badge className={statusColors[a.status]}>{a.status}</Badge>
+                {(() => {
+                    const ds = getDisplayStatus(a);
+                    return <Badge className={statusColors[ds]}>{ds}</Badge>;
+                  })()}
               </div>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
                 <div>{a.date.toLocaleDateString()}</div>
@@ -98,7 +102,10 @@ export default async function AllActivitiesPage() {
                     <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusColors[a.status]}>{a.status}</Badge>
+                    {(() => {
+                    const ds = getDisplayStatus(a);
+                    return <Badge className={statusColors[ds]}>{ds}</Badge>;
+                  })()}
                   </TableCell>
                   <TableCell>{a.date.toLocaleDateString()}</TableCell>
                   <TableCell>{mainManager?.user.name || "—"}</TableCell>

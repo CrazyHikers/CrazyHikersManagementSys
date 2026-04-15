@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getDisplayStatus } from "@/lib/activity";
 import {
   Table,
   TableBody,
@@ -66,7 +67,10 @@ export default async function ActivitiesPage() {
             <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-medium">{a.title}</h3>
-                <Badge className={statusColors[a.status]}>{a.status}</Badge>
+                {(() => {
+                  const ds = getDisplayStatus(a);
+                  return <Badge className={statusColors[ds]}>{ds}</Badge>;
+                })()}
               </div>
               <div className="text-sm text-muted-foreground mt-2 space-y-1">
                 <div>{a.date.toLocaleDateString()}</div>
@@ -104,7 +108,10 @@ export default async function ActivitiesPage() {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Badge className={statusColors[a.status]}>{a.status}</Badge>
+                  {(() => {
+                  const ds = getDisplayStatus(a);
+                  return <Badge className={statusColors[ds]}>{ds}</Badge>;
+                })()}
                 </TableCell>
                 <TableCell>{a.date.toLocaleDateString()}</TableCell>
                 <TableCell>
