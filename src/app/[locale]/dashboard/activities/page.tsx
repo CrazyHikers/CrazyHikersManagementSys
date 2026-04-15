@@ -76,7 +76,7 @@ export default async function ActivitiesPage() {
                 <div>{a.date.toLocaleDateString()}</div>
                 <div>
                   {a.activityManagers[0]?.user.name || "—"} ·{" "}
-                  {a._count.registrations} {t("registrations").toLowerCase()}
+                  {t("attendanceCount")}: {a._count.registrations}
                 </div>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default async function ActivitiesPage() {
               <TableHead>Status</TableHead>
               <TableHead>{t("activityDate")}</TableHead>
               <TableHead>{t("manager")}</TableHead>
-              <TableHead>{t("registrations")}</TableHead>
+              <TableHead>{t("attendanceCount")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

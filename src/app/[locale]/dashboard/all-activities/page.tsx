@@ -72,7 +72,7 @@ export default async function AllActivitiesPage() {
                     <span className="text-xs"> + {comanagers.map((c) => c.user.name).join(", ")}</span>
                   )}
                 </div>
-                <div>{a._count.registrations} {t("registrations").toLowerCase()}</div>
+                <div>{t("attendanceCount")}: {a._count.registrations}</div>
               </div>
             </div>
           );
@@ -89,7 +89,7 @@ export default async function AllActivitiesPage() {
               <TableHead>{t("activityDate")}</TableHead>
               <TableHead>{t("manager")}</TableHead>
               <TableHead>{t("comanagers")}</TableHead>
-              <TableHead>{t("registrations")}</TableHead>
+              <TableHead>{t("attendanceCount")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
