@@ -19,15 +19,14 @@ export async function POST(
       );
     }
 
-    const { id: activityId } = await params;
-    const { email, name, notes, formData } = await request.json();
-
-    if (!email || !name) {
-      return NextResponse.json(
-        { error: "Email and name are required" },
-        { status: 400 }
-      );
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const email = session.user.email;
+
+    const { id: activityId } = await params;
+    const { notes, formData } = await request.json();
 
     // Check activity exists and is open
     const activity = await db.activity.findUnique({ where: { id: activityId } });
@@ -61,16 +60,14 @@ export async function POST(
       }
     }
 
-    // Find or create user
-    let user = await db.user.findUnique({ where: { email } });
+    // Look up the authenticated user
+    const user = await db.user.findUnique({ where: { email } });
     if (!user) {
-      user = await db.user.create({
-        data: { name, email, role: "member" },
-      });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check for complete profile
-    if (!isProfileComplete(user.profile)) {
+    // Check for complete profile (including display name)
+    if (!user.name?.trim() || !isProfileComplete(user.profile)) {
       return NextResponse.json(
         { error: "INCOMPLETE_PROFILE" },
         { status: 403 }

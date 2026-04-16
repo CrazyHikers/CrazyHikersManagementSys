@@ -135,7 +135,7 @@ export default async function ActivityDetailPage({
       }),
       db.user.findUnique({
         where: { email: session.user.email },
-        select: { profile: true },
+        select: { name: true, profile: true },
       }),
       db.userWaiver.findFirst({
         where: {
@@ -155,7 +155,7 @@ export default async function ActivityDetailPage({
 
     preflight = {
       registrationStatus: registration?.status || null,
-      needsProfile: !isProfileComplete(user?.profile),
+      needsProfile: !user?.name?.trim() || !isProfileComplete(user?.profile),
       needsWaiver: !waiver,
       waiverValidityDays: waiverValidityDays,
     };

@@ -93,8 +93,6 @@ export function RegistrationForm({
 
     const fd = new FormData(e.currentTarget);
     const data = {
-      email: (fd.get("email") as string) || session?.email || "",
-      name: (fd.get("name") as string) || session?.name || "",
       notes: fd.get("notes") as string,
       formData: {
         transportTicket: transportTicket || undefined,
@@ -218,29 +216,6 @@ export function RegistrationForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">{t("yourEmail")}</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          placeholder="you@example.com"
-          defaultValue={session?.email || ""}
-          readOnly={!!session?.email}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="name">{t("yourName")}</Label>
-        <Input
-          id="name"
-          name="name"
-          type="text"
-          required
-          defaultValue={session?.name || ""}
-          readOnly={!!session?.name}
-        />
-      </div>
       <div className="space-y-2">
         <Label htmlFor="notes">{t("notes")}</Label>
         <Textarea id="notes" name="notes" rows={2} />

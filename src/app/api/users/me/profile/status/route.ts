@@ -11,10 +11,11 @@ export async function GET() {
 
   const user = await db.user.findUnique({
     where: { email: session.user.email },
-    select: { profile: true },
+    select: { name: true, profile: true },
   });
 
   const missingFields = getMissingProfileFields(user?.profile);
+  if (!user?.name?.trim()) missingFields.push("name");
 
   return NextResponse.json({
     isComplete: missingFields.length === 0,
