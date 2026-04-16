@@ -136,9 +136,13 @@ export default async function UserDetailPage({
         const p = (user as any).profile as Record<string, any> | null;
         if (!p || Object.values(p).every((v) => !v && v !== false)) return null;
 
-        const formatValue = (val: unknown): string => {
-          if (Array.isArray(val)) return val.join(", ");
+        const translateOption = (key: string): string => {
+          return t.has(`options.${key}`) ? t(`options.${key}`) : key;
+        };
+        const formatValue = (val: unknown, fieldKey?: string): string => {
+          if (Array.isArray(val)) return val.map(translateOption).join(", ");
           if (typeof val === "boolean") return val ? t("yes") : t("no");
+          if (fieldKey === "gender") return translateOption(String(val));
           return String(val);
         };
 
@@ -177,7 +181,7 @@ export default async function UserDetailPage({
                 {filledFields.map((f) => (
                   <div key={f.key}>
                     <span className="text-muted-foreground">{f.label}: </span>
-                    <span className="font-medium">{formatValue(p[f.key])}</span>
+                    <span className="font-medium">{formatValue(p[f.key], f.key)}</span>
                   </div>
                 ))}
               </div>

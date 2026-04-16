@@ -23,7 +23,7 @@ type SessionUser = {
   email?: string | null;
 } | null;
 
-const cameraEquipmentOptions = ["微单或单反", "无人机", "运动相机", "其他"];
+const cameraEquipmentOptions = ["mirrorless_dslr", "drone", "action_camera", "other"];
 
 type Preflight = {
   registrationStatus: string | null;
@@ -254,7 +254,7 @@ export function RegistrationForm({
                   onChange={(e) => toggleCameraEquipment(opt, e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300"
                 />
-                {opt}
+                {t(`options.${opt}`)}
               </label>
             ))}
           </div>

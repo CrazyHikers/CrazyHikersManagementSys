@@ -733,17 +733,22 @@ export function RegistrationManager({
                                 ["equipment", tp("equipment")],
                                 ["insurance", tp("insurance")],
                               ];
+                              const translateOption = (key: string) => {
+                                const translated = tp.has(`options.${key}`) ? tp(`options.${key}`) : key;
+                                return translated;
+                              };
                               return (
                                 <>
                                   {fields.map(([k, label]) => {
                                     const v = p[k];
                                     if (!v) return null;
-                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{String(v)}</div>;
+                                    const display = k === "gender" ? translateOption(String(v)) : String(v);
+                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{display}</div>;
                                   })}
                                   {arrayFields.map(([k, label]) => {
                                     const v = p[k];
                                     if (!Array.isArray(v) || v.length === 0) return null;
-                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{v.join(", ")}</div>;
+                                    return <div key={k}><span className="text-muted-foreground">{label}: </span>{v.map(translateOption).join(", ")}</div>;
                                   })}
                                 </>
                               );
@@ -770,7 +775,7 @@ export function RegistrationManager({
                               <div><span className="text-muted-foreground">{ta("departureCity")}: </span>{reg.formData.departureCity}</div>
                             )}
                             {reg.formData.cameraEquipment && reg.formData.cameraEquipment.length > 0 && (
-                              <div><span className="text-muted-foreground">{ta("cameraEquipment")}: </span>{reg.formData.cameraEquipment.join(", ")}</div>
+                              <div><span className="text-muted-foreground">{ta("cameraEquipment")}: </span>{reg.formData.cameraEquipment.map((v: string) => ta.has(`options.${v}`) ? ta(`options.${v}`) : v).join(", ")}</div>
                             )}
                             {reg.formData.willPostSocialMedia !== undefined && (
                               <div><span className="text-muted-foreground">{ta("willPostSocialMedia")}: </span>{reg.formData.willPostSocialMedia ? ta("yes") : ta("no")}</div>

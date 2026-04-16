@@ -55,6 +55,13 @@ type Profile = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PromotionEligibility = any;
 
+const genderLabels: Record<string, string> = {
+  male: "male",
+  female: "female",
+  other: "otherGender",
+  prefer_not_to_say: "preferNotToSay",
+};
+
 const roleBadgeColors: Record<string, string> = {
   dev: "bg-red-100 text-red-800",
   admin: "bg-purple-100 text-purple-800",
@@ -81,11 +88,11 @@ const emptyUserProfile: UserProfile = {
   insurance: [],
 };
 
-const fitnessOptions = ["跑步", "游泳", "骑行", "徒步", "ASVZ有氧", "其他"];
-const equipmentOptions = ["登山鞋", "越野跑鞋(非普通跑鞋)", "登山杖", "冲锋衣", "登山包", "户外水袋>1.5L", "魔术头巾", "冰袖"];
-const managerDutyOptions = ["导引队伍", "指挥行动", "活跃气氛", "协助背负"];
-const memberDutyOptions = ["听从领队指挥", "行前装备检查", "尊重领队劳动", "自我安全意识", "擅自独自行动", "随性穿搭出门", "领队为我服务", "责任全甩领队"];
-const insuranceOptions = ["Rega直升机俱乐部", "雇员(公司保险)", "个人额外购买", "以上都没有"];
+const fitnessOptions = ["running", "swimming", "cycling", "hiking", "asvz_cardio", "other"];
+const equipmentOptions = ["hiking_boots", "trail_shoes", "trekking_poles", "hardshell", "backpack", "hydration_bladder", "buff", "arm_sleeves"];
+const managerDutyOptions = ["lead_group", "command", "boost_morale", "help_carry"];
+const memberDutyOptions = ["follow_leader", "gear_check", "respect_leader", "self_safety", "go_alone", "casual_dress", "leader_serves_me", "blame_leader"];
+const insuranceOptions = ["rega", "employer", "personal", "none"];
 
 export default function MyProfilePage() {
   const t = useTranslations("dashboard.myProfile");
@@ -296,13 +303,13 @@ export default function MyProfilePage() {
                     onValueChange={(val) => updateProfileField("gender", val || "")}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("selectGender")} />
+                      <span>{userProfile.gender ? t(genderLabels[userProfile.gender] || userProfile.gender) : t("selectGender")}</span>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="男">{t("male")}</SelectItem>
-                      <SelectItem value="女">{t("female")}</SelectItem>
-                      <SelectItem value="其他">{t("otherGender")}</SelectItem>
-                      <SelectItem value="不愿透露">{t("preferNotToSay")}</SelectItem>
+                      <SelectItem value="male">{t("male")}</SelectItem>
+                      <SelectItem value="female">{t("female")}</SelectItem>
+                      <SelectItem value="other">{t("otherGender")}</SelectItem>
+                      <SelectItem value="prefer_not_to_say">{t("preferNotToSay")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -340,7 +347,7 @@ export default function MyProfilePage() {
                           onChange={(e) => toggleCheckbox("fitnessActivities", opt, e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
-                        {opt}
+                        {t(`options.${opt}`)}
                       </label>
                     ))}
                   </div>
@@ -393,7 +400,7 @@ export default function MyProfilePage() {
                         onChange={(e) => toggleCheckbox("equipment", opt, e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300"
                       />
-                      {opt}
+                      {t(`options.${opt}`)}
                     </label>
                   ))}
                 </div>
@@ -415,7 +422,7 @@ export default function MyProfilePage() {
                           onChange={(e) => toggleCheckbox("quizManagerDuties", opt, e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
-                        {opt}
+                        {t(`options.${opt}`)}
                       </label>
                     ))}
                   </div>
@@ -431,7 +438,7 @@ export default function MyProfilePage() {
                           onChange={(e) => toggleCheckbox("quizMemberDuties", opt, e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
-                        {opt}
+                        {t(`options.${opt}`)}
                       </label>
                     ))}
                   </div>
@@ -450,7 +457,7 @@ export default function MyProfilePage() {
                     onValueChange={(val) => updateProfileField("canDoEquipmentCheck", val === "yes" ? true : val === "no" ? false : undefined)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      <span>{userProfile.canDoEquipmentCheck === true ? t("yes") : userProfile.canDoEquipmentCheck === false ? t("no") : ""}</span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="yes">{t("yes")}</SelectItem>
@@ -486,7 +493,7 @@ export default function MyProfilePage() {
                           onChange={(e) => toggleCheckbox("insurance", opt, e.target.checked)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
-                        {opt}
+                        {t(`options.${opt}`)}
                       </label>
                     ))}
                   </div>
