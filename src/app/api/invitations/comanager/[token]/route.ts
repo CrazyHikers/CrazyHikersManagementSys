@@ -87,19 +87,33 @@ export async function POST(
     );
   }
 
-  await db.activityManager.update({
-    where: {
-      activityId_userEmail: {
-        activityId: am.activityId,
-        userEmail: am.userEmail,
+  // On accept: auto-withdraw any existing member registration for this
+  // activity, since a confirmed co-manager cannot also be a participant.
+  await db.$transaction([
+    db.activityManager.update({
+      where: {
+        activityId_userEmail: {
+          activityId: am.activityId,
+          userEmail: am.userEmail,
+        },
       },
-    },
-    data: {
-      status: accepted ? "confirmed" : "declined",
-      respondedAt: new Date(),
-      token: null,
-    },
-  });
+      data: {
+        status: accepted ? "confirmed" : "declined",
+        respondedAt: new Date(),
+        token: null,
+      },
+    }),
+    ...(accepted
+      ? [
+          db.registration.deleteMany({
+            where: {
+              activityId: am.activityId,
+              userEmail: am.userEmail,
+            },
+          }),
+        ]
+      : []),
+  ]);
 
   return NextResponse.json({
     success: true,

@@ -45,6 +45,7 @@
     "register": "报名",
     "registered": "已报名",
     "managing": "我带的队",
+    "pendingInvitation": "待回应邀请",
     "deadline": "报名截止时间",
     "activityDate": "活动日期",
     "spotsLeft": "剩余 {count} 个名额",
@@ -62,6 +63,9 @@
     "registrationSuccess": "报名提交成功！",
     "signInToRegister": "请先登录后再报名参加活动",
     "youAreManaging": "你是这次活动的领队，无需报名。",
+    "pendingComanagerInvitation": "副领队邀请待回应",
+    "pendingComanagerInvitationHelp": "你已收到本次活动的副领队邀请，请先回应邀请后再以队员身份报名。",
+    "respondToInvitation": "回应邀请",
     "signIn": "登录",
     "yourStatus": "你的报名状态",
     "statusRegistered": "待审核",
@@ -99,7 +103,9 @@
     "technicalDifficulty": "技术难度",
     "enduranceDifficulty": "体力需求",
     "hikingNotes": "注意事项",
-    "hikingDetails": "徒步详情"
+    "hikingDetails": "徒步详情",
+    "qrCode": "群聊二维码",
+    "qrCodeHelp": "扫码加入群聊。"
   },
   "dashboard": {
     "title": "控制面板",
@@ -266,7 +272,8 @@
       "title": "我的活动",
       "upcoming": "即将开始",
       "past": "已结束",
-      "noActivities": "你还没有报名任何活动"
+      "noActivities": "你还没有报名任何活动",
+      "hasQrCode": "群聊二维码已就绪"
     },
     "myWaivers": {
       "title": "我的免责声明",

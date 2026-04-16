@@ -16,7 +16,7 @@ type ActivityData = {
 };
 
 export function ActivityList({ activities }: { activities: ActivityData[] }) {
-  const { registered, managing } = useActivityStatus();
+  const { registered, managing, pendingInvitation } = useActivityStatus();
 
   return (
     <div className="flex flex-col gap-4">
@@ -26,6 +26,7 @@ export function ActivityList({ activities }: { activities: ActivityData[] }) {
           {...activity}
           registered={registered.has(activity.id)}
           managing={managing.has(activity.id)}
+          pendingInvitation={pendingInvitation.has(activity.id)}
         />
       ))}
     </div>

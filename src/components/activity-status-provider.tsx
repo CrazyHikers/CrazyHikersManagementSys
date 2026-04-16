@@ -6,11 +6,13 @@ import { useSession } from "next-auth/react";
 type ActivityStatus = {
   registered: Set<string>;
   managing: Set<string>;
+  pendingInvitation: Set<string>;
 };
 
 const defaultStatus: ActivityStatus = {
   registered: new Set(),
   managing: new Set(),
+  pendingInvitation: new Set(),
 };
 
 export function useActivityStatus() {
@@ -25,6 +27,7 @@ export function useActivityStatus() {
         setStatus({
           registered: new Set(data.registered),
           managing: new Set(data.managing),
+          pendingInvitation: new Set(data.pendingInvitation ?? []),
         });
       })
       .catch(() => {});

@@ -45,6 +45,7 @@
     "register": "Register",
     "registered": "Registered",
     "managing": "Managing",
+    "pendingInvitation": "Pending Invitation",
     "deadline": "Registration deadline",
     "activityDate": "Activity date",
     "spotsLeft": "{count} spots left",
@@ -62,6 +63,9 @@
     "registrationSuccess": "Registration submitted successfully!",
     "signInToRegister": "Please sign in to register for this activity",
     "youAreManaging": "You are managing this activity.",
+    "pendingComanagerInvitation": "Pending Co-manager Invitation",
+    "pendingComanagerInvitationHelp": "You have been invited to co-manage this activity. Please respond to the invitation before registering as a member.",
+    "respondToInvitation": "Respond to Invitation",
     "signIn": "Sign In",
     "yourStatus": "Your registration status",
     "statusRegistered": "Pending",
@@ -99,7 +103,9 @@
     "technicalDifficulty": "Technical Difficulty",
     "enduranceDifficulty": "Endurance Difficulty",
     "hikingNotes": "Notes",
-    "hikingDetails": "Hiking Details"
+    "hikingDetails": "Hiking Details",
+    "qrCode": "Group Chat QR Code",
+    "qrCodeHelp": "Scan to join the group chat."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -266,7 +272,8 @@
       "title": "My Activities",
       "upcoming": "Upcoming",
       "past": "Past",
-      "noActivities": "You haven't registered for any activities yet"
+      "noActivities": "You haven't registered for any activities yet",
+      "hasQrCode": "Group chat QR available"
     },
     "myWaivers": {
       "title": "My Waivers",

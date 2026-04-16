@@ -88,14 +88,22 @@ export async function POST(
       );
     }
 
-    // Check if user is a manager/comanager of this activity
-    const isManager = await db.activityManager.findUnique({
+    // Check if user is a manager/comanager of this activity.
+    // `confirmed` managers cannot register as members. `invited` co-managers
+    // must respond to the invitation first. `declined` rows don't block.
+    const activityManager = await db.activityManager.findUnique({
       where: { activityId_userEmail: { activityId, userEmail: user.email } },
     });
-    if (isManager) {
+    if (activityManager?.status === "confirmed") {
       return NextResponse.json(
         { error: "Activity managers cannot register for their own activity" },
         { status: 400 }
+      );
+    }
+    if (activityManager?.status === "invited") {
+      return NextResponse.json(
+        { error: "PENDING_COMANAGER_INVITATION" },
+        { status: 403 }
       );
     }
 

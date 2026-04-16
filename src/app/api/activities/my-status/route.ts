@@ -8,12 +8,12 @@ import { auth } from "@/lib/auth";
 export async function GET() {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ registered: [], managing: [] });
+    return NextResponse.json({ registered: [], managing: [], pendingInvitation: [] });
   }
 
   const email = session.user.email;
 
-  const [registrations, managedActivities] = await Promise.all([
+  const [registrations, managedActivities, pendingInvitations] = await Promise.all([
     db.registration.findMany({
       where: {
         userEmail: email,
@@ -30,10 +30,19 @@ export async function GET() {
       },
       select: { activityId: true },
     }),
+    db.activityManager.findMany({
+      where: {
+        userEmail: email,
+        status: "invited",
+        activity: { status: "open" },
+      },
+      select: { activityId: true },
+    }),
   ]);
 
   return NextResponse.json({
     registered: registrations.map((r) => r.activityId),
     managing: managedActivities.map((m) => m.activityId),
+    pendingInvitation: pendingInvitations.map((m) => m.activityId),
   });
 }

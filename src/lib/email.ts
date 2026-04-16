@@ -56,31 +56,6 @@ export async function sendMagicLinkEmail(email: string, url: string) {
   });
 }
 
-export async function sendRegistrationConfirmation(
-  email: string,
-  memberName: string,
-  activityTitle: string,
-  qrCodeUrl?: string
-) {
-  const qrSection = qrCodeUrl
-    ? `<p>Please join the group chat using the QR code below:</p><img src="${qrCodeUrl}" alt="Group Chat QR Code" style="max-width:200px;height:auto;" />`
-    : "";
-
-  return sendEmail({
-    to: email,
-    subject: `Registration Confirmed - ${activityTitle}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2>Registration Confirmed</h2>
-        <p>Dear ${memberName},</p>
-        <p>Your registration for <strong>${activityTitle}</strong> has been confirmed.</p>
-        ${qrSection}
-        <p>Best regards,<br/>Crazy Hikers Team</p>
-      </div>
-    `,
-  });
-}
-
 export async function sendWaiverExpiryNotification(
   email: string,
   memberName: string,
@@ -116,9 +91,9 @@ export async function sendComanagerInvitation(
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h2>Co-manager Invitation</h2>
         <p>Dear ${comanagerName},</p>
-        <p>You have been invited to co-manage <strong>${activityTitle}</strong>.</p>
+        <p>You have been invited to co-manage <strong>${activityTitle}</strong>. Click below to accept or decline the invitation.</p>
         <a href="${acceptUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
-          Accept Invitation
+          View Invitation
         </a>
         <p>Best regards,<br/>Crazy Hikers Team</p>
       </div>

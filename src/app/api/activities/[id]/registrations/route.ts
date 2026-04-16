@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { sendRegistrationConfirmation } from "@/lib/email";
 
 export async function GET(
   _req: NextRequest,
@@ -122,18 +121,6 @@ export async function PATCH(
             ]
           : []),
       ]);
-
-      // Send confirmation email with QR code if available
-      const user = await db.user.findUnique({ where: { email: userEmail } });
-      if (user && activity) {
-        const qrCodeUrl = (activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as string | undefined;
-        await sendRegistrationConfirmation(
-          user.email,
-          user.name,
-          activity.title,
-          qrCodeUrl
-        ).catch(console.error);
-      }
     } else {
       await db.registration.update({
         where: {

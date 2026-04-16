@@ -22,6 +22,7 @@ type ActivityCardProps = {
   managerNames: string;
   registered?: boolean;
   managing?: boolean;
+  pendingInvitation?: boolean;
 };
 
 export function ActivityCard({
@@ -36,6 +37,7 @@ export function ActivityCard({
   managerNames,
   registered,
   managing,
+  pendingInvitation,
 }: ActivityCardProps) {
   const t = useTranslations("home");
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
@@ -86,6 +88,10 @@ export function ActivityCard({
               {managing ? (
                 <Button size="sm" variant="outline">
                   {t("managing")}
+                </Button>
+              ) : pendingInvitation ? (
+                <Button size="sm" variant="outline" className="text-amber-700 border-amber-600">
+                  {t("pendingInvitation")}
                 </Button>
               ) : registered ? (
                 <Button size="sm" variant="outline" className="text-green-700 border-green-600">

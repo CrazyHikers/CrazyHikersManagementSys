@@ -78,8 +78,10 @@ export default async function ActivityDetailPage({
     waiverValidityDays: number;
   } | undefined;
 
+  let pendingInvitationToken: string | null = null;
+
   if (session?.user?.email && !isManager) {
-    const [registration, user, waiver, waiverValidityDays] = await Promise.all([
+    const [registration, user, waiver, waiverValidityDays, pendingInvitation] = await Promise.all([
       db.registration.findUnique({
         where: {
           activityId_userEmail: { activityId: activity.id, userEmail: session.user.email },
@@ -98,6 +100,12 @@ export default async function ActivityDetailPage({
         orderBy: { signedAt: "desc" },
       }),
       getSetting("waiver_validity_days"),
+      db.activityManager.findUnique({
+        where: {
+          activityId_userEmail: { activityId: activity.id, userEmail: session.user.email },
+        },
+        select: { status: true, token: true },
+      }),
     ]);
 
     preflight = {
@@ -106,6 +114,10 @@ export default async function ActivityDetailPage({
       needsWaiver: !waiver,
       waiverValidityDays: waiverValidityDays,
     };
+
+    if (pendingInvitation?.status === "invited" && pendingInvitation.token) {
+      pendingInvitationToken = pendingInvitation.token;
+    }
   }
 
   return (
@@ -261,6 +273,31 @@ export default async function ActivityDetailPage({
             </Card>
           </div>
 
+          {(() => {
+            const isConfirmed =
+              preflight?.registrationStatus === "registration_confirmed" ||
+              preflight?.registrationStatus === "attended";
+            const qrCodeUrl = (activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as
+              | string
+              | undefined;
+            if (!isConfirmed || !qrCodeUrl) return null;
+            return (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>{t("qrCode")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">{t("qrCodeHelp")}</p>
+                  <img
+                    src={qrCodeUrl}
+                    alt={t("qrCode")}
+                    className="max-w-64 rounded-lg"
+                  />
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {isOpen && !isFull ? (
             !session?.user ? (
               <Card>
@@ -277,6 +314,22 @@ export default async function ActivityDetailPage({
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   {t("youAreManaging")}
+                </CardContent>
+              </Card>
+            ) : pendingInvitationToken ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("pendingComanagerInvitation")}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-muted-foreground mb-4">
+                    {t("pendingComanagerInvitationHelp")}
+                  </p>
+                  <Link href={`/invitations/comanager/${pendingInvitationToken}`}>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      {t("respondToInvitation")}
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ) : (

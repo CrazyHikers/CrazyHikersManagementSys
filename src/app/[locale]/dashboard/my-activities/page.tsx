@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { QrCode } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
@@ -74,6 +75,14 @@ export default async function MyActivitiesPage() {
                       <Badge className={statusColors[r.status] || ""}>
                         {statusLabels[r.status] || r.status}
                       </Badge>
+                      {(r.status === "registration_confirmed" || r.status === "attended") &&
+                        !!(r.activity.metadata as Record<string, unknown> | null)?.qrCodeUrl && (
+                          <QrCode
+                            className="h-4 w-4 text-muted-foreground"
+                            aria-label={t("hasQrCode")}
+                            title={t("hasQrCode")}
+                          />
+                        )}
                     </div>
                   </div>
                 </div>
