@@ -77,11 +77,9 @@ export default async function MyActivitiesPage() {
                       </Badge>
                       {(r.status === "registration_confirmed" || r.status === "attended") &&
                         !!(r.activity.metadata as Record<string, unknown> | null)?.qrCodeUrl && (
-                          <QrCode
-                            className="h-4 w-4 text-muted-foreground"
-                            aria-label={t("hasQrCode")}
-                            title={t("hasQrCode")}
-                          />
+                          <span title={t("hasQrCode")} aria-label={t("hasQrCode")}>
+                            <QrCode className="h-4 w-4 text-muted-foreground" />
+                          </span>
                         )}
                     </div>
                   </div>
