@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -33,6 +34,50 @@ async function getActivity(id: string) {
       },
     },
   });
+}
+
+// Emit OG / Twitter Card metadata so shared links render rich previews
+// (WeChat, Slack, iMessage, Twitter, Telegram, etc.). The crawler fetches
+// this page and reads the <meta> tags — no extra work is needed beyond
+// shipping accurate tags here.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const activity = await db.activity.findUnique({
+    where: { id },
+    select: { title: true, description: true, coverImgId: true, date: true },
+  });
+
+  if (!activity) return {};
+
+  // Truncate long descriptions so they fit inside card previews.
+  const rawDescription = activity.description?.trim() ?? "";
+  const description =
+    rawDescription.length > 200
+      ? `${rawDescription.slice(0, 197)}…`
+      : rawDescription || `Join us for ${activity.title} on ${activity.date.toLocaleDateString()}.`;
+
+  const imageUrl = activity.coverImgId ? getPublicUrl(activity.coverImgId) : undefined;
+
+  return {
+    title: activity.title,
+    description,
+    openGraph: {
+      title: activity.title,
+      description,
+      type: "article",
+      ...(imageUrl ? { images: [imageUrl] } : {}),
+    },
+    twitter: {
+      card: imageUrl ? "summary_large_image" : "summary",
+      title: activity.title,
+      description,
+      ...(imageUrl ? { images: [imageUrl] } : {}),
+    },
+  };
 }
 
 export default async function ActivityDetailPage({
