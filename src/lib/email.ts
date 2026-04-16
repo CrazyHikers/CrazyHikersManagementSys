@@ -22,6 +22,13 @@ export async function sendEmail({
   html?: string;
   text?: string;
 }) {
+  // Refuse to dispatch an email with no body. Without this check, a caller
+  // that forgets to pass html/text (or passes an empty string due to a
+  // template bug) would silently deliver a blank email.
+  if (!html?.trim() && !text?.trim()) {
+    throw new Error(`Refusing to send email to ${to} with empty body`);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload: any = { from: FROM_EMAIL, to: [to], subject };
   if (html) payload.html = html;
@@ -38,21 +45,33 @@ export async function sendEmail({
 }
 
 export async function sendMagicLinkEmail(email: string, url: string) {
+  // Fail fast on a missing/malformed URL — otherwise the template would
+  // render an "<a href="">" button and the email would look mostly blank
+  // to the recipient. Surfacing the error lets the caller retry or alert.
+  if (!url || !/^https?:\/\//i.test(url)) {
+    throw new Error(`Refusing to send magic link to ${email}: invalid URL`);
+  }
+
   return sendEmail({
     to: email,
     subject: "Sign in to Crazy Hikers",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h2>Sign in to Crazy Hikers</h2>
-        <p>Click the button below to sign in to your account.</p>
+        <p>Click the button below to sign in to your account. If you're resetting your password, you'll be asked to set a new one after signing in.</p>
         <a href="${url}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
           Sign In
         </a>
+        <p style="color: #666; font-size: 14px; margin-top: 16px;">
+          Or copy and paste this link into your browser:<br/>
+          <a href="${url}" style="color: #16a34a; word-break: break-all;">${url}</a>
+        </p>
         <p style="color: #666; font-size: 14px; margin-top: 16px;">
           This link expires in 24 hours. If you didn't request this, you can safely ignore this email.
         </p>
       </div>
     `,
+    text: `Sign in to Crazy Hikers\n\nClick the link below to sign in. If you're resetting your password, you'll be asked to set a new one after signing in.\n\n${url}\n\nThis link expires in 24 hours. If you didn't request this, you can safely ignore this email.`,
   });
 }
 
