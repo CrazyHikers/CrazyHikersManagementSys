@@ -123,7 +123,10 @@ export default function MyProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
-        setName(data.name);
+        // Legacy users may have `name` set to their email (from the old
+        // auto-create default). Treat that as "no name set" so the field
+        // shows the placeholder and the user is prompted to fill it in.
+        setName(data.name && data.name !== data.email ? data.name : "");
         setTag(data.tag || "");
         if (data.profile) {
           setUserProfile({ ...emptyUserProfile, ...data.profile });
@@ -227,6 +230,7 @@ export default function MyProfilePage() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder={t("namePlaceholder")}
                 required
               />
             </div>

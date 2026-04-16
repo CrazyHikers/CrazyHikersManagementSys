@@ -302,6 +302,7 @@
       "title": "My Profile",
       "profileDetails": "Profile Details",
       "name": "Name",
+      "namePlaceholder": "Your full name",
       "role": "Role",
       "save": "Save",
       "saved": "Profile updated",

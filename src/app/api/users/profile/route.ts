@@ -38,8 +38,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
+  const trimmedName = name.trim();
+  if (trimmedName.toLowerCase() === session.user.email.toLowerCase()) {
+    return NextResponse.json(
+      { error: "Name cannot be the same as your email address" },
+      { status: 400 }
+    );
+  }
+
   // Build update data
-  const updateData: Record<string, unknown> = { name: name.trim() };
+  const updateData: Record<string, unknown> = { name: trimmedName };
 
   // Merge profile fields if provided
   if (profile && typeof profile === "object") {

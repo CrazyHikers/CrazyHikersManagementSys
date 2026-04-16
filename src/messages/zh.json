@@ -302,6 +302,7 @@
       "title": "个人资料",
       "profileDetails": "个人信息",
       "name": "姓名",
+      "namePlaceholder": "请输入你的姓名",
       "role": "角色",
       "save": "保存",
       "saved": "资料已更新",

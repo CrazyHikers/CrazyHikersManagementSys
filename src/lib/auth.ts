@@ -24,8 +24,12 @@ const userAdapter: Adapter = {
         emailVerified: null,
       };
     }
+    // Leave `name` empty on auto-create so the user must enter a real name
+    // in their profile before it becomes visible anywhere. Using the email
+    // as a placeholder caused users to miss the field entirely and end up
+    // with their email address shown as their display name.
     const created = await db.user.create({
-      data: { email: user.email, name: user.email, role: "member" },
+      data: { email: user.email, name: "", role: "member" },
     });
     return {
       id: created.email,
