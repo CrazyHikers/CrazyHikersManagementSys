@@ -100,27 +100,31 @@ export async function PATCH(
         }
       }
 
-      await db.$transaction([
-        db.registration.update({
+      // Block if the member is already confirmed for another activity on the same day
+      if (activity) {
+        const sameDayConfirmed = await db.registration.findFirst({
           where: {
-            activityId_userEmail: { activityId, userEmail },
+            userEmail,
+            status: "registration_confirmed",
+            activityId: { not: activityId },
+            activity: { date: activity.date },
           },
-          data: { status: "registration_confirmed", confirmedAt: new Date() },
-        }),
-        // Remove same-day pending registrations
-        ...(activity
-          ? [
-              db.registration.deleteMany({
-                where: {
-                  userEmail,
-                  status: "registered",
-                  activityId: { not: activityId },
-                  activity: { date: activity.date },
-                },
-              }),
-            ]
-          : []),
-      ]);
+          include: { activity: { select: { title: true } } },
+        });
+        if (sameDayConfirmed) {
+          return NextResponse.json(
+            { error: `This member is already confirmed for "${sameDayConfirmed.activity.title}" on the same day` },
+            { status: 409 }
+          );
+        }
+      }
+
+      await db.registration.update({
+        where: {
+          activityId_userEmail: { activityId, userEmail },
+        },
+        data: { status: "registration_confirmed", confirmedAt: new Date() },
+      });
     } else {
       await db.registration.update({
         where: {

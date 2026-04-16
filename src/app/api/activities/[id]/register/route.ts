@@ -125,16 +125,18 @@ export async function POST(
       return NextResponse.json({ message: "Already registered" });
     }
 
-    // Check for same-day conflict (can't register for two activities on the same date)
+    // Block registration only if the user is already confirmed for another
+    // activity on the same day. Pending-vs-pending conflicts are allowed —
+    // managers decide which one to confirm.
     const activityDate = new Date(activity.date);
     const dayStart = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
 
-    const sameDayRegistration = await db.registration.findFirst({
+    const sameDayConfirmed = await db.registration.findFirst({
       where: {
         userEmail: user.email,
-        status: { in: ["registered", "registration_confirmed"] },
+        status: "registration_confirmed",
         activity: {
           date: { gte: dayStart, lt: dayEnd },
           id: { not: activityId },
@@ -142,9 +144,9 @@ export async function POST(
       },
       include: { activity: { select: { title: true } } },
     });
-    if (sameDayRegistration) {
+    if (sameDayConfirmed) {
       return NextResponse.json(
-        { error: `You are already registered for "${sameDayRegistration.activity.title}" on the same day.` },
+        { error: `You are already confirmed for "${sameDayConfirmed.activity.title}" on the same day.` },
         { status: 400 }
       );
     }
