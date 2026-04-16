@@ -48,11 +48,20 @@ async function getOpenActivities() {
     submissionCounts.map((c) => [c.activityId, c._count._all])
   );
 
-  // Filter out activities at max registration
+  // Filter out activities at max registration, and hide intern-led
+  // activities until at least one non-intern manager has accepted.
   return activities
     .filter((a) => {
       if (!a.maximumRegistration || a.maximumRegistration === 0) return true;
       return (submissionMap.get(a.id) ?? 0) < a.maximumRegistration;
+    })
+    .filter((a) => {
+      const creator = a.activityManagers.find((am) => am.role === "manager");
+      if (!creator?.user.managerProfile?.intern) return true;
+      // Intern-led: require at least one confirmed non-intern co-manager
+      return a.activityManagers.some(
+        (am) => am.role === "comanager" && !am.user.managerProfile?.intern
+      );
     })
     .map((a) => ({ ...a, submissionCount: submissionMap.get(a.id) ?? 0 }));
 }
