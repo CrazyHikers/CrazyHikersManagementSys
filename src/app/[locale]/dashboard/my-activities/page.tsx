@@ -27,8 +27,17 @@ export default async function MyActivitiesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const email = (session!.user as any).email as string;
 
+  // Only surface registrations that the manager has acted on. Pending
+  // `registered` rows are intentionally excluded: if a manager removes an
+  // unconfirmed registration, the row is deleted and the activity would
+  // silently vanish from this panel, which is confusing. Members can still
+  // confirm their pending registration was received via the home page,
+  // which shows a "Registered" badge for any active registration.
   const registrations = await db.registration.findMany({
-    where: { userEmail: email },
+    where: {
+      userEmail: email,
+      status: { in: ["registration_confirmed", "attended", "absent"] },
+    },
     include: { activity: true },
     orderBy: { activity: { date: "desc" } },
   });
