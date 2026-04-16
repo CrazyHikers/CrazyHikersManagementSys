@@ -50,7 +50,9 @@
     "activityDate": "Activity date",
     "spotsLeft": "{count} spots left",
     "spotsFull": "Registration full",
-    "managers": "Led by"
+    "managers": "Led by",
+    "placesTaken": "{current}/{max} places taken",
+    "formsSubmitted": "{current}/{max} registration forms submitted"
   },
   "activity": {
     "detail": "Activity Details",

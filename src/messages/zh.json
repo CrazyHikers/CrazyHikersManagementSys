@@ -50,7 +50,9 @@
     "activityDate": "活动日期",
     "spotsLeft": "剩余 {count} 个名额",
     "spotsFull": "名额已满",
-    "managers": "领队"
+    "managers": "领队",
+    "placesTaken": "已确认 {current}/{max} 人",
+    "formsSubmitted": "已提交 {current}/{max} 份报名表"
   },
   "activity": {
     "detail": "活动详情",

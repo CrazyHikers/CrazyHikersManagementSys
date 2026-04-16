@@ -12,6 +12,8 @@ type ActivityData = {
   deadline: string;
   capacity: number;
   currentRegistrations: number;
+  maximumRegistration: number | null;
+  submissionCount: number;
   managerNames: string;
 };
 

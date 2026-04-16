@@ -19,6 +19,8 @@ type ActivityCardProps = {
   deadline: string;
   capacity: number;
   currentRegistrations: number;
+  maximumRegistration: number | null;
+  submissionCount: number;
   managerNames: string;
   registered?: boolean;
   managing?: boolean;
@@ -34,6 +36,8 @@ export function ActivityCard({
   deadline,
   capacity,
   currentRegistrations,
+  maximumRegistration,
+  submissionCount,
   managerNames,
   registered,
   managing,
@@ -41,6 +45,7 @@ export function ActivityCard({
 }: ActivityCardProps) {
   const t = useTranslations("home");
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
+  const showSubmissions = !!maximumRegistration && maximumRegistration > 0;
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -83,6 +88,16 @@ export function ActivityCard({
               <div>
                 {t("managers")}: {managerNames}
               </div>
+              {capacity > 0 && (
+                <div>
+                  {t("placesTaken", { current: currentRegistrations, max: capacity })}
+                </div>
+              )}
+              {showSubmissions && (
+                <div>
+                  {t("formsSubmitted", { current: submissionCount, max: maximumRegistration! })}
+                </div>
+              )}
             </div>
             <Link href={`/activities/${id}`}>
               {managing ? (

@@ -32,11 +32,29 @@ async function getOpenActivities() {
     orderBy: { date: "asc" },
   });
 
-  // Filter out activities at max registration
-  return activities.filter((a) => {
-    if (!a.maximumRegistration || a.maximumRegistration === 0) return true;
-    return a._count.registrations < a.maximumRegistration;
+  // Second count: "forms submitted" = registered + registration_confirmed.
+  // This matches the cap the registration API enforces (see
+  // /api/activities/[id]/register/route.ts) and is a separate count from
+  // the existing `_count.registrations` which tracks confirmed spots only.
+  const submissionCounts = await db.registration.groupBy({
+    by: ["activityId"],
+    where: {
+      activityId: { in: activities.map((a) => a.id) },
+      status: { in: ["registered", "registration_confirmed"] },
+    },
+    _count: { _all: true },
   });
+  const submissionMap = new Map(
+    submissionCounts.map((c) => [c.activityId, c._count._all])
+  );
+
+  // Filter out activities at max registration
+  return activities
+    .filter((a) => {
+      if (!a.maximumRegistration || a.maximumRegistration === 0) return true;
+      return (submissionMap.get(a.id) ?? 0) < a.maximumRegistration;
+    })
+    .map((a) => ({ ...a, submissionCount: submissionMap.get(a.id) ?? 0 }));
 }
 
 export default async function HomePage() {
@@ -67,6 +85,8 @@ export default async function HomePage() {
       deadline: activity.deadline.toISOString(),
       capacity: activity.capacity,
       currentRegistrations: activity._count.registrations,
+      maximumRegistration: activity.maximumRegistration,
+      submissionCount: activity.submissionCount,
       managerNames: allNames,
     };
   });
