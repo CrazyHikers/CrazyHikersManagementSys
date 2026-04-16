@@ -200,7 +200,10 @@
       "technicalDifficulty": "技术难度",
       "enduranceDifficulty": "体力需求",
       "hikingNotes": "注意事项",
-      "hikingDetails": "徒步详情"
+      "hikingDetails": "徒步详情",
+      "waiverInfo": "免责声明",
+      "waiverSignedName": "签名",
+      "noWaiver": "无有效免责声明"
     },
     "members": {
       "title": "成员管理",

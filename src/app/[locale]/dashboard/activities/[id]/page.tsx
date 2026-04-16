@@ -41,9 +41,10 @@ export default async function ActivityDetailPage({
                 orderBy: { registeredAt: "desc" },
               },
               waivers: {
-                where: { status: "approved" },
+                where: { status: { in: ["approved", "expiring"] } },
                 orderBy: { signedAt: "desc" },
                 take: 1,
+                select: { status: true, signedName: true },
               },
               flags: {
                 where: { issuedAt: { gt: unexpiredCutoff(flagSettings) }, invalidated: false },
@@ -92,6 +93,7 @@ export default async function ActivityDetailPage({
         userProfile: r.user.profile ? JSON.parse(JSON.stringify(r.user.profile)) : null,
         totalAttended: r.user.registrations.filter((reg) => reg.status === "attended").length,
         hasValidWaiver: r.user.waivers.length > 0,
+        waiverSignedName: r.user.waivers[0]?.signedName || null,
         yellowFlags: yellowCount,
         redFlags: redCount,
         flagHistory: activeFlags.map((f) => ({

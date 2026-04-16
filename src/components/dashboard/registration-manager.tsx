@@ -52,6 +52,7 @@ export type Registration = {
   userProfile?: Record<string, unknown> | null;
   totalAttended: number;
   hasValidWaiver: boolean;
+  waiverSignedName: string | null;
   yellowFlags: number;
   redFlags: number;
   flagHistory: {
@@ -749,6 +750,15 @@ export function RegistrationManager({
                             })()}
                           </div>
                         )}
+                        {/* Waiver signed name */}
+                        <div className="p-3 bg-purple-50 rounded text-sm">
+                          <div className="font-medium text-purple-800 text-xs mb-2">{t("waiverInfo")}</div>
+                          {reg.waiverSignedName ? (
+                            <div><span className="text-muted-foreground">{t("waiverSignedName")}: </span>{reg.waiverSignedName}</div>
+                          ) : (
+                            <div className="text-red-600">{t("noWaiver")}</div>
+                          )}
+                        </div>
                         {/* Per-registration form data */}
                         {reg.formData && (
                           <div className="p-3 bg-gray-50 rounded text-sm space-y-1">

@@ -200,7 +200,10 @@
       "technicalDifficulty": "Technical Difficulty",
       "enduranceDifficulty": "Endurance Difficulty",
       "hikingNotes": "Notes",
-      "hikingDetails": "Hiking Details"
+      "hikingDetails": "Hiking Details",
+      "waiverInfo": "Waiver",
+      "waiverSignedName": "Signed name",
+      "noWaiver": "No valid waiver"
     },
     "members": {
       "title": "Members",
