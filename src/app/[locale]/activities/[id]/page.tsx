@@ -336,7 +336,7 @@ export default async function ActivityDetailPage({
                   <img
                     src={qrCodeUrl}
                     alt={t("qrCode")}
-                    className="max-w-64 rounded-lg"
+                    className="max-w-64 mx-auto rounded-lg"
                   />
                 </CardContent>
               </Card>
