@@ -24,7 +24,8 @@ export function ShareButton({
 
     if (navigator.share) {
       try {
-        await navigator.share({ url, title, text: t("shareText") });
+        const shareText = title ? `${title}\n${t("shareText")}` : t("shareText");
+        await navigator.share({ url, title, text: shareText });
         return;
       } catch {
         // User cancelled or share failed — fall through to clipboard
