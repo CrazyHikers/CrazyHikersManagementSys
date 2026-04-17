@@ -641,17 +641,14 @@ export function RegistrationManager({
       {registrations.map((reg) => (
         <Card
           key={reg.userEmail}
-          className={`${saving === reg.userEmail ? "opacity-60" : ""}`}
+          className={`${saving === reg.userEmail ? "opacity-60" : ""} ${canViewMemberDetail ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+          onClick={canViewMemberDetail ? () => router.push(`/dashboard/members/${reg.userUid}`) : undefined}
         >
           <CardContent className="pt-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {canViewMemberDetail ? (
-                    <Link href={`/dashboard/members/${reg.userUid}`} className="font-medium text-green-700 hover:underline">{reg.userName}</Link>
-                  ) : (
-                    <span className="font-medium">{reg.userName}</span>
-                  )}
+                  <span className="font-medium">{reg.userName}</span>
                   <Badge className={statusColors[reg.status]}>
                     {statusLabels[reg.status]}
                   </Badge>
@@ -701,7 +698,7 @@ export function RegistrationManager({
                   </div>
                 )}
                 {(reg.formData || reg.userProfile || reg.flagHistory.length > 0 || reg.activityHistory.length > 0) && (
-                  <div className="mt-2">
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="text-xs text-green-700 hover:underline"
@@ -847,7 +844,7 @@ export function RegistrationManager({
               </div>
 
               {isEditable && (
-                <div className="flex flex-col gap-2 items-end flex-shrink-0">
+                <div className="flex flex-col gap-2 items-end flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   {/* Status controls */}
                   {reg.status === "registered" ? (
                     <div className="flex flex-col items-end gap-1">

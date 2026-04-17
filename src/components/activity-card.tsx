@@ -48,79 +48,79 @@ export function ActivityCard({
   const showSubmissions = !!maximumRegistration && maximumRegistration > 0;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="flex flex-col sm:flex-row">
-        {coverImgUrl && (
-          <div className="sm:w-48 h-40 sm:h-auto flex-shrink-0">
-            <img
-              src={coverImgUrl}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-        <div className="flex-1">
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-lg leading-tight">{title}</CardTitle>
-              {spotsLeft !== null && (
-                <Badge variant={spotsLeft > 0 ? "secondary" : "destructive"}>
-                  {spotsLeft > 0
-                    ? t("spotsLeft", { count: spotsLeft })
-                    : t("spotsFull")}
-                </Badge>
-              )}
+    <Link href={`/activities/${id}`} className="block">
+      <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+        <div className="flex flex-col sm:flex-row">
+          {coverImgUrl && (
+            <div className="sm:w-48 h-40 sm:h-auto flex-shrink-0">
+              <img
+                src={coverImgUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+              />
             </div>
-            <CardDescription className="line-clamp-2">
-              {description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-col gap-1 text-sm text-muted-foreground mb-3">
-              <div>
-                {t("activityDate")}:{" "}
-                {new Date(date).toLocaleDateString()}
+          )}
+          <div className="flex-1">
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between gap-2">
+                <CardTitle className="text-lg leading-tight">{title}</CardTitle>
+                {spotsLeft !== null && (
+                  <Badge variant={spotsLeft > 0 ? "secondary" : "destructive"}>
+                    {spotsLeft > 0
+                      ? t("spotsLeft", { count: spotsLeft })
+                      : t("spotsFull")}
+                  </Badge>
+                )}
               </div>
-              <div>
-                {t("deadline")}:{" "}
-                {new Date(deadline).toLocaleDateString()}
-              </div>
-              <div>
-                {t("managers")}: {managerNames}
-              </div>
-              {capacity > 0 && (
+              <CardDescription className="line-clamp-2">
+                {description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground mb-3">
                 <div>
-                  {t("placesTaken", { current: currentRegistrations, max: capacity })}
+                  {t("activityDate")}:{" "}
+                  {new Date(date).toLocaleDateString()}
                 </div>
-              )}
-              {showSubmissions && (
                 <div>
-                  {t("formsSubmitted", { current: submissionCount, max: maximumRegistration! })}
+                  {t("deadline")}:{" "}
+                  {new Date(deadline).toLocaleDateString()}
                 </div>
-              )}
-            </div>
-            <Link href={`/activities/${id}`}>
+                <div>
+                  {t("managers")}: {managerNames}
+                </div>
+                {capacity > 0 && (
+                  <div>
+                    {t("placesTaken", { current: currentRegistrations, max: capacity })}
+                  </div>
+                )}
+                {showSubmissions && (
+                  <div>
+                    {t("formsSubmitted", { current: submissionCount, max: maximumRegistration! })}
+                  </div>
+                )}
+              </div>
               {managing ? (
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" tabIndex={-1}>
                   {t("managing")}
                 </Button>
               ) : pendingInvitation ? (
-                <Button size="sm" variant="outline" className="text-amber-700 border-amber-600">
+                <Button size="sm" variant="outline" className="text-amber-700 border-amber-600" tabIndex={-1}>
                   {t("pendingInvitation")}
                 </Button>
               ) : registered ? (
-                <Button size="sm" variant="outline" className="text-green-700 border-green-600">
+                <Button size="sm" variant="outline" className="text-green-700 border-green-600" tabIndex={-1}>
                   {t("registered")}
                 </Button>
               ) : (
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <Button size="sm" className="bg-green-600 hover:bg-green-700" tabIndex={-1}>
                   {t("register")}
                 </Button>
               )}
-            </Link>
-          </CardContent>
+            </CardContent>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }

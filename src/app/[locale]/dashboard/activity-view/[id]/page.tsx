@@ -246,20 +246,17 @@ export default async function ActivityViewPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activity.registrations.map((r) => (
-                    <TableRow key={r.userEmail}>
-                      <TableCell>
-                        <Link href={`/dashboard/members/${r.user.uid}`} className="font-medium hover:underline text-green-700">
-                          {r.user.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{r.user.email}</TableCell>
-                      <TableCell>
-                        <Badge className={regStatusColors[r.status] || ""}>{r.status}</Badge>
-                      </TableCell>
-                      <TableCell>{r.registeredAt.toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
+                  {activity.registrations.map((r) => {
+                    const href = `/dashboard/members/${r.user.uid}`;
+                    return (
+                      <TableRow key={r.userEmail} className="cursor-pointer hover:bg-gray-50">
+                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{r.user.name}</Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{r.user.email}</Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2"><Badge className={regStatusColors[r.status] || ""}>{r.status}</Badge></Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{r.registeredAt.toLocaleDateString()}</Link></TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

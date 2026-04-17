@@ -223,30 +223,23 @@ export default function ManagersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {managers.map((m) => (
-              <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
-                <TableCell>
-                  <Link href={`/dashboard/managers/${m.uid}`} className="font-medium hover:underline">
-                    {m.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{m.email}</TableCell>
-                <TableCell>{m.managerProfile?.tag || "—"}</TableCell>
-                <TableCell>
-                  <Badge
-                    className={
-                      m.managerProfile?.intern
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                    }
-                  >
-                    {m.managerProfile?.intern ? t("intern") : t("qualified")}
-                  </Badge>
-                </TableCell>
-                <TableCell>{m.managerProfile?.kpi ?? "—"}</TableCell>
-                <TableCell>—</TableCell>
-              </TableRow>
-            ))}
+            {managers.map((m) => {
+              const href = `/dashboard/managers/${m.uid}`;
+              return (
+                <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{m.name}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.email}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.managerProfile?.tag || "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">
+                    <Badge className={m.managerProfile?.intern ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
+                      {m.managerProfile?.intern ? t("intern") : t("qualified")}
+                    </Badge>
+                  </Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.managerProfile?.kpi ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">—</Link></TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

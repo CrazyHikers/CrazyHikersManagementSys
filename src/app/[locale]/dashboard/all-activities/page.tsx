@@ -97,27 +97,19 @@ export default async function AllActivitiesPage() {
               const mainManager = a.activityManagers.find((am) => am.role === "manager");
               const comanagers = a.activityManagers.filter((am) => am.role === "comanager");
               return (
-                <TableRow key={a.id}>
-                  <TableCell>
-                    <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
+                <TableRow key={a.id} className="cursor-pointer hover:bg-gray-50">
+                  {(() => {
+                    const href = `/dashboard/activity-view/${a.id}`;
                     const ds = getDisplayStatus(a);
-                    return <Badge className={statusColors[ds]}>{ds}</Badge>;
+                    return (<>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{a.title}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2"><Badge className={statusColors[ds]}>{ds}</Badge></Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{a.date.toLocaleDateString()}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{mainManager?.user.name || "—"}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{comanagers.length > 0 ? comanagers.map((c) => c.user.name).join(", ") : "—"}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{a._count.registrations}{a.maximumRegistration ? ` / ${a.maximumRegistration}` : ""}</Link></TableCell>
+                    </>);
                   })()}
-                  </TableCell>
-                  <TableCell>{a.date.toLocaleDateString()}</TableCell>
-                  <TableCell>{mainManager?.user.name || "—"}</TableCell>
-                  <TableCell>
-                    {comanagers.length > 0
-                      ? comanagers.map((c) => c.user.name).join(", ")
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {a._count.registrations}
-                    {a.maximumRegistration ? ` / ${a.maximumRegistration}` : ""}
-                  </TableCell>
                 </TableRow>
               );
             })}

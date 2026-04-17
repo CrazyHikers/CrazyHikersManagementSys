@@ -106,42 +106,39 @@ export default async function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((m) => (
-              <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
-                <TableCell>
-                  <Link href={`/dashboard/members/${m.uid}`} className="font-medium hover:underline">
-                    {m.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{m.email}</TableCell>
-                <TableCell>
-                  <Badge className={
-                    m.role === "dev" ? "bg-red-100 text-red-800" :
-                    m.role === "admin" ? "bg-purple-100 text-purple-800" :
-                    m.role === "manager" ? "bg-blue-100 text-blue-800" :
-                    "bg-gray-100 text-gray-800"
-                  }>
-                    {m.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>{m._count.registrations}</TableCell>
-                <TableCell>
-                  {m.waivers.length > 0 ? (
+            {members.map((m) => {
+              const href = `/dashboard/members/${m.uid}`;
+              const activeBan = m.flags.find((f) => isBanActive(f, flagSettings));
+              return (
+                <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{m.name}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.email}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">
                     <Badge className={
-                      m.waivers[0].status === "approved" ? "bg-green-100 text-green-800" :
-                      m.waivers[0].status === "expiring" ? "bg-orange-100 text-orange-800" :
+                      m.role === "dev" ? "bg-red-100 text-red-800" :
+                      m.role === "admin" ? "bg-purple-100 text-purple-800" :
+                      m.role === "manager" ? "bg-blue-100 text-blue-800" :
                       "bg-gray-100 text-gray-800"
                     }>
-                      {m.waivers[0].status}
+                      {m.role}
                     </Badge>
-                  ) : (
-                    <Badge variant="destructive">None</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {(() => {
-                    const activeBan = m.flags.find((f) => isBanActive(f, flagSettings));
-                    return activeBan ? (
+                  </Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m._count.registrations}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">
+                    {m.waivers.length > 0 ? (
+                      <Badge className={
+                        m.waivers[0].status === "approved" ? "bg-green-100 text-green-800" :
+                        m.waivers[0].status === "expiring" ? "bg-orange-100 text-orange-800" :
+                        "bg-gray-100 text-gray-800"
+                      }>
+                        {m.waivers[0].status}
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">None</Badge>
+                    )}
+                  </Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">
+                    {activeBan ? (
                       <Badge className={
                         activeBan.flagType === "red"
                           ? "bg-red-100 text-red-800"
@@ -153,11 +150,11 @@ export default async function MembersPage() {
                       <Badge className="bg-green-100 text-green-800">
                         Active
                       </Badge>
-                    );
-                  })()}
-                </TableCell>
-              </TableRow>
-            ))}
+                    )}
+                  </Link></TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
