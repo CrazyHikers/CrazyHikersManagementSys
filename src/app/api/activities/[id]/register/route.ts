@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
+import { findSameDayCommitment } from "@/lib/activity";
 
 export async function POST(
   request: NextRequest,
@@ -122,30 +123,16 @@ export async function POST(
       return NextResponse.json({ message: "Already registered" });
     }
 
-    // Block registration only if the user is already confirmed for another
-    // activity on the same day. Pending-vs-pending conflicts are allowed —
-    // managers decide which one to confirm.
-    const activityDate = new Date(activity.date);
-    const dayStart = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-
-    const sameDayConfirmed = await db.registration.findFirst({
-      where: {
-        userEmail: user.email,
-        status: "registration_confirmed",
-        activity: {
-          date: { gte: dayStart, lt: dayEnd },
-          id: { not: activityId },
-        },
-      },
-      include: { activity: { select: { title: true } } },
-    });
-    if (sameDayConfirmed) {
-      return NextResponse.json(
-        { error: `You are already confirmed for "${sameDayConfirmed.activity.title}" on the same day.` },
-        { status: 400 }
-      );
+    // Block registration only if the user already has a confirmed commitment
+    // (as a member or as a confirmed manager/comanager) for another activity
+    // on the same day. Pending-vs-pending conflicts are allowed — managers
+    // decide which one to confirm.
+    const conflict = await findSameDayCommitment(user.email, new Date(activity.date), activityId);
+    if (conflict) {
+      const label = conflict.role === "manager"
+        ? `You are already managing "${conflict.title}" on the same day.`
+        : `You are already confirmed for "${conflict.title}" on the same day.`;
+      return NextResponse.json({ error: label }, { status: 400 });
     }
 
     // Create registration — shadow ban is checked at query time

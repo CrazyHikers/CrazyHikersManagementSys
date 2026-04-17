@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { findSameDayCommitment } from "@/lib/activity";
 
 export async function GET(
   _req: NextRequest,
@@ -85,6 +86,19 @@ export async function POST(
       { error: "Activity has already ended" },
       { status: 400 }
     );
+  }
+
+  // Block accept when the invitee already has a confirmed commitment
+  // (member registration or another confirmed management role) on the
+  // same day. Decline is always allowed.
+  if (accepted) {
+    const conflict = await findSameDayCommitment(am.userEmail, new Date(am.activity.date), am.activityId);
+    if (conflict) {
+      const label = conflict.role === "manager"
+        ? `You are already managing "${conflict.title}" on the same day.`
+        : `You are already confirmed for "${conflict.title}" on the same day.`;
+      return NextResponse.json({ error: label }, { status: 400 });
+    }
   }
 
   // On accept: auto-withdraw any existing member registration for this

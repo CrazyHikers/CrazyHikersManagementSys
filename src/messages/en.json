@@ -47,6 +47,8 @@
     "registered": "Registered",
     "managing": "Managing",
     "pendingInvitation": "Pending Invitation",
+    "sameDayConfirmed": "Conflict: already confirmed for \"{title}\"",
+    "sameDayManaging": "Conflict: already managing \"{title}\"",
     "deadline": "Registration deadline",
     "activityDate": "Activity date",
     "spotsLeft": "{count} spots left",

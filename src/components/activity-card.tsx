@@ -25,6 +25,7 @@ type ActivityCardProps = {
   registered?: boolean;
   managing?: boolean;
   pendingInvitation?: boolean;
+  sameDayConflict?: { activityId: string; title: string; role: "member" | "manager" };
 };
 
 export function ActivityCard({
@@ -42,10 +43,14 @@ export function ActivityCard({
   registered,
   managing,
   pendingInvitation,
+  sameDayConflict,
 }: ActivityCardProps) {
   const t = useTranslations("home");
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
   const showSubmissions = !!maximumRegistration && maximumRegistration > 0;
+  // Only show the conflict state when the user isn't already involved with
+  // this activity in another way (managing / invited / registered).
+  const showConflict = !!sameDayConflict && !managing && !pendingInvitation && !registered;
 
   return (
     <Link href={`/activities/${id}`} className="block">
@@ -111,6 +116,12 @@ export function ActivityCard({
               ) : registered ? (
                 <Button size="sm" variant="outline" className="text-green-700 border-green-600" tabIndex={-1}>
                   {t("registered")}
+                </Button>
+              ) : showConflict ? (
+                <Button size="sm" variant="outline" className="text-red-700 border-red-600" tabIndex={-1}>
+                  {sameDayConflict!.role === "manager"
+                    ? t("sameDayManaging", { title: sameDayConflict!.title })
+                    : t("sameDayConfirmed", { title: sameDayConflict!.title })}
                 </Button>
               ) : (
                 <Button size="sm" className="bg-green-600 hover:bg-green-700" tabIndex={-1}>

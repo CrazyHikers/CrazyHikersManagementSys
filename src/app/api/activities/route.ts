@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
+import { findSameDayCommitment } from "@/lib/activity";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -95,6 +96,18 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // Block creation if the creator already has a confirmed commitment
+    // (member registration or another management role) on the same day.
+    // The creator is auto-confirmed as manager below, so this would
+    // otherwise bypass the same-day rule enforced elsewhere.
+    const creatorConflict = await findSameDayCommitment(userEmail, activityDate);
+    if (creatorConflict) {
+      const label = creatorConflict.role === "manager"
+        ? `You are already managing "${creatorConflict.title}" on the same day.`
+        : `You are already confirmed for "${creatorConflict.title}" on the same day.`;
+      return NextResponse.json({ error: label }, { status: 400 });
     }
 
     // Generate tokens for comanager invitations

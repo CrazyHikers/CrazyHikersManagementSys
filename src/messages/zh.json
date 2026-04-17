@@ -47,6 +47,8 @@
     "registered": "已报名",
     "managing": "我带的队",
     "pendingInvitation": "待回应邀请",
+    "sameDayConfirmed": "冲突：已确认参加「{title}」",
+    "sameDayManaging": "冲突：已带领「{title}」",
     "deadline": "报名截止时间",
     "activityDate": "活动日期",
     "spotsLeft": "剩余 {count} 个名额",

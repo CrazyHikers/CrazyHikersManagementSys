@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { findSameDayCommitment } from "@/lib/activity";
 
 export async function GET(
   _req: NextRequest,
@@ -100,22 +101,16 @@ export async function PATCH(
         }
       }
 
-      // Block if the member is already confirmed for another activity on the same day
+      // Block if the member already has a confirmed commitment (as member
+      // or as a confirmed manager/comanager) for another activity on the
+      // same day.
       if (activity) {
-        const sameDayConfirmed = await db.registration.findFirst({
-          where: {
-            userEmail,
-            status: "registration_confirmed",
-            activityId: { not: activityId },
-            activity: { date: activity.date },
-          },
-          include: { activity: { select: { title: true } } },
-        });
-        if (sameDayConfirmed) {
-          return NextResponse.json(
-            { error: `This member is already confirmed for "${sameDayConfirmed.activity.title}" on the same day` },
-            { status: 409 }
-          );
+        const conflict = await findSameDayCommitment(userEmail, new Date(activity.date), activityId);
+        if (conflict) {
+          const label = conflict.role === "manager"
+            ? `This member is already managing "${conflict.title}" on the same day`
+            : `This member is already confirmed for "${conflict.title}" on the same day`;
+          return NextResponse.json({ error: label }, { status: 409 });
         }
       }
 
