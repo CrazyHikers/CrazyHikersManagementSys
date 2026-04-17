@@ -4,6 +4,7 @@ import { getPublicUrl } from "@/lib/r2";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ActivityList } from "@/components/activity-list";
+import { computeEffectiveSubmissionCounts } from "@/lib/activity";
 
 export const revalidate = 300; // ISR: regenerate every 5 minutes
 
@@ -32,20 +33,12 @@ async function getOpenActivities() {
     orderBy: { date: "asc" },
   });
 
-  // Second count: "forms submitted" = registered + registration_confirmed.
-  // This matches the cap the registration API enforces (see
-  // /api/activities/[id]/register/route.ts) and is a separate count from
-  // the existing `_count.registrations` which tracks confirmed spots only.
-  const submissionCounts = await db.registration.groupBy({
-    by: ["activityId"],
-    where: {
-      activityId: { in: activities.map((a) => a.id) },
-      status: { in: ["registered", "registration_confirmed"] },
-    },
-    _count: { _all: true },
-  });
-  const submissionMap = new Map(
-    submissionCounts.map((c) => [c.activityId, c._count._all])
+  // Second count: "effective forms submitted" = registered + confirmed,
+  // excluding phantom pending registrations from users already confirmed
+  // elsewhere on the same day. This matches the cap enforced by the
+  // registration API (see /api/activities/[id]/register/route.ts).
+  const submissionMap = await computeEffectiveSubmissionCounts(
+    activities.map((a) => ({ id: a.id, date: a.date }))
   );
 
   // Filter out activities at max registration, and hide intern-led

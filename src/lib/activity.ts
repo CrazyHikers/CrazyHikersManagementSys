@@ -64,3 +64,112 @@ export async function findSameDayCommitment(
   if (mgmt) return { activityId: mgmt.activity.id, title: mgmt.activity.title, role: "manager" };
   return null;
 }
+
+/**
+ * Returns the effective submission count for one or more activities,
+ * excluding "phantom" pending registrations — rows where the user already
+ * has a confirmed commitment (member or manager) on the same day for a
+ * different activity. Phantom rows can never be confirmed, so they should
+ * not occupy a slot against `maximumRegistration`.
+ *
+ * Confirmed rows always count.
+ *
+ * Returns a Map of activityId → effective submission count.
+ */
+export async function computeEffectiveSubmissionCounts(
+  activities: { id: string; date: Date }[]
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (activities.length === 0) return result;
+
+  const activityIds = activities.map((a) => a.id);
+  const activityDateById = new Map(activities.map((a) => [a.id, a.date]));
+
+  // Fetch all pending + confirmed registrations for these activities
+  const regs = await db.registration.findMany({
+    where: {
+      activityId: { in: activityIds },
+      status: { in: ["registered", "registration_confirmed"] },
+    },
+    select: { activityId: true, userEmail: true, status: true },
+  });
+
+  // Initialize counts
+  for (const id of activityIds) result.set(id, 0);
+
+  // For pending registrations, check whether the user has a same-day
+  // confirmed commitment on another activity. We batch all the pending
+  // rows' users and collect their confirmed commitments across the
+  // relevant date window in two queries.
+  const pendingRegs = regs.filter((r) => r.status === "registered");
+  const pendingUserEmails = Array.from(new Set(pendingRegs.map((r) => r.userEmail)));
+
+  // Build day windows touched by these activities
+  const dayWindows = Array.from(
+    new Set(
+      activities.map((a) => {
+        const d = new Date(a.date);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      })
+    )
+  ).map((ms) => {
+    const start = new Date(ms);
+    const end = new Date(ms);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  });
+
+  let confirmedCommitments: { userEmail: string; activityId: string; date: Date }[] = [];
+  if (pendingUserEmails.length > 0 && dayWindows.length > 0) {
+    const dateOrFilter = dayWindows.map((w) => ({ date: { gte: w.start, lt: w.end } }));
+    const [mRows, gRows] = await Promise.all([
+      db.registration.findMany({
+        where: {
+          userEmail: { in: pendingUserEmails },
+          status: "registration_confirmed",
+          activity: { status: { not: "cancelled" }, OR: dateOrFilter },
+        },
+        select: { userEmail: true, activityId: true, activity: { select: { date: true } } },
+      }),
+      db.activityManager.findMany({
+        where: {
+          userEmail: { in: pendingUserEmails },
+          status: "confirmed",
+          activity: { status: { not: "cancelled" }, OR: dateOrFilter },
+        },
+        select: { userEmail: true, activityId: true, activity: { select: { date: true } } },
+      }),
+    ]);
+    confirmedCommitments = [
+      ...mRows.map((r) => ({ userEmail: r.userEmail, activityId: r.activityId, date: r.activity.date })),
+      ...gRows.map((r) => ({ userEmail: r.userEmail, activityId: r.activityId, date: r.activity.date })),
+    ];
+  }
+
+  // Index commitments by "userEmail|YYYY-MM-DD" → Set<activityId>
+  const commitmentIndex = new Map<string, Set<string>>();
+  for (const c of confirmedCommitments) {
+    const d = new Date(c.date);
+    const key = `${c.userEmail}|${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!commitmentIndex.has(key)) commitmentIndex.set(key, new Set());
+    commitmentIndex.get(key)!.add(c.activityId);
+  }
+
+  for (const r of regs) {
+    if (r.status === "registration_confirmed") {
+      result.set(r.activityId, (result.get(r.activityId) ?? 0) + 1);
+      continue;
+    }
+    // Pending: exclude if user has a confirmed commitment on the same day elsewhere
+    const actDate = activityDateById.get(r.activityId);
+    if (!actDate) continue;
+    const key = `${r.userEmail}|${actDate.getFullYear()}-${actDate.getMonth()}-${actDate.getDate()}`;
+    const commits = commitmentIndex.get(key);
+    const isPhantom = commits && Array.from(commits).some((cid) => cid !== r.activityId);
+    if (!isPhantom) {
+      result.set(r.activityId, (result.get(r.activityId) ?? 0) + 1);
+    }
+  }
+
+  return result;
+}

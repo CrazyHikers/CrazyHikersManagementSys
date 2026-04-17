@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
-import { findSameDayCommitment } from "@/lib/activity";
+import { findSameDayCommitment, computeEffectiveSubmissionCounts } from "@/lib/activity";
 
 export async function POST(
   request: NextRequest,
@@ -45,14 +45,15 @@ export async function POST(
       );
     }
 
-    // Check max registration
+    // Check max registration. Use the effective count that excludes
+    // "phantom" pending registrations from users already confirmed
+    // elsewhere on the same day — those rows can never be confirmed, so
+    // they should not occupy a slot.
     if (activity.maximumRegistration && activity.maximumRegistration > 0) {
-      const count = await db.registration.count({
-        where: {
-          activityId,
-          status: { in: ["registered", "registration_confirmed"] },
-        },
-      });
+      const counts = await computeEffectiveSubmissionCounts([
+        { id: activity.id, date: activity.date },
+      ]);
+      const count = counts.get(activity.id) ?? 0;
       if (count >= activity.maximumRegistration) {
         return NextResponse.json(
           { error: "Registration is full" },
