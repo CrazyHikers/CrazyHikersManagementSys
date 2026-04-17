@@ -194,7 +194,7 @@ export default async function ActivityDetailPage({
                 </Badge>
               </div>
               {activity.status === "open" && new Date(activity.deadline) > new Date() && (
-                <ShareButton path={`/${locale}/activities/${activity.id}`} />
+                <ShareButton path={`/${locale}/activities/${activity.id}`} title={activity.title} text={activity.description} />
               )}
             </div>
             <p className="text-muted-foreground whitespace-pre-wrap">

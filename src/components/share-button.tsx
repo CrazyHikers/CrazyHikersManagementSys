@@ -6,10 +6,14 @@ import { toast } from "sonner";
 
 export function ShareButton({
   path,
+  title,
+  text,
   variant = "outline",
   size = "sm",
 }: {
   path: string;
+  title?: string;
+  text?: string;
   variant?: "outline" | "default" | "ghost";
   size?: "sm" | "default";
 }) {
@@ -20,7 +24,7 @@ export function ShareButton({
 
     if (navigator.share) {
       try {
-        await navigator.share({ url });
+        await navigator.share({ url, title, text });
         return;
       } catch {
         // User cancelled or share failed — fall through to clipboard
