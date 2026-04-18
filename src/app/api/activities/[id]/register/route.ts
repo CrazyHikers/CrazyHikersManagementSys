@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
 import { findSameDayCommitment, computeEffectiveSubmissionCounts } from "@/lib/activity";
+import { cacheTags } from "@/lib/cache-tags";
 
 export async function POST(
   request: NextRequest,
@@ -147,6 +149,8 @@ export async function POST(
       } as Parameters<typeof db.registration.create>[0]["data"],
     });
 
+    revalidateTag(cacheTags.activity(activityId));
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ message: "Registration successful" });
   } catch (error) {
     console.error("Registration error:", error);
@@ -202,6 +206,8 @@ export async function DELETE(
       where: { activityId_userEmail: { activityId, userEmail } },
     });
 
+    revalidateTag(cacheTags.activity(activityId));
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ message: "Registration withdrawn" });
   } catch (error) {
     console.error("Withdraw error:", error);
