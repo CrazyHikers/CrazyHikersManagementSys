@@ -249,11 +249,11 @@ export default async function ManagerDetailPage({
                         {t("invalidated")}
                       </Badge>
                     )}
-                    <Link href={`/dashboard/members/${f.user.uid}`} className="text-sm font-medium hover:underline text-green-700">
+                    <Link href={`/dashboard/members/${f.user.uid}`} prefetch={false} className="text-sm font-medium hover:underline text-green-700">
                       {f.user.name}
                     </Link>
                     <span className="text-sm text-muted-foreground">—</span>
-                    <Link href={`/dashboard/activity-view/${f.activityId}`} className="text-sm text-muted-foreground hover:underline hover:text-green-700">
+                    <Link href={`/dashboard/activity-view/${f.activityId}`} prefetch={false} className="text-sm text-muted-foreground hover:underline hover:text-green-700">
                       {f.activity.title}
                     </Link>
                   </div>

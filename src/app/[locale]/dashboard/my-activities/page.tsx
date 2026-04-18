@@ -62,7 +62,7 @@ export default async function MyActivitiesPage() {
     return (
       <div className="space-y-3">
         {items.map((r) => (
-          <Link key={r.activityId} href={`/activities/${r.activityId}`}>
+          <Link key={r.activityId} href={`/activities/${r.activityId}`} prefetch={false}>
             <Card className="hover:shadow-sm transition-shadow">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">

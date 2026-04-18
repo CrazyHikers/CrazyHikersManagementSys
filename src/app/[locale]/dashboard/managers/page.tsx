@@ -180,7 +180,7 @@ export default function ManagersPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {managers.map((m) => (
-          <Link key={m.email} href={`/dashboard/managers/${m.uid}`}>
+          <Link key={m.email} href={`/dashboard/managers/${m.uid}`} prefetch={false}>
             <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between">
                 <div>
@@ -227,16 +227,16 @@ export default function ManagersPage() {
               const href = `/dashboard/managers/${m.uid}`;
               return (
                 <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{m.name}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.email}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.managerProfile?.tag || "—"}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2 font-medium">{m.name}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{m.email}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{m.managerProfile?.tag || "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">
                     <Badge className={m.managerProfile?.intern ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
                       {m.managerProfile?.intern ? t("intern") : t("qualified")}
                     </Badge>
                   </Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{m.managerProfile?.kpi ?? "—"}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2">—</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{m.managerProfile?.kpi ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">—</Link></TableCell>
                 </TableRow>
               );
             })}

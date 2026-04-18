@@ -64,13 +64,13 @@ export default async function FlagsPage() {
                 <div className="text-sm space-y-1">
                   <div>
                     <span className="text-muted-foreground">{t("member")}: </span>
-                    <Link href={`/dashboard/members/${f.user.uid}`} className="text-green-700 hover:underline">
+                    <Link href={`/dashboard/members/${f.user.uid}`} prefetch={false} className="text-green-700 hover:underline">
                       {f.user.name}
                     </Link>
                   </div>
                   <div>
                     <span className="text-muted-foreground">{t("activity")}: </span>
-                    <Link href={`/dashboard/activity-view/${f.activity.id}`} className="text-green-700 hover:underline">
+                    <Link href={`/dashboard/activity-view/${f.activity.id}`} prefetch={false} className="text-green-700 hover:underline">
                       {f.activity.title}
                     </Link>
                   </div>
@@ -145,12 +145,12 @@ export default async function FlagsPage() {
                         <Badge className={flagColors[f.flagType]}>{f.flagType}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Link href={`/dashboard/members/${f.user.uid}`} className="text-green-700 hover:underline">
+                        <Link href={`/dashboard/members/${f.user.uid}`} prefetch={false} className="text-green-700 hover:underline">
                           {f.user.name}
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Link href={`/dashboard/activity-view/${f.activity.id}`} className="text-green-700 hover:underline">
+                        <Link href={`/dashboard/activity-view/${f.activity.id}`} prefetch={false} className="text-green-700 hover:underline">
                           {f.activity.title}
                         </Link>
                       </TableCell>

@@ -58,7 +58,7 @@ export default async function AllActivitiesPage() {
           return (
             <div key={a.id} className="bg-white rounded-lg border p-4">
               <div className="flex items-start justify-between gap-2">
-                <Link href={`/dashboard/activity-view/${a.id}`} className="font-medium hover:underline text-green-700">{a.title}</Link>
+                <Link href={`/dashboard/activity-view/${a.id}`} prefetch={false} className="font-medium hover:underline text-green-700">{a.title}</Link>
                 {(() => {
                     const ds = getDisplayStatus(a);
                     return <Badge className={statusColors[ds]}>{ds}</Badge>;
@@ -102,12 +102,12 @@ export default async function AllActivitiesPage() {
                     const href = `/dashboard/activity-view/${a.id}`;
                     const ds = getDisplayStatus(a);
                     return (<>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{a.title}</Link></TableCell>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2"><Badge className={statusColors[ds]}>{ds}</Badge></Link></TableCell>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{a.date.toLocaleDateString()}</Link></TableCell>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{mainManager?.user.name || "—"}</Link></TableCell>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{comanagers.length > 0 ? comanagers.map((c) => c.user.name).join(", ") : "—"}</Link></TableCell>
-                      <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{a._count.registrations}{a.maximumRegistration ? ` / ${a.maximumRegistration}` : ""}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2 font-medium">{a.title}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2"><Badge className={statusColors[ds]}>{ds}</Badge></Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{a.date.toLocaleDateString()}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{mainManager?.user.name || "—"}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{comanagers.length > 0 ? comanagers.map((c) => c.user.name).join(", ") : "—"}</Link></TableCell>
+                      <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{a._count.registrations}{a.maximumRegistration ? ` / ${a.maximumRegistration}` : ""}</Link></TableCell>
                     </>);
                   })()}
                 </TableRow>

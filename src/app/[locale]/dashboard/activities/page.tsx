@@ -63,7 +63,7 @@ export default async function ActivitiesPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {activities.map((a) => (
-          <Link key={a.id} href={`/dashboard/activities/${a.id}`}>
+          <Link key={a.id} href={`/dashboard/activities/${a.id}`} prefetch={false}>
             <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-medium">{a.title}</h3>

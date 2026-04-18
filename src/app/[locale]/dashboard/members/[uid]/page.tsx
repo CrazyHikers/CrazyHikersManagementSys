@@ -256,7 +256,7 @@ export default async function UserDetailPage({
                 {user.registrations.map((r) => (
                   <TableRow key={r.activityId}>
                     <TableCell className="font-medium">
-                      <Link href={`/dashboard/activity-view/${r.activityId}`} className="hover:underline text-green-700">
+                      <Link href={`/dashboard/activity-view/${r.activityId}`} prefetch={false} className="hover:underline text-green-700">
                         {r.activity.title}
                       </Link>
                     </TableCell>

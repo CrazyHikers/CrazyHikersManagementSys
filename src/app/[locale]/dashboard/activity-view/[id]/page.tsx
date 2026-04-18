@@ -198,7 +198,7 @@ export default async function ActivityViewPage({
               <div key={am.userEmail} className="flex items-center gap-2">
                 <Badge>Manager</Badge>
                 {isAdmin ? (
-                  <Link href={`/dashboard/managers/${am.user.uid}`} className="hover:underline text-green-700">
+                  <Link href={`/dashboard/managers/${am.user.uid}`} prefetch={false} className="hover:underline text-green-700">
                     {am.user.name}
                   </Link>
                 ) : (
@@ -211,7 +211,7 @@ export default async function ActivityViewPage({
               <div key={am.userEmail} className="flex items-center gap-2">
                 <Badge variant="secondary">Co-manager</Badge>
                 {isAdmin ? (
-                  <Link href={`/dashboard/managers/${am.user.uid}`} className="hover:underline text-green-700">
+                  <Link href={`/dashboard/managers/${am.user.uid}`} prefetch={false} className="hover:underline text-green-700">
                     {am.user.name}
                   </Link>
                 ) : (
@@ -250,10 +250,10 @@ export default async function ActivityViewPage({
                     const href = `/dashboard/members/${r.user.uid}`;
                     return (
                       <TableRow key={r.userEmail} className="cursor-pointer hover:bg-gray-50">
-                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2 font-medium">{r.user.name}</Link></TableCell>
-                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{r.user.email}</Link></TableCell>
-                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2"><Badge className={regStatusColors[r.status] || ""}>{r.status}</Badge></Link></TableCell>
-                        <TableCell className="p-0"><Link href={href} className="block px-4 py-2">{r.registeredAt.toLocaleDateString()}</Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2 font-medium">{r.user.name}</Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{r.user.email}</Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2"><Badge className={regStatusColors[r.status] || ""}>{r.status}</Badge></Link></TableCell>
+                        <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2">{r.registeredAt.toLocaleDateString()}</Link></TableCell>
                       </TableRow>
                     );
                   })}

@@ -53,7 +53,7 @@ export function ActivityCard({
   const showConflict = !!sameDayConflict && !managing && !pendingInvitation && !registered;
 
   return (
-    <Link href={`/activities/${id}`} className="block">
+    <Link href={`/activities/${id}`} prefetch={false} className="block">
       <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
         <div className="flex flex-col sm:flex-row">
           {coverImgUrl && (
