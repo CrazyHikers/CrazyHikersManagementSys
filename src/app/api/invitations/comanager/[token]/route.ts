@@ -135,8 +135,8 @@ export async function POST(
   // page and the landing page's intern-visibility rule; decline never
   // appears on member-facing pages, so no invalidation needed.
   if (accepted) {
-    revalidateTag(cacheTags.activity(am.activityId));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(am.activityId), "max");
+    revalidateTag(cacheTags.activities, "max");
   }
 
   return NextResponse.json({

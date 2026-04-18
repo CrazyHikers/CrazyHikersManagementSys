@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
     }
 
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ id: activity.id });
   } catch (error) {
     console.error("Create activity error:", error);

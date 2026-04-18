@@ -149,8 +149,8 @@ export async function POST(
       } as Parameters<typeof db.registration.create>[0]["data"],
     });
 
-    revalidateTag(cacheTags.activity(activityId));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(activityId), "max");
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ message: "Registration successful" });
   } catch (error) {
     console.error("Registration error:", error);
@@ -206,8 +206,8 @@ export async function DELETE(
       where: { activityId_userEmail: { activityId, userEmail } },
     });
 
-    revalidateTag(cacheTags.activity(activityId));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(activityId), "max");
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ message: "Registration withdrawn" });
   } catch (error) {
     console.error("Withdraw error:", error);

@@ -226,8 +226,8 @@ export async function PATCH(
       }
     }
 
-    revalidateTag(cacheTags.activity(id));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(id), "max");
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update activity error:", error);

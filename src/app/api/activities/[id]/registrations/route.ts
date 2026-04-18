@@ -64,8 +64,8 @@ export async function PATCH(
           })
         )
       );
-      revalidateTag(cacheTags.activity(activityId));
-      revalidateTag(cacheTags.activities);
+      revalidateTag(cacheTags.activity(activityId), "max");
+      revalidateTag(cacheTags.activities, "max");
       return NextResponse.json({ success: true, updated: updates.length });
     } catch (error) {
       console.error("Batch registration update error:", error);
@@ -133,8 +133,8 @@ export async function PATCH(
       });
     }
 
-    revalidateTag(cacheTags.activity(activityId));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(activityId), "max");
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update registration error:", error);
@@ -165,8 +165,8 @@ export async function DELETE(
     const result = await db.registration.deleteMany({
       where: { activityId, status: "registered" },
     });
-    revalidateTag(cacheTags.activity(activityId));
-    revalidateTag(cacheTags.activities);
+    revalidateTag(cacheTags.activity(activityId), "max");
+    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ success: true, removed: result.count });
   }
 
@@ -182,7 +182,7 @@ export async function DELETE(
     },
   });
 
-  revalidateTag(cacheTags.activity(activityId));
-  revalidateTag(cacheTags.activities);
+  revalidateTag(cacheTags.activity(activityId), "max");
+  revalidateTag(cacheTags.activities, "max");
   return NextResponse.json({ success: true });
 }

@@ -44,6 +44,6 @@ export async function PUT(request: NextRequest) {
     });
   }
 
-  revalidateTag("app-settings");
+  revalidateTag("app-settings", "max");
   return NextResponse.json({ success: true });
 }
