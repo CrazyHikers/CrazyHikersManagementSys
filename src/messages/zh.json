@@ -428,7 +428,6 @@
       "flag_expiry_days_red": "红旗记录保留期限（天）",
       "yellow_to_red_threshold": "黄旗自动升级为红旗的次数（次）",
       "waiver_validity_days": "免责声明有效期（天）",
-      "waiver_expiry_warning_days": "免责声明到期提醒（提前天数）",
       "promotion_vote_duration_hours": "转正投票时限（小时）",
       "promotion_vote_approval_ratio": "转正投票通过比例（%）",
       "promotion_min_attended_activities": "申请见习领队最低跟队次数（次）",

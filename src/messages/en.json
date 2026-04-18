@@ -428,7 +428,6 @@
       "flag_expiry_days_red": "Red flag record retention period (days)",
       "yellow_to_red_threshold": "Yellow flags to auto-escalate to red (count)",
       "waiver_validity_days": "Waiver validity period (days)",
-      "waiver_expiry_warning_days": "Waiver expiry warning notice (days before)",
       "promotion_vote_duration_hours": "Promotion voting window (hours)",
       "promotion_vote_approval_ratio": "Promotion vote approval ratio (%)",
       "promotion_min_attended_activities": "Min attended activities for intern application (count)",

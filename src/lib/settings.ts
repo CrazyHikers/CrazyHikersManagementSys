@@ -11,7 +11,6 @@ export const DEFAULTS: Record<string, number> = {
 
   // Waivers
   waiver_validity_days: 365,
-  waiver_expiry_warning_days: 7,
 
   // Promotions
   promotion_vote_duration_hours: 24,
