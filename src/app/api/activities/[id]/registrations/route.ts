@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
+import { cacheTags } from "@/lib/cache-tags";
 
 export async function GET(
   _req: NextRequest,
@@ -62,6 +64,8 @@ export async function PATCH(
           })
         )
       );
+      revalidateTag(cacheTags.activity(activityId));
+      revalidateTag(cacheTags.activities);
       return NextResponse.json({ success: true, updated: updates.length });
     } catch (error) {
       console.error("Batch registration update error:", error);
@@ -129,6 +133,8 @@ export async function PATCH(
       });
     }
 
+    revalidateTag(cacheTags.activity(activityId));
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update registration error:", error);
@@ -159,6 +165,8 @@ export async function DELETE(
     const result = await db.registration.deleteMany({
       where: { activityId, status: "registered" },
     });
+    revalidateTag(cacheTags.activity(activityId));
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ success: true, removed: result.count });
   }
 
@@ -174,5 +182,7 @@ export async function DELETE(
     },
   });
 
+  revalidateTag(cacheTags.activity(activityId));
+  revalidateTag(cacheTags.activities);
   return NextResponse.json({ success: true });
 }

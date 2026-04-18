@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "./db";
 
 // Default values for all configurable settings
@@ -40,16 +41,33 @@ export const DEFAULTS: Record<string, number> = {
   rate_limit_register_window_minutes: 15,
 };
 
+// Settings are admin-edited config; they change rarely but were previously
+// re-read from the DB on every API call (registration, preflight, etc.)
+// — a meaningful share of Fluid CPU. Cache for 10 min and invalidate via
+// revalidateTag("app-settings") when the admin edits them.
+const getAllSettings = unstable_cache(
+  async (): Promise<Record<string, number>> => {
+    const result: Record<string, number> = {};
+    try {
+      const settings = await db.appSettings.findMany();
+      for (const s of settings) {
+        result[s.key] = parseInt(s.value, 10);
+      }
+    } catch {
+      // DB error — callers fall back to DEFAULTS
+    }
+    return result;
+  },
+  ["app-settings"],
+  { tags: ["app-settings"], revalidate: 600 }
+);
+
 /**
  * Get a numeric setting value, falling back to the default.
  */
 export async function getSetting(key: string): Promise<number> {
-  try {
-    const setting = await db.appSettings.findUnique({ where: { key } });
-    if (setting) return parseInt(setting.value, 10);
-  } catch {
-    // DB error — use default
-  }
+  const all = await getAllSettings();
+  if (key in all) return all[key];
   return DEFAULTS[key] ?? 0;
 }
 
@@ -57,21 +75,10 @@ export async function getSetting(key: string): Promise<number> {
  * Get multiple settings at once.
  */
 export async function getSettings(keys: string[]): Promise<Record<string, number>> {
+  const all = await getAllSettings();
   const result: Record<string, number> = {};
-  try {
-    const settings = await db.appSettings.findMany({
-      where: { key: { in: keys } },
-    });
-    for (const s of settings) {
-      result[s.key] = parseInt(s.value, 10);
-    }
-  } catch {
-    // DB error — use defaults
-  }
   for (const key of keys) {
-    if (!(key in result)) {
-      result[key] = DEFAULTS[key] ?? 0;
-    }
+    result[key] = key in all ? all[key] : DEFAULTS[key] ?? 0;
   }
   return result;
 }

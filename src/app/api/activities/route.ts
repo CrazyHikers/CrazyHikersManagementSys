@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
 import { findSameDayCommitment } from "@/lib/activity";
+import { cacheTags } from "@/lib/cache-tags";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -155,6 +157,7 @@ export async function POST(request: NextRequest) {
       ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
     }
 
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ id: activity.id });
   } catch (error) {
     console.error("Create activity error:", error);

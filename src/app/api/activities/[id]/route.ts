@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
 import { deleteFile, getKeyFromUrl } from "@/lib/r2";
+import { cacheTags } from "@/lib/cache-tags";
 import type { Prisma } from "@/generated/prisma/client";
 
 export async function GET(
@@ -224,6 +226,8 @@ export async function PATCH(
       }
     }
 
+    revalidateTag(cacheTags.activity(id));
+    revalidateTag(cacheTags.activities);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update activity error:", error);

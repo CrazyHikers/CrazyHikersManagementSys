@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { findSameDayCommitment } from "@/lib/activity";
+import { cacheTags } from "@/lib/cache-tags";
 
 export async function GET(
   _req: NextRequest,
@@ -128,6 +130,14 @@ export async function POST(
         ]
       : []),
   ]);
+
+  // Accept changes the list of confirmed managers shown on the activity
+  // page and the landing page's intern-visibility rule; decline never
+  // appears on member-facing pages, so no invalidation needed.
+  if (accepted) {
+    revalidateTag(cacheTags.activity(am.activityId));
+    revalidateTag(cacheTags.activities);
+  }
 
   return NextResponse.json({
     success: true,

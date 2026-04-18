@@ -171,51 +171,52 @@ export const authConfig: NextAuthConfig = {
       // Allow both existing users and new signups (user will be created by adapter)
       return true;
     },
-    async jwt({ token, user }) {
-      // On first sign-in, `user` is present. On subsequent requests, only `token` is.
-      // Always refresh role from DB to pick up role changes.
+    async jwt({ token, user, trigger }) {
+      // Hit DB only on sign-in (user present) or when the client calls
+      // session.update() (trigger === "update"). Every other request
+      // reuses what's already in the signed JWT cookie — no DB work.
+      //
+      // Role/name changes require the user to sign out and back in, or
+      // the client to explicitly call useSession().update() after an
+      // action that should refresh their claims (e.g. after accepting
+      // a promotion).
+      const shouldRefresh = !!user?.email || trigger === "update";
+      if (!shouldRefresh) return token;
+
       const email = user?.email || (token.email as string) || (token.sub as string);
-      console.log("[AUTH] jwt callback - email:", email, "token.role:", token.role);
-      if (email) {
-        try {
-          const dbUser = await db.user.findUnique({
-            where: { email },
-            include: { managerProfile: true },
-          });
-          console.log("[AUTH] jwt db lookup result:", dbUser ? { email: dbUser.email, role: dbUser.role } : "NOT FOUND");
-          if (dbUser) {
-            token.email = dbUser.email;
-            token.name = dbUser.name;
-            token.role = dbUser.role;
-            token.tag = dbUser.managerProfile?.tag;
-            token.isIntern = dbUser.managerProfile?.intern;
-            token.hasPassword = !!dbUser.passwordHash;
-            console.log("[AUTH] jwt token.role set to:", token.role);
-          }
-        } catch (err) {
-          console.error("[AUTH] jwt db error:", err);
+      if (!email) return token;
+
+      try {
+        const dbUser = await db.user.findUnique({
+          where: { email },
+          include: { managerProfile: true },
+        });
+        if (dbUser) {
+          token.email = dbUser.email;
+          token.name = dbUser.name;
+          token.role = dbUser.role;
+          token.tag = dbUser.managerProfile?.tag;
+          token.isIntern = dbUser.managerProfile?.intern;
+          token.hasPassword = !!dbUser.passwordHash;
         }
+      } catch (err) {
+        console.error("[AUTH] jwt db error:", err);
       }
       return token;
     },
     async session({ session, token }) {
+      // Read from the JWT only — no DB hit. Previously this did a
+      // findUnique on every auth() call, which fires from middleware
+      // AND the page on every request.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = session.user as any;
-      const email = token?.email || token?.sub || session.user?.email;
-      if (email) {
-        // Always read role from DB since JWT token doesn't persist custom fields with adapter
-        const dbUser = await db.user.findUnique({
-          where: { email: email as string },
-          include: { managerProfile: true },
-        });
-        if (dbUser) {
-          user.email = dbUser.email;
-          user.name = dbUser.name;
-          user.role = dbUser.role;
-          user.tag = dbUser.managerProfile?.tag;
-          user.isIntern = dbUser.managerProfile?.intern;
-          user.hasPassword = !!dbUser.passwordHash;
-        }
+      if (token) {
+        if (token.email) user.email = token.email;
+        if (token.name !== undefined) user.name = token.name;
+        user.role = token.role;
+        user.tag = token.tag;
+        user.isIntern = token.isIntern;
+        user.hasPassword = token.hasPassword;
       }
       return session;
     },

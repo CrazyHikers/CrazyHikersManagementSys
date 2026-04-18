@@ -1,39 +1,59 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
-import { auth } from "@/lib/auth";
-import { getSetting } from "@/lib/settings";
-import { isProfileComplete } from "@/lib/profile";
+import { cacheTags } from "@/lib/cache-tags";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
-import { RegistrationForm } from "@/components/registration-form";
+import { ActivityRegistrationPanel } from "@/components/activity-registration-panel";
 import { ShareButton } from "@/components/share-button";
 
-async function getActivity(id: string) {
-  return db.activity.findUnique({
-    where: { id },
-    include: {
-      activityManagers: {
-        where: { status: "confirmed" },
-        include: { user: { include: { managerProfile: true } } },
-      },
-      _count: {
-        select: {
-          registrations: {
-            where: {
-              status: { in: ["registration_confirmed", "attended"] },
+// Activity payload is shared across all visitors — cache it with a
+// per-ID tag. Write routes call revalidateTag(cacheTags.activity(id))
+// on edits, registration changes, manager accept/decline, etc. The
+// 1-day revalidate is a safety net; correctness comes from the tag.
+function getActivity(id: string) {
+  return unstable_cache(
+    async () => {
+      return db.activity.findUnique({
+        where: { id },
+        include: {
+          activityManagers: {
+            where: { status: "confirmed" },
+            include: { user: { include: { managerProfile: true } } },
+          },
+          _count: {
+            select: {
+              registrations: {
+                where: {
+                  status: { in: ["registration_confirmed", "attended"] },
+                },
+              },
             },
           },
         },
-      },
+      });
     },
-  });
+    ["activity-detail", id],
+    { tags: [cacheTags.activity(id)], revalidate: 86400 }
+  )();
+}
+
+function getActivityMetadata(id: string) {
+  return unstable_cache(
+    async () => {
+      return db.activity.findUnique({
+        where: { id },
+        select: { title: true, description: true, coverImgId: true, date: true },
+      });
+    },
+    ["activity-metadata", id],
+    { tags: [cacheTags.activity(id)], revalidate: 86400 }
+  )();
 }
 
 // Emit OG / Twitter Card metadata so shared links render rich previews
@@ -46,10 +66,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const activity = await db.activity.findUnique({
-    where: { id },
-    select: { title: true, description: true, coverImgId: true, date: true },
-  });
+  const activity = await getActivityMetadata(id);
 
   if (!activity) return {};
 
@@ -58,7 +75,7 @@ export async function generateMetadata({
   const description =
     rawDescription.length > 200
       ? `${rawDescription.slice(0, 197)}…`
-      : rawDescription || `Join us for ${activity.title} on ${activity.date.toLocaleDateString()}.`;
+      : rawDescription || `Join us for ${activity.title} on ${new Date(activity.date).toLocaleDateString()}.`;
 
   const imageUrl = activity.coverImgId ? getPublicUrl(activity.coverImgId) : undefined;
 
@@ -87,17 +104,21 @@ export default async function ActivityDetailPage({
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("activity");
-  const session = await auth();
   const activity = await getActivity(id);
 
   if (!activity) notFound();
 
+  // unstable_cache serializes Dates to ISO strings, so revive them here.
+  const activityDate = new Date(activity.date);
+  const activityDeadline = new Date(activity.deadline);
+
   const isOpen =
-    activity.status === "open" && new Date(activity.deadline) > new Date();
-  const isFull =
+    activity.status === "open" && activityDeadline > new Date();
+  const isFull = !!(
     activity.maximumRegistration &&
     activity.maximumRegistration > 0 &&
-    activity._count.registrations >= activity.maximumRegistration;
+    activity._count.registrations >= activity.maximumRegistration
+  );
 
   const managers = activity.activityManagers
     .filter((am) => am.role === "manager")
@@ -106,64 +127,10 @@ export default async function ActivityDetailPage({
     .filter((am) => am.role === "comanager")
     .map((am) => am.user.managerProfile?.tag || am.user.name);
 
-  const sessionUser = session?.user
-    ? { name: session.user.name, email: session.user.email }
-    : null;
-
-  const isManager = session?.user?.email
-    ? activity.activityManagers.some((am) => am.user.email === session.user!.email)
-    : false;
-
-  // Server-side preflight: check registration status, profile, and waiver in one go
-  // This replaces 3 separate client-side API calls
-  let preflight: {
-    registrationStatus: string | null;
-    needsProfile: boolean;
-    needsWaiver: boolean;
-    waiverValidityDays: number;
-  } | undefined;
-
-  let pendingInvitationToken: string | null = null;
-
-  if (session?.user?.email && !isManager) {
-    const [registration, user, waiver, waiverValidityDays, pendingInvitation] = await Promise.all([
-      db.registration.findUnique({
-        where: {
-          activityId_userEmail: { activityId: activity.id, userEmail: session.user.email },
-        },
-        select: { status: true },
-      }),
-      db.user.findUnique({
-        where: { email: session.user.email },
-        select: { name: true, profile: true },
-      }),
-      db.userWaiver.findFirst({
-        where: {
-          userEmail: session.user.email,
-          status: "approved",
-        },
-        orderBy: { signedAt: "desc" },
-      }),
-      getSetting("waiver_validity_days"),
-      db.activityManager.findUnique({
-        where: {
-          activityId_userEmail: { activityId: activity.id, userEmail: session.user.email },
-        },
-        select: { status: true, token: true },
-      }),
-    ]);
-
-    preflight = {
-      registrationStatus: registration?.status || null,
-      needsProfile: !user?.name?.trim() || !isProfileComplete(user?.profile),
-      needsWaiver: !waiver,
-      waiverValidityDays: waiverValidityDays,
-    };
-
-    if (pendingInvitation?.status === "invited" && pendingInvitation.token) {
-      pendingInvitationToken = pendingInvitation.token;
-    }
-  }
+  const qrCodeUrl =
+    ((activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as
+      | string
+      | undefined) ?? null;
 
   return (
     <>
@@ -193,7 +160,7 @@ export default async function ActivityDetailPage({
                   {activity.status}
                 </Badge>
               </div>
-              {activity.status === "open" && new Date(activity.deadline) > new Date() && (
+              {activity.status === "open" && activityDeadline > new Date() && (
                 <ShareButton path={`/${locale}/activities/${activity.id}`} title={activity.title} text={activity.description} />
               )}
             </div>
@@ -275,7 +242,7 @@ export default async function ActivityDetailPage({
                   {t("date")}
                 </div>
                 <div className="font-medium">
-                  {activity.date.toLocaleDateString()}
+                  {activityDate.toLocaleDateString()}
                 </div>
               </CardContent>
             </Card>
@@ -285,7 +252,7 @@ export default async function ActivityDetailPage({
                   {t("deadline")}
                 </div>
                 <div className="font-medium">
-                  {activity.deadline.toLocaleDateString()}
+                  {activityDeadline.toLocaleDateString()}
                 </div>
               </CardContent>
             </Card>
@@ -318,86 +285,12 @@ export default async function ActivityDetailPage({
             </Card>
           </div>
 
-          {(() => {
-            const isConfirmed =
-              preflight?.registrationStatus === "registration_confirmed" ||
-              preflight?.registrationStatus === "attended";
-            const qrCodeUrl = (activity.metadata as Record<string, unknown> | null)?.qrCodeUrl as
-              | string
-              | undefined;
-            if (!isConfirmed || !qrCodeUrl) return null;
-            return (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>{t("qrCode")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">{t("qrCodeHelp")}</p>
-                  <img
-                    src={qrCodeUrl}
-                    alt={t("qrCode")}
-                    className="max-w-64 mx-auto rounded-lg"
-                  />
-                </CardContent>
-              </Card>
-            );
-          })()}
-
-          {isOpen && !isFull ? (
-            !session?.user ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground mb-4">{t("signInToRegister")}</p>
-                  <Link href="/signin">
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      {t("signIn")}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : isManager ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  {t("youAreManaging")}
-                </CardContent>
-              </Card>
-            ) : pendingInvitationToken ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("pendingComanagerInvitation")}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4">
-                    {t("pendingComanagerInvitationHelp")}
-                  </p>
-                  <Link href={`/invitations/comanager/${pendingInvitationToken}`}>
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      {t("respondToInvitation")}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t("registrationForm")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RegistrationForm
-                    activityId={activity.id}
-                    session={sessionUser}
-                    preflight={preflight}
-                  />
-                </CardContent>
-              </Card>
-            )
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                {isFull ? t("registrationClosed") : t("registrationClosed")}
-              </CardContent>
-            </Card>
-          )}
+          <ActivityRegistrationPanel
+            activityId={activity.id}
+            qrCodeUrl={qrCodeUrl}
+            isOpen={isOpen}
+            isFull={isFull}
+          />
         </div>
       </main>
       <SiteFooter />
