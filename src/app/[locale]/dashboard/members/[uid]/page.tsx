@@ -27,7 +27,6 @@ const roleBadgeColors: Record<string, string> = {
 
 const waiverStatusColors: Record<string, string> = {
   approved: "bg-green-100 text-green-800",
-  expiring: "bg-orange-100 text-orange-800",
   expired: "bg-gray-100 text-gray-800",
 };
 

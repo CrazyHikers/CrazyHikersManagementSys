@@ -101,7 +101,6 @@ model UserFlag {
 
 enum WaiverStatus {
   approved
-  expiring
   expired
 }
 

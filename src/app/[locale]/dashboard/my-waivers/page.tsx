@@ -25,7 +25,6 @@ type WaiverStatus = {
 
 const statusColors: Record<string, string> = {
   approved: "bg-green-100 text-green-800",
-  expiring: "bg-orange-100 text-orange-800",
   expired: "bg-gray-100 text-gray-600",
 };
 

@@ -76,9 +76,9 @@ export async function POST(
       );
     }
 
-    // Check for valid waiver (approved or expiring)
+    // Check for valid (non-expired) waiver
     const validWaiver = await db.userWaiver.findFirst({
-      where: { userEmail: user.email, status: { in: ["approved", "expiring"] } },
+      where: { userEmail: user.email, status: "approved" },
     });
     if (!validWaiver) {
       return NextResponse.json(

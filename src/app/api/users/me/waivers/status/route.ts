@@ -15,7 +15,7 @@ export async function GET() {
     db.userWaiver.findFirst({
       where: {
         userEmail: session.user.email,
-        status: { in: ["approved", "expiring"] },
+        status: "approved",
       },
       orderBy: { signedAt: "desc" },
     }),

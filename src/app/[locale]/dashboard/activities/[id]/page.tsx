@@ -41,7 +41,7 @@ export default async function ActivityDetailPage({
                 orderBy: { registeredAt: "desc" },
               },
               waivers: {
-                where: { status: { in: ["approved", "expiring"] } },
+                where: { status: "approved" },
                 orderBy: { signedAt: "desc" },
                 take: 1,
                 select: { status: true, signedName: true },

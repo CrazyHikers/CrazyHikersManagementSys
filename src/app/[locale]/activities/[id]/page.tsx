@@ -140,7 +140,7 @@ export default async function ActivityDetailPage({
       db.userWaiver.findFirst({
         where: {
           userEmail: session.user.email,
-          status: { in: ["approved", "expiring"] },
+          status: "approved",
         },
         orderBy: { signedAt: "desc" },
       }),

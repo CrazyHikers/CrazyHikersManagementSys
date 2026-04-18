@@ -19,11 +19,10 @@ type Waiver = {
 
 const statusColors: Record<string, string> = {
   approved: "bg-green-100 text-green-800",
-  expiring: "bg-orange-100 text-orange-800",
   expired: "bg-gray-100 text-gray-600",
 };
 
-const statusFilters = ["all", "approved", "expiring", "expired"] as const;
+const statusFilters = ["all", "approved", "expired"] as const;
 
 export function WaiverAuditLog({ waivers }: { waivers: Waiver[] }) {
   const t = useTranslations("dashboard.members");

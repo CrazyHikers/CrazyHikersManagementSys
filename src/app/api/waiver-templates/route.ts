@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       });
 
       await tx.userWaiver.updateMany({
-        where: { status: { in: ["approved", "expiring"] } },
+        where: { status: "approved" },
         data: { status: "expired" },
       });
 

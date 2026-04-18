@@ -75,28 +75,6 @@ export async function sendMagicLinkEmail(email: string, url: string) {
   });
 }
 
-export async function sendWaiverExpiryNotification(
-  email: string,
-  memberName: string,
-  waiverFormUrl: string
-) {
-  return sendEmail({
-    to: email,
-    subject: "Waiver Expiry Notification",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2>Waiver Expiring Soon</h2>
-        <p>Dear ${memberName},</p>
-        <p>Your waiver is expiring in 7 days. Please submit a new waiver:</p>
-        <a href="${waiverFormUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
-          Submit Waiver
-        </a>
-        <p>Thank you,<br/>Crazy Hikers Team</p>
-      </div>
-    `,
-  });
-}
-
 export async function sendComanagerInvitation(
   email: string,
   comanagerName: string,
