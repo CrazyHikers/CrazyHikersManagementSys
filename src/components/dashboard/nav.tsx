@@ -105,7 +105,7 @@ export function DashboardNav({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-56 md:flex-col md:border-r bg-white">
         <div className="flex h-14 items-center border-b px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-green-700">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-foreground">
             <img src="/logo.jpg" alt="" className="h-8" />
             {t("appName")}
           </Link>
@@ -132,7 +132,7 @@ export function DashboardNav({
 
       {/* Mobile header + sheet */}
       <div className="md:hidden sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-white px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-green-700">
+        <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
           <img src="/logo.jpg" alt="" className="h-7" />
           {t("appName")}
         </Link>
