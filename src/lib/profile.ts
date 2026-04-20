@@ -1,14 +1,9 @@
 const REQUIRED_STRING_FIELDS = [
   "emergencyContact",
   "emergencyPhone",
-  "gender",
-  "organization",
-  "position",
   "fiveKmPace",
   "maxElevationGain",
   "maxElevationLoss",
-  "navigationSoftware",
-  "selfIntro",
 ] as const;
 
 const REQUIRED_ARRAY_FIELDS = [
@@ -17,11 +12,6 @@ const REQUIRED_ARRAY_FIELDS = [
   "quizManagerDuties",
   "quizMemberDuties",
   "insurance",
-] as const;
-
-const REQUIRED_BOOLEAN_FIELDS = [
-  "canDoEquipmentCheck",
-  "followsCrazyHikers",
 ] as const;
 
 /**
@@ -41,12 +31,6 @@ export function getMissingProfileFields(profile: unknown): string[] {
   for (const field of REQUIRED_ARRAY_FIELDS) {
     const val = p[field];
     if (!Array.isArray(val) || val.length === 0) {
-      missing.push(field);
-    }
-  }
-
-  for (const field of REQUIRED_BOOLEAN_FIELDS) {
-    if (typeof p[field] !== "boolean") {
       missing.push(field);
     }
   }
