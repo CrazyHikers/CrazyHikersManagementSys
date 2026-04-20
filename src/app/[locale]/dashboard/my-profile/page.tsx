@@ -87,7 +87,7 @@ const emptyUserProfile: UserProfile = {
   insurance: [],
 };
 
-const fitnessOptions = ["running", "swimming", "cycling", "hiking", "asvz_cardio", "other"];
+const fitnessOptions = ["running", "swimming", "cycling", "hiking", "climbing", "alpinism", "asvz_cardio", "other"];
 const equipmentOptions = ["hiking_boots", "trail_shoes", "trekking_poles", "hardshell", "backpack", "hydration_bladder", "buff", "arm_sleeves"];
 const managerDutyOptions = ["lead_group", "command", "boost_morale", "help_carry"];
 const memberDutyOptions = ["follow_leader", "go_alone", "gear_check", "casual_dress", "respect_leader", "leader_serves_me", "self_safety", "blame_leader"];
@@ -206,6 +206,13 @@ export default function MyProfilePage() {
     return <div className="text-center py-12 text-muted-foreground">Error loading profile</div>;
   }
 
+  const requiredStrings: (keyof typeof userProfile)[] = ["emergencyContact", "emergencyPhone", "fiveKmPace", "maxElevationGain", "maxElevationLoss"];
+  const requiredArrays: (keyof typeof userProfile)[] = ["fitnessActivities", "equipment", "quizManagerDuties", "quizMemberDuties", "insurance"];
+  const isProfileFormComplete =
+    !!name.trim() &&
+    requiredStrings.every((f) => !!(userProfile[f] as string)?.trim()) &&
+    requiredArrays.every((f) => (userProfile[f] as string[])?.length > 0);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
@@ -231,7 +238,7 @@ export default function MyProfilePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">{t("name")}</Label>
+              <Label htmlFor="name" className="gap-0.5">{t("name")}<span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 value={name}
@@ -273,7 +280,7 @@ export default function MyProfilePage() {
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("emergencySection")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyContact">{t("emergencyContact")}</Label>
+                  <Label htmlFor="emergencyContact" className="gap-0.5">{t("emergencyContact")}<span className="text-red-500">*</span></Label>
                   <Input
                     id="emergencyContact"
                     value={userProfile.emergencyContact || ""}
@@ -281,7 +288,7 @@ export default function MyProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">{t("emergencyPhone")}</Label>
+                  <Label htmlFor="emergencyPhone" className="gap-0.5">{t("emergencyPhone")}<span className="text-red-500">*</span></Label>
                   <Input
                     id="emergencyPhone"
                     value={userProfile.emergencyPhone || ""}
@@ -336,7 +343,7 @@ export default function MyProfilePage() {
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("fitnessSection")}</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("fitnessActivities")}</Label>
+                  <Label className="gap-0.5">{t("fitnessActivities")}<span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {fitnessOptions.map((opt) => (
                       <label key={opt} className="flex items-center gap-2 text-sm">
@@ -353,7 +360,7 @@ export default function MyProfilePage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fiveKmPace">{t("fiveKmPace")}</Label>
+                    <Label htmlFor="fiveKmPace" className="gap-0.5">{t("fiveKmPace")}<span className="text-red-500">*</span></Label>
                     <Input
                       id="fiveKmPace"
                       value={userProfile.fiveKmPace || ""}
@@ -362,7 +369,7 @@ export default function MyProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="maxElevationGain">{t("maxElevationGain")}</Label>
+                    <Label htmlFor="maxElevationGain" className="gap-0.5">{t("maxElevationGain")}<span className="text-red-500">*</span></Label>
                     <Input
                       id="maxElevationGain"
                       type="number"
@@ -372,7 +379,7 @@ export default function MyProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="maxElevationLoss">{t("maxElevationLoss")}</Label>
+                    <Label htmlFor="maxElevationLoss" className="gap-0.5">{t("maxElevationLoss")}<span className="text-red-500">*</span></Label>
                     <Input
                       id="maxElevationLoss"
                       type="number"
@@ -389,7 +396,7 @@ export default function MyProfilePage() {
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("equipmentSection")}</h3>
               <div className="space-y-2">
-                <Label>{t("equipment")}</Label>
+                <Label className="gap-0.5">{t("equipment")}<span className="text-red-500">*</span></Label>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
                   {equipmentOptions.map((opt) => (
                     <label key={opt} className="flex items-center gap-2 text-sm">
@@ -411,7 +418,7 @@ export default function MyProfilePage() {
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("quizSection")}</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t("quizManagerDuties")}</Label>
+                  <Label className="gap-0.5">{t("quizManagerDuties")}<span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {managerDutyOptions.map((opt) => (
                       <label key={opt} className="flex items-center gap-2 text-sm">
@@ -427,7 +434,7 @@ export default function MyProfilePage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("quizMemberDuties")}</Label>
+                  <Label className="gap-0.5">{t("quizMemberDuties")}<span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {memberDutyOptions.map((opt) => (
                       <label key={opt} className="flex items-center gap-2 text-sm">
@@ -482,7 +489,7 @@ export default function MyProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("insurance")}</Label>
+                  <Label className="gap-0.5">{t("insurance")}<span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {insuranceOptions.map((opt) => (
                       <label key={opt} className="flex items-center gap-2 text-sm">
@@ -535,13 +542,15 @@ export default function MyProfilePage() {
               <span className="text-muted-foreground">{t("profileConsent")}</span>
             </label>
 
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700"
-              disabled={savingProfile || !profileConsent}
-            >
-              {savingProfile ? "..." : t("save")}
-            </Button>
+            <span title={!isProfileFormComplete ? t("fillRequiredFields") : undefined}>
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700"
+                disabled={savingProfile || !profileConsent || !isProfileFormComplete}
+              >
+                {savingProfile ? "..." : t("save")}
+              </Button>
+            </span>
           </form>
         </CardContent>
       </Card>
