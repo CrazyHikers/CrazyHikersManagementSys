@@ -13,7 +13,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PromotionRequest } from "@/components/dashboard/promotion-request";
@@ -91,7 +90,7 @@ const emptyUserProfile: UserProfile = {
 const fitnessOptions = ["running", "swimming", "cycling", "hiking", "asvz_cardio", "other"];
 const equipmentOptions = ["hiking_boots", "trail_shoes", "trekking_poles", "hardshell", "backpack", "hydration_bladder", "buff", "arm_sleeves"];
 const managerDutyOptions = ["lead_group", "command", "boost_morale", "help_carry"];
-const memberDutyOptions = ["follow_leader", "gear_check", "respect_leader", "self_safety", "go_alone", "casual_dress", "leader_serves_me", "blame_leader"];
+const memberDutyOptions = ["follow_leader", "go_alone", "gear_check", "casual_dress", "respect_leader", "leader_serves_me", "self_safety", "blame_leader"];
 const insuranceOptions = ["rega", "employer", "personal", "none"];
 
 export default function MyProfilePage() {
