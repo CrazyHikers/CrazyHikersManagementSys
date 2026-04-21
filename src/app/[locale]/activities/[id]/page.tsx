@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityRegistrationPanel } from "@/components/activity-registration-panel";
 import { ShareButton } from "@/components/share-button";
+import { ActivityNotificationCard } from "@/components/activity-notification-card";
 
 // Activity payload is shared across all visitors — cache it with a
 // per-ID tag. Write routes call revalidateTag(cacheTags.activity(id))
@@ -177,7 +178,7 @@ export default async function ActivityDetailPage({
             return (
               <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle>{t("hikingDetails")}</CardTitle>
+                  <CardTitle className="text-lg">{t("hikingDetails")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -234,6 +235,8 @@ export default async function ActivityDetailPage({
               </Card>
             );
           })()}
+
+          <ActivityNotificationCard />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <Card>

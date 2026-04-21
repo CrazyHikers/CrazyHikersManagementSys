@@ -116,7 +116,25 @@
     "hikingNotes": "Notes",
     "hikingDetails": "Hiking Details",
     "qrCode": "Group Chat QR Code",
-    "qrCodeHelp": "Scan to join the group chat."
+    "qrCodeHelp": "Scan to join the group chat.",
+    "notification": {
+      "title": "Notification",
+      "activityInfoTitle": "Activity information:",
+      "activityInfoBody": "Exact departure time and meeting place will be announced by the leader after you join the WeChat group.",
+      "conductTitle": "Participant conduct:",
+      "conductIntro": "To keep registration fair and hikes enjoyable for everyone, please follow the rules below. Thank you for your understanding and cooperation.",
+      "yellowHeading": "🟨 Yellow card: any of the following — you will not be selected for three weeks",
+      "yellow_1": "After being selected, you do not join the WeChat group or tell the leader you cannot attend within 24 hours of the screening results being posted",
+      "yellow_2": "Between 24 hours before and 15 minutes after assembly or departure time, you notify the leader that you cannot join the group",
+      "yellow_3": "During the hike, you refuse to follow reasonable instructions from the leader",
+      "yellow_4": "Information on your registration form is false",
+      "yellow_5": "Camera gear you listed on the form is not brought, or you refuse to use it when conditions allow, or you refuse to share materials after the activity",
+      "redHeading": "🟥 Red card: any of the following — you will not be selected for the rest of this hiking season",
+      "red_1": "You do not join the group at assembly or departure time and do not notify the leader within 15 minutes (no show)",
+      "red_2": "Unsafe behaviour during the hike, and you ignore the leader’s warnings",
+      "red_3": "Clearly inappropriate behaviour toward others during the hike",
+      "red_4": "Receiving two yellow cards in the same hiking season"
+    }
   },
   "dashboard": {
     "title": "Dashboard",

@@ -14,6 +14,7 @@ import { RegistrationManager } from "@/components/dashboard/registration-manager
 import { RegistrationsStore } from "@/components/dashboard/registrations-store";
 import { RegistrationCountDisplay } from "@/components/dashboard/registration-count-display";
 import { getDisplayStatus } from "@/lib/activity";
+import { ActivityNotificationCard } from "@/components/activity-notification-card";
 
 export default async function ActivityDetailPage({
   params,
@@ -236,7 +237,7 @@ export default async function ActivityDetailPage({
         return (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>{t("hikingDetails")}</CardTitle>
+              <CardTitle className="text-lg">{t("hikingDetails")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -293,6 +294,8 @@ export default async function ActivityDetailPage({
           </Card>
         );
       })()}
+
+      <ActivityNotificationCard />
 
       <Card className="mb-6">
         <CardHeader>

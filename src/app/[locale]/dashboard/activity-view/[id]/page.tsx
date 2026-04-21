@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ActivityNotificationCard } from "@/components/activity-notification-card";
 
 const statusColors: Record<string, string> = {
   open: "bg-green-100 text-green-800",
@@ -187,6 +188,8 @@ export default async function ActivityViewPage({
           </Card>
         );
       })()}
+
+      <ActivityNotificationCard />
 
       <Card className="mb-6">
         <CardHeader>
