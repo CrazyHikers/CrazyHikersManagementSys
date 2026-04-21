@@ -114,7 +114,12 @@
     "technicalDifficulty": "技术难度",
     "enduranceDifficulty": "体力需求",
     "hikingNotes": "注意事项",
-    "hikingDetails": "徒步详情",
+    "hikingDetails": "线路信息",
+    "managersCardTitle": "领队",
+    "participantsWithCount": "队员（{count}）",
+    "noParticipants": "暂无队员",
+    "unlimited": "不限",
+    "participantRegisteredAt": "报名时间",
     "qrCode": "群聊二维码",
     "qrCodeHelp": "扫码加入群聊。",
     "notification": {
@@ -226,7 +231,7 @@
       "technicalDifficulty": "技术难度",
       "enduranceDifficulty": "体力需求",
       "hikingNotes": "注意事项",
-      "hikingDetails": "徒步详情",
+      "hikingDetails": "线路信息",
       "waiverInfo": "免责声明",
       "waiverSignedName": "签名",
       "noWaiver": "无有效免责声明"

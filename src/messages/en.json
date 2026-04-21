@@ -115,6 +115,11 @@
     "enduranceDifficulty": "Endurance Difficulty",
     "hikingNotes": "Notes",
     "hikingDetails": "Hiking Details",
+    "managersCardTitle": "Managers",
+    "participantsWithCount": "Participants ({count})",
+    "noParticipants": "No participants",
+    "unlimited": "Unlimited",
+    "participantRegisteredAt": "Registered",
     "qrCode": "Group Chat QR Code",
     "qrCodeHelp": "Scan to join the group chat.",
     "notification": {
