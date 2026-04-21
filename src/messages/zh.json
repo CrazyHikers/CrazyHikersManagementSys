@@ -114,9 +114,32 @@
     "technicalDifficulty": "技术难度",
     "enduranceDifficulty": "体力需求",
     "hikingNotes": "注意事项",
-    "hikingDetails": "徒步详情",
+    "hikingDetails": "线路信息",
+    "managersCardTitle": "领队",
+    "participantsWithCount": "队员（{count}）",
+    "noParticipants": "暂无队员",
+    "unlimited": "不限",
+    "participantRegisteredAt": "报名时间",
     "qrCode": "群聊二维码",
-    "qrCodeHelp": "扫码加入群聊。"
+    "qrCodeHelp": "扫码加入群聊。",
+    "notification": {
+      "title": "温馨提示",
+      "activityInfoTitle": "活动信息:",
+      "activityInfoBody": "具体出发时间和集合地点在入微信群以后由领队通知",
+      "conductTitle": "队员违规行为:",
+      "conductIntro": "为了给大家提供公平的报名环境和良好的徒步体验，请注意以下规则，谢谢大家的理解和配合！",
+      "yellowHeading": "🟨 黄牌：有至少一项以下行为者，三周内不会被选",
+      "yellow_1": "被选中后，在领队发布筛选结果24小时之内没有入微信群或没有告知自己无法参加",
+      "yellow_2": "在集合或发车时间的24小时之内至15分钟后的区间，通知领队不能加入队伍",
+      "yellow_3": "徒步过程中拒绝配合领队的合理指引",
+      "yellow_4": "报名表填写不实",
+      "yellow_5": "在报名表里填写的摄影器材在活动中没有携带，或在有条件使用的情况下拒绝使用，或拒绝在活动结束后分享素材",
+      "redHeading": "🟥 红牌：有至少一项以下行为者，本徒步季不会被选",
+      "red_1": "在集合或发车时间没有加入队伍，且没有在15分钟之内通知领队（no show）",
+      "red_2": "徒步过程中有不安全行为，并且无视领队的劝阻",
+      "red_3": "徒步过程中对他人有明显不当行为",
+      "red_4": "在本徒步季获得两张黄牌"
+    }
   },
   "dashboard": {
     "title": "控制面板",
@@ -208,7 +231,7 @@
       "technicalDifficulty": "技术难度",
       "enduranceDifficulty": "体力需求",
       "hikingNotes": "注意事项",
-      "hikingDetails": "徒步详情",
+      "hikingDetails": "线路信息",
       "waiverInfo": "免责声明",
       "waiverSignedName": "签名",
       "noWaiver": "无有效免责声明"
