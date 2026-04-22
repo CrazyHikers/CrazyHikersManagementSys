@@ -4,45 +4,15 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-
-      - name: Build
-        run: npx next build
-
-      - name: Prepare deploy branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B deploy
-
-          # Remove dev/meta files not needed for production
-          rm -f CLAUDE.md AGENTS.md DEPLOY.md README.md
-          rm -rf .claude scripts
-          rm -rf .github
-
-          git add -A
-          git commit -m "Deploy: $(date -u +%Y-%m-%dT%H:%M:%SZ) from main@$(git rev-parse --short main)" --allow-empty
-
-      - name: Push deploy branch
-        run: git push origin deploy --force
+      - name: Deploy to Vercel
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
