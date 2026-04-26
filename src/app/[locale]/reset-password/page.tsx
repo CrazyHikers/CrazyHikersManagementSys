@@ -67,8 +67,8 @@ function ResetPasswordForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <img src="/logo.jpg" alt="Crazy Hikers" className="h-20 mx-auto mb-2" />
-          <CardTitle>{t("setPasswordTitle")}</CardTitle>
-          <CardDescription>{t("setPasswordDescription")}</CardDescription>
+          <CardTitle>{t("resetPasswordTitle")}</CardTitle>
+          <CardDescription>{t("resetPasswordDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           {linkInvalid ? (
