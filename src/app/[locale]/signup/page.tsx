@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { signIn } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Turnstile } from "@/components/turnstile";
 
 export default function SignUpPage() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -32,24 +32,21 @@ export default function SignUpPage() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
 
-    // Verify Turnstile first
-    const verifyRes = await fetch("/api/auth/verify-turnstile", {
+    // No users row is created here — the signup endpoint stores only a
+    // verification_tokens row, and the user is created in the database
+    // when they click the email link and set a password.
+    const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turnstileToken }),
+      body: JSON.stringify({ email, turnstileToken, locale }),
     });
 
-    if (!verifyRes.ok) {
-      setError(t("turnstileError"));
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || t("turnstileError"));
       setLoading(false);
       return;
     }
-
-    await signIn("email", {
-      email,
-      redirect: false,
-      callbackUrl: "/set-password",
-    });
 
     setSent(true);
     setLoading(false);

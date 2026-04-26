@@ -44,62 +44,36 @@ export async function sendEmail({
   return data;
 }
 
-export async function sendMagicLinkEmail(email: string, url: string) {
-  // Fail fast on a missing/malformed URL — otherwise the template would
-  // render an "<a href="">" button and the email would look mostly blank
-  // to the recipient. Surfacing the error lets the caller retry or alert.
+export async function sendWelcomeSignupEmail(email: string, url: string) {
+  // Used after a fresh signup. Same destination URL shape as reset
+  // (/{locale}/reset-password?token=…&email=…) — the receiving endpoint
+  // upserts the user, so the same flow handles both "first password" and
+  // "replace existing password".
   if (!url || !/^https?:\/\//i.test(url)) {
-    throw new Error(`Refusing to send magic link to ${email}: invalid URL`);
+    throw new Error(`Refusing to send welcome email to ${email}: invalid URL`);
   }
-
-  // The signin page reuses the magic-link mechanism for "forgot password"
-  // by passing callbackUrl=/set-password. Detect that here so the email
-  // can be unambiguously labeled as a password reset — otherwise users
-  // who requested a reset see a generic "Sign in" email and mistake it
-  // for the wrong message.
-  const isPasswordReset = (() => {
-    try {
-      const callback = new URL(url).searchParams.get("callbackUrl") || "";
-      return callback.includes("/set-password");
-    } catch {
-      return false;
-    }
-  })();
-
-  const subject = isPasswordReset
-    ? "重置密码 — Crazy Hikers / Reset your password"
-    : "登录 Crazy Hikers / Sign in";
-  const heading = isPasswordReset ? "重置密码 / Reset Password" : "登录 / Sign In";
-  const introZh = isPasswordReset
-    ? "点击下方按钮重置你的账户密码。点击后你将被引导设置新密码。"
-    : "点击下方按钮登录你的账户。";
-  const introEn = isPasswordReset
-    ? "Click the button below to reset your password. You'll be asked to set a new one after clicking."
-    : "Click the button below to sign in to your account.";
-  const buttonLabel = isPasswordReset ? "重置密码 / Reset Password" : "登录 / Sign In";
-
   return sendEmail({
     to: email,
-    subject,
+    subject: "欢迎加入 Crazy Hikers！请设置密码 / Welcome — set your password",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2>${heading}</h2>
-        <p>${introZh}</p>
-        <p>${introEn}</p>
+        <h2>欢迎加入 Crazy Hikers / Welcome to Crazy Hikers</h2>
+        <p>感谢注册！点击下方按钮设置你的密码并完成账户创建。</p>
+        <p>Thanks for signing up. Click the button below to set your password and finish creating your account.</p>
         <a href="${url}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
-          ${buttonLabel}
+          设置密码 / Set Password
         </a>
         <p style="color: #666; font-size: 14px; margin-top: 16px;">
           或将以下链接复制到浏览器打开 / Or copy and paste this link:<br/>
           <a href="${url}" style="color: #16a34a; word-break: break-all;">${url}</a>
         </p>
         <p style="color: #666; font-size: 14px; margin-top: 16px;">
-          此链接24小时内有效。如果不是你本人操作，请忽略此邮件。<br/>
-          This link expires in 24 hours. If you didn't request this, you can safely ignore this email.
+          此链接1小时内有效。如果不是你本人操作，请忽略此邮件。<br/>
+          This link expires in 1 hour. If you didn't sign up, you can safely ignore this email.
         </p>
       </div>
     `,
-    text: `${heading}\n\n${introZh}\n${introEn}\n\n${url}\n\n此链接24小时内有效。如果不是你本人操作，请忽略此邮件。\nThis link expires in 24 hours. If you didn't request this, you can safely ignore this email.`,
+    text: `欢迎加入 Crazy Hikers / Welcome to Crazy Hikers\n\n点击以下链接设置密码 / Click to set your password:\n\n${url}\n\n此链接1小时内有效。\nThis link expires in 1 hour.`,
   });
 }
 

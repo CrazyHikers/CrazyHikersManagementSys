@@ -46,9 +46,13 @@ export async function POST(req: NextRequest) {
     });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    await db.user.update({
+    // Upsert handles both flows: signup (no row yet) and reset (row exists).
+    // The token grant proves email ownership, which is enough to either
+    // create or replace the account credentials.
+    await db.user.upsert({
       where: { email },
-      data: { passwordHash },
+      create: { email, name: "", role: "member", passwordHash },
+      update: { passwordHash },
     });
 
     return NextResponse.json({ ok: true });

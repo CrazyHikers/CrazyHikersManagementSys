@@ -1,12 +1,9 @@
 import NextAuth from "next-auth";
-import EmailProvider from "next-auth/providers/email";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { sendMagicLinkEmail } from "./email";
 import { db } from "./db";
 import { rateLimit } from "./rate-limit";
-import { verifyTurnstile, verifyTurnstileCookie } from "./turnstile";
-import { cookies } from "next/headers";
+import { verifyTurnstile } from "./turnstile";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
 
@@ -95,30 +92,6 @@ const userAdapter: Adapter = {
 export const authConfig: NextAuthConfig = {
   adapter: userAdapter,
   providers: [
-    EmailProvider({
-      server: { host: "smtp.placeholder.com", port: 587, auth: { user: "", pass: "" } },
-      from: "noreply@crazyhiker.com",
-      sendVerificationRequest: async ({ identifier: email, url }) => {
-        // Verify Turnstile cookie (set by /api/auth/verify-turnstile)
-        const cookieStore = await cookies();
-        const turnstileCookie = cookieStore.get("turnstile-verified")?.value;
-        if (!verifyTurnstileCookie(turnstileCookie)) {
-          console.warn(`[AUTH] Turnstile cookie missing/invalid for ${email}`);
-          throw new Error("Bot verification required. Please try again.");
-        }
-
-        // Rate limit: max 3 magic links per email per 15 minutes
-        const { allowed } = rateLimit(`signin:${email}`, { maxAttempts: 3, windowMs: 15 * 60 * 1000 });
-        if (!allowed) {
-          console.warn(`[AUTH] Rate limited magic link for ${email}`);
-          throw new Error("Too many sign-in attempts. Please try again later.");
-        }
-        console.log(`[AUTH] Magic link for ${email}: ${url}`);
-        await sendMagicLinkEmail(email, url).catch((err) => {
-          console.error("[AUTH] Email send failed:", err);
-        });
-      },
-    }),
     CredentialsProvider({
       id: "credentials",
       credentials: {
