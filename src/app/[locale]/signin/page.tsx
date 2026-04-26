@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { signIn } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Turnstile } from "@/components/turnstile";
 
 export default function SignInPage() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,24 +61,21 @@ export default function SignInPage() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
 
-    // Verify Turnstile first
-    const verifyRes = await fetch("/api/auth/verify-turnstile", {
+    // The reset flow handles its own Turnstile verification server-side and
+    // doesn't go through Auth.js's email magic-link callback (which fails
+    // to issue a JWT cookie under JWT session strategy).
+    const res = await fetch("/api/auth/request-password-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turnstileToken }),
+      body: JSON.stringify({ email, turnstileToken, locale }),
     });
 
-    if (!verifyRes.ok) {
-      setError(t("turnstileError"));
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || t("turnstileError"));
       setLoading(false);
       return;
     }
-
-    await signIn("email", {
-      email,
-      redirect: false,
-      callbackUrl: "/set-password",
-    });
 
     setForgotSent(true);
     setLoading(false);

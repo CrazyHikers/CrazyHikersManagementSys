@@ -103,6 +103,38 @@ export async function sendMagicLinkEmail(email: string, url: string) {
   });
 }
 
+export async function sendPasswordResetEmail(email: string, url: string) {
+  // The reset flow doesn't go through Auth.js's magic-link callback (which
+  // fails to issue a JWT cookie under JWT session strategy), so this email
+  // links straight to /reset-password?token=…&email=… instead.
+  if (!url || !/^https?:\/\//i.test(url)) {
+    throw new Error(`Refusing to send password reset to ${email}: invalid URL`);
+  }
+  return sendEmail({
+    to: email,
+    subject: "重置密码 — Crazy Hikers / Reset your password",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2>重置密码 / Reset Password</h2>
+        <p>点击下方按钮重置你的账户密码。</p>
+        <p>Click the button below to reset your account password.</p>
+        <a href="${url}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+          重置密码 / Reset Password
+        </a>
+        <p style="color: #666; font-size: 14px; margin-top: 16px;">
+          或将以下链接复制到浏览器打开 / Or copy and paste this link:<br/>
+          <a href="${url}" style="color: #16a34a; word-break: break-all;">${url}</a>
+        </p>
+        <p style="color: #666; font-size: 14px; margin-top: 16px;">
+          此链接1小时内有效。如果不是你本人操作，请忽略此邮件。<br/>
+          This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+        </p>
+      </div>
+    `,
+    text: `重置密码 / Reset Password\n\n点击以下链接重置密码 / Click to reset your password:\n\n${url}\n\n此链接1小时内有效。如果不是你本人操作，请忽略此邮件。\nThis link expires in 1 hour. If you didn't request this, you can safely ignore this email.`,
+  });
+}
+
 export async function sendComanagerInvitation(
   email: string,
   comanagerName: string,

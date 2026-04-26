@@ -516,11 +516,14 @@
     "sendResetLink": "Send Reset Link",
     "backToSignIn": "Back to Sign In",
     "invalidCredentials": "Invalid email or password.",
-    "setPasswordTitle": "Set Your Password",
-    "setPasswordDescription": "Create a password for your account to enable direct sign-in.",
+    "setPasswordTitle": "Reset Your Password",
+    "setPasswordDescription": "Enter a new password for your account.",
     "setPassword": "Set Password",
     "passwordMinLength": "Password must be at least 8 characters.",
     "passwordsMustMatch": "Passwords do not match.",
+    "resetFailed": "Could not reset password. Please try again.",
+    "resetLinkInvalid": "This reset link is invalid or expired. Please request a new one.",
+    "resetSuccess": "Password reset. Redirecting to sign in…",
     "turnstileError": "Bot verification failed. Please try again."
   },
   "cookieBanner": {
