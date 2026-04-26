@@ -275,33 +275,9 @@ export default function MyProfilePage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveProfile} className="space-y-6">
-            {/* Emergency Contact */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("emergencySection")}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyContact" className="gap-0.5">{t("emergencyContact")}<span className="text-red-500">*</span></Label>
-                  <Input
-                    id="emergencyContact"
-                    value={userProfile.emergencyContact || ""}
-                    onChange={(e) => updateProfileField("emergencyContact", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone" className="gap-0.5">{t("emergencyPhone")}<span className="text-red-500">*</span></Label>
-                  <Input
-                    id="emergencyPhone"
-                    value={userProfile.emergencyPhone || ""}
-                    onChange={(e) => updateProfileField("emergencyPhone", e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Personal */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("personalSection")}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="gender">{t("gender")}</Label>
                   <Select
@@ -340,7 +316,6 @@ export default function MyProfilePage() {
 
             {/* Fitness & Experience */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("fitnessSection")}</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="gap-0.5">{t("fitnessActivities")}<span className="text-red-500">*</span></Label>
@@ -394,7 +369,6 @@ export default function MyProfilePage() {
 
             {/* Equipment */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("equipmentSection")}</h3>
               <div className="space-y-2">
                 <Label className="gap-0.5">{t("equipment")}<span className="text-red-500">*</span></Label>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -415,7 +389,6 @@ export default function MyProfilePage() {
 
             {/* Knowledge Quiz */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("quizSection")}</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="gap-0.5">{t("quizManagerDuties")}<span className="text-red-500">*</span></Label>
@@ -454,7 +427,6 @@ export default function MyProfilePage() {
 
             {/* Other */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">{t("otherSection")}</h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>{t("canDoEquipmentCheck")}</Label>
@@ -528,6 +500,28 @@ export default function MyProfilePage() {
                     />
                     {t("no")}
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact" className="gap-0.5">{t("emergencyContact")}<span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergencyContact"
+                    value={userProfile.emergencyContact || ""}
+                    onChange={(e) => updateProfileField("emergencyContact", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone" className="gap-0.5">{t("emergencyPhone")}<span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergencyPhone"
+                    value={userProfile.emergencyPhone || ""}
+                    onChange={(e) => updateProfileField("emergencyPhone", e.target.value)}
+                  />
                 </div>
               </div>
             </div>
