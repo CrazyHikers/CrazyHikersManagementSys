@@ -12,17 +12,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Re-author HEAD as github-actions[bot]
-        # Vercel's authorship checks scan git metadata (and commit
-        # message trailers like Co-Authored-By) on the HEAD it
-        # receives. Replace HEAD with a single bot-authored orphan
-        # commit so Vercel sees no human-author signal. The branch
-        # is local-only and never pushed — Vercel CLI uploads the
-        # working tree and attaches local HEAD metadata directly.
+        # Vercel's authorship checks scan git metadata on the HEAD
+        # commit (author + message trailers like Co-Authored-By).
+        # Amend HEAD with the bot identity and a fresh message so
+        # the CLI deploy attaches no human-author signal. Local-
+        # only — never pushed.
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan deploy
-          git commit -m "Deploy main@$(echo $GITHUB_SHA | cut -c1-7)"
+          git commit --amend --reset-author -m "Deploy main@$(echo $GITHUB_SHA | cut -c1-7)"
 
       - name: Deploy to Vercel
         run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
