@@ -23,6 +23,25 @@
     "shareText": "使用以下链接来报名",
     "linkCopied": "链接已复制到剪贴板"
   },
+  "feedback": {
+    "button": "意见反馈",
+    "dialogTitle": "意见反馈",
+    "systemOnly": "请仅反馈系统相关的问题（程序缺陷或功能建议）。如需投诉其他成员，请直接联系俱乐部负责人。",
+    "typeLabel": "类型",
+    "type_bug": "程序缺陷",
+    "type_feature": "功能建议",
+    "type_other": "其他",
+    "titleLabel": "标题",
+    "titlePlaceholder": "简要概括",
+    "descriptionLabel": "详细描述",
+    "descriptionPlaceholder": "请详细描述。如果是程序缺陷，请说明复现步骤。",
+    "submit": "提交",
+    "submitting": "提交中...",
+    "cancel": "取消",
+    "success": "感谢您的反馈！已成功提交。",
+    "error": "提交失败，请稍后重试。",
+    "tooManyRequests": "提交次数过多，请稍后再试。"
+  },
   "nav": {
     "home": "首页",
     "dashboard": "控制面板",

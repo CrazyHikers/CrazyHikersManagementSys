@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 export function SiteFooter() {
   const t = useTranslations("common");
@@ -12,9 +12,12 @@ export function SiteFooter() {
             <img src="/logo.jpg" alt="" className="h-6" />
             {t("appName")}
           </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} {t("appName")}
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <FeedbackDialog />
+            <p>
+              &copy; {new Date().getFullYear()} {t("appName")}
+            </p>
+          </div>
         </div>
       </div>
     </footer>

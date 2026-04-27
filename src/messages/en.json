@@ -23,6 +23,25 @@
     "shareText": "Register using the link below",
     "linkCopied": "Link copied to clipboard"
   },
+  "feedback": {
+    "button": "Send Feedback",
+    "dialogTitle": "Send Feedback",
+    "systemOnly": "Please report system-related issues only (bugs, feature requests). For complaints about other members, contact club leadership directly.",
+    "typeLabel": "Type",
+    "type_bug": "Bug",
+    "type_feature": "Feature request",
+    "type_other": "Other",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Brief summary",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Please describe in detail. For bugs, include steps to reproduce.",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "cancel": "Cancel",
+    "success": "Thanks! Your feedback has been submitted.",
+    "error": "Failed to submit. Please try again later.",
+    "tooManyRequests": "You've submitted too many times. Please try again later."
+  },
   "nav": {
     "home": "Home",
     "dashboard": "Dashboard",
