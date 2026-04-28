@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { findSameDayCommitment } from "@/lib/activity";
@@ -161,14 +161,20 @@ export async function POST(
       });
       if (nonInternConfirmedCount === 1) {
         const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-        broadcast({
-          kind: "activity_created",
-          activityId: am.activityId,
-          activityTitle: am.activity.title,
-          url: `${baseUrl}/activities/${am.activityId}`,
-        }).catch((err) =>
-          console.error("[notify] activity_created broadcast failed:", err)
-        );
+        const activityId = am.activityId;
+        const activityTitle = am.activity.title;
+        after(async () => {
+          try {
+            await broadcast({
+              kind: "activity_created",
+              activityId,
+              activityTitle,
+              url: `${baseUrl}/activities/${activityId}`,
+            });
+          } catch (err) {
+            console.error("[notify] activity_created broadcast failed:", err);
+          }
+        });
       }
     }
   }

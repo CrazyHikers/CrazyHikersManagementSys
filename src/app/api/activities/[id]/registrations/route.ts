@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -127,17 +127,24 @@ export async function PATCH(
       });
 
       // Fire push notification to whatever channels the user has enabled.
-      // Non-blocking: a delivery failure must not roll back the confirmation.
+      // `after()` keeps the function alive past the response; a bare
+      // unawaited promise would risk being killed by Vercel before the
+      // push completes. A delivery failure must not roll back the confirm.
       if (activity) {
         const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-        notify(userEmail, {
-          kind: "registration_confirmed",
-          activityId,
-          activityTitle: activity.title,
-          url: `${baseUrl}/activities/${activityId}`,
-        }).catch((err) =>
-          console.error("[notify] registration_confirmed failed:", err)
-        );
+        const activityTitle = activity.title;
+        after(async () => {
+          try {
+            await notify(userEmail, {
+              kind: "registration_confirmed",
+              activityId,
+              activityTitle,
+              url: `${baseUrl}/activities/${activityId}`,
+            });
+          } catch (err) {
+            console.error("[notify] registration_confirmed failed:", err);
+          }
+        });
       }
     } else {
       await db.registration.update({

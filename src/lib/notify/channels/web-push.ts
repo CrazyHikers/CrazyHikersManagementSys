@@ -66,7 +66,13 @@ async function sendToOne(
     await webpush.sendNotification(
       { endpoint, keys: { p256dh, auth } },
       body,
-      { TTL: 60 * 60 * 24 } // 1 day — keep queued if browser offline
+      {
+        TTL: 60 * 60 * 24, // 1 day — keep queued if browser offline
+        // Tell the push service to deliver immediately. Without this, FCM
+        // and Mozilla autopush batch low-urgency pushes for power saving,
+        // which can introduce minutes of delay on backgrounded devices.
+        urgency: "high",
+      }
     );
     return "delivered";
   } catch (err) {

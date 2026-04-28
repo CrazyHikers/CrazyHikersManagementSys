@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -162,17 +162,27 @@ export async function POST(request: NextRequest) {
     // manager. For intern-created activities the broadcast is deferred until
     // the first non-intern co-manager accepts their invitation (handled in
     // /api/invitations/comanager/[token]).
+    //
+    // `after()` keeps the function alive past the response so the broadcast
+    // (potentially hundreds of pushes) actually finishes. Vercel will kill
+    // a bare unawaited promise once the response is sent.
     const creatorIsIntern = manager?.managerProfile?.intern === true;
     if (!creatorIsIntern) {
       const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-      broadcast({
-        kind: "activity_created",
-        activityId: activity.id,
-        activityTitle: title,
-        url: `${baseUrl}/activities/${activity.id}`,
-      }).catch((err) =>
-        console.error("[notify] activity_created broadcast failed:", err)
-      );
+      const activityId = activity.id;
+      const activityTitle = title;
+      after(async () => {
+        try {
+          await broadcast({
+            kind: "activity_created",
+            activityId,
+            activityTitle,
+            url: `${baseUrl}/activities/${activityId}`,
+          });
+        } catch (err) {
+          console.error("[notify] activity_created broadcast failed:", err);
+        }
+      });
     }
 
     revalidateTag(cacheTags.activities, "max");

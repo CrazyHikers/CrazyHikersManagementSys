@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { notifyDevice } from "@/lib/notify";
@@ -51,14 +51,22 @@ export async function POST(request: NextRequest) {
 
   // Fire a confirmation push to *this* device only, not the user's other
   // subscribed devices — those devices didn't just enable anything, so a
-  // global welcome would be confusing. Failures are non-fatal: the
-  // subscription is already saved.
-  notifyDevice(body.endpoint, {
-    kind: "test",
-    title: "Crazy Hikers",
-    body: "此设备已启用推送通知 / Push notifications enabled on this device",
-    url: "/dashboard/my-profile",
-  }).catch((err) => console.error("[subscribe] welcome push failed:", err));
+  // global welcome would be confusing. Wrapped in `after()` so Vercel
+  // keeps the function alive until the push completes; a bare promise
+  // would risk being killed when the response is returned, which earlier
+  // showed up as multi-minute delivery delays.
+  after(async () => {
+    try {
+      await notifyDevice(body.endpoint, {
+        kind: "test",
+        title: "Crazy Hikers",
+        body: "此设备已启用推送通知 / Push notifications enabled on this device",
+        url: "/dashboard/my-profile",
+      });
+    } catch (err) {
+      console.error("[subscribe] welcome push failed:", err);
+    }
+  });
 
   return NextResponse.json({ success: true });
 }
