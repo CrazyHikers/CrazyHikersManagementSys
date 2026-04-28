@@ -551,7 +551,7 @@ export default function MyProfilePage() {
       </Card>
 
       <div className="mt-6">
-        <NotificationSettings />
+        <NotificationSettings userRole={profile.role} />
       </div>
 
       {promotionEligibility && (

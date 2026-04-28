@@ -482,10 +482,16 @@
       "deniedTitle": "通知已被屏蔽",
       "deniedBody": "你已屏蔽本站的通知。请在浏览器设置中允许 Crazy Hikers 发送通知，然后刷新页面。",
       "prefsTitle": "接收以下通知",
+      "memberGroupTitle": "通用",
+      "managerGroupTitle": "领队相关",
       "prefSaveFailed": "更新偏好设置失败，请重试。",
       "prefs": {
         "activity_created": "新活动发布",
-        "registration_confirmed": "报名被确认"
+        "registration_confirmed": "报名被确认",
+        "comanager_invited": "我收到协管邀请",
+        "comanager_response": "协管接受或拒绝我的邀请",
+        "confirm_registrations_reminder": "报名截止后提醒确认报名",
+        "finalize_activity_reminder": "提醒将活动标记为完成或取消"
       }
     },
     "settings": {

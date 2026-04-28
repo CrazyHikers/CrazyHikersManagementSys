@@ -46,6 +46,43 @@ function formatPayload(payload: NotificationPayload): string {
         icon: "/icon.png",
         tag: `activity-${payload.activityId}`,
       });
+    case "comanager_invited":
+      return JSON.stringify({
+        title: "Crazy Hikers",
+        body: `${payload.inviterName} 邀请你协管 / invited you to co-manage: ${payload.activityTitle}`,
+        url: payload.url,
+        icon: "/icon.png",
+        tag: `comanager-invite-${payload.activityId}`,
+      });
+    case "comanager_response":
+      return JSON.stringify({
+        title: "Crazy Hikers",
+        body: payload.accepted
+          ? `${payload.responderName} 接受了协管邀请 / accepted co-manage invite: ${payload.activityTitle}`
+          : `${payload.responderName} 拒绝了协管邀请 / declined co-manage invite: ${payload.activityTitle}`,
+        url: payload.url,
+        icon: "/icon.png",
+        tag: `comanager-response-${payload.activityId}-${payload.responderName}`,
+      });
+    case "confirm_registrations_reminder":
+      return JSON.stringify({
+        title: "Crazy Hikers",
+        body: `提醒：${payload.activityTitle} 还有 ${payload.pendingCount} 个待确认报名 / Reminder: ${payload.pendingCount} pending registration(s) to confirm`,
+        url: payload.url,
+        icon: "/icon.png",
+        // Daily reminders use a date-stamped tag so each day's reminder
+        // replaces the previous (no growing stack), but two distinct
+        // activities don't dedupe each other.
+        tag: `confirm-reminder-${payload.activityId}-${new Date().toISOString().slice(0, 10)}`,
+      });
+    case "finalize_activity_reminder":
+      return JSON.stringify({
+        title: "Crazy Hikers",
+        body: `提醒：请将活动「${payload.activityTitle}」标记为完成或取消 / Reminder: please mark activity "${payload.activityTitle}" as finished or cancelled`,
+        url: payload.url,
+        icon: "/icon.png",
+        tag: `finalize-reminder-${payload.activityId}-${new Date().toISOString().slice(0, 10)}`,
+      });
     case "test":
       return JSON.stringify({
         title: payload.title,

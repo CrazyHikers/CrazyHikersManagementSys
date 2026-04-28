@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
-import { broadcast } from "@/lib/notify";
+import { broadcast, notify } from "@/lib/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -131,6 +131,43 @@ export async function POST(
         ]
       : []),
   ]);
+
+  // Notify the main manager who issued the invitation, both on accept and
+  // decline — they need to know either way (decline means re-invite). Look
+  // up the responder's display name for the push body.
+  const responder = await db.user.findUnique({
+    where: { email: am.userEmail },
+    select: { name: true },
+  });
+  const mainManager = await db.activityManager.findFirst({
+    where: {
+      activityId: am.activityId,
+      role: "manager",
+      status: "confirmed",
+    },
+    select: { userEmail: true },
+  });
+  if (mainManager) {
+    const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+    const responderName = responder?.name || am.userEmail;
+    const activityId = am.activityId;
+    const activityTitle = am.activity.title;
+    const responseAccepted = accepted;
+    after(async () => {
+      try {
+        await notify(mainManager.userEmail, {
+          kind: "comanager_response",
+          activityId,
+          activityTitle,
+          responderName,
+          accepted: responseAccepted,
+          url: `${baseUrl}/dashboard/activities/${activityId}`,
+        });
+      } catch (err) {
+        console.error("[notify] comanager_response failed:", err);
+      }
+    });
+  }
 
   // Accept changes the list of confirmed managers shown on the activity
   // page and the landing page's intern-visibility rule; decline never

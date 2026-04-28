@@ -6,7 +6,7 @@ import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
-import { broadcast } from "@/lib/notify";
+import { broadcast, notify } from "@/lib/notify";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -144,7 +144,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send invitation emails to comanagers
+    // Send invitation emails to comanagers + push notifications. The push
+    // is in addition to the email since not every comanager checks email
+    // promptly; both are fire-and-forget so the response isn't blocked.
     const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
     const managerName = session.user?.name || userEmail;
     for (const cm of comanagerData) {
@@ -156,6 +158,20 @@ export async function POST(request: NextRequest) {
         title,
         inviteUrl
       ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
+
+      after(async () => {
+        try {
+          await notify(cm.userEmail, {
+            kind: "comanager_invited",
+            activityId: activity.id,
+            activityTitle: title,
+            inviterName: managerName,
+            url: inviteUrl,
+          });
+        } catch (err) {
+          console.error("[notify] comanager_invited failed:", err);
+        }
+      });
     }
 
     // Broadcast "activity created" only if the creator is a non-intern

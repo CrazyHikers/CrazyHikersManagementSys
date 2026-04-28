@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/kpi",
       "schedule": "0 3 1 11 *"
+    },
+    {
+      "path": "/api/cron/manager-reminders",
+      "schedule": "0 8 * * *"
     }
   ]
 }

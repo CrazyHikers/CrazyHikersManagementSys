@@ -17,8 +17,15 @@ export type {
   ChannelId,
   SendResult,
   UserToggleableKind,
+  MemberKind,
+  ManagerKind,
 } from "./types";
-export { USER_TOGGLEABLE_KINDS, DEFAULT_PREFS } from "./types";
+export {
+  USER_TOGGLEABLE_KINDS,
+  MEMBER_KINDS,
+  MANAGER_KINDS,
+  DEFAULT_PREFS,
+} from "./types";
 
 const channels: Record<ChannelId, Channel> = {
   "web-push": webPushChannel,
@@ -29,15 +36,19 @@ function isUserToggleable(kind: string): kind is UserToggleableKind {
 }
 
 // Resolve a user's effective prefs, applying defaults for missing keys.
+// Iterates DEFAULT_PREFS so adding a new toggleable kind doesn't require
+// touching this function — just extend the type union and DEFAULT_PREFS.
 export function resolvePrefs(
   raw: unknown
 ): Required<NotificationPreferences> {
-  const prefs = (raw && typeof raw === "object" ? raw : {}) as NotificationPreferences;
-  return {
-    activity_created: prefs.activity_created ?? DEFAULT_PREFS.activity_created,
-    registration_confirmed:
-      prefs.registration_confirmed ?? DEFAULT_PREFS.registration_confirmed,
-  };
+  const prefs = (raw && typeof raw === "object"
+    ? raw
+    : {}) as NotificationPreferences;
+  const out = {} as Required<NotificationPreferences>;
+  for (const key of Object.keys(DEFAULT_PREFS) as UserToggleableKind[]) {
+    out[key] = prefs[key] ?? DEFAULT_PREFS[key];
+  }
+  return out;
 }
 
 async function userHasKindEnabled(

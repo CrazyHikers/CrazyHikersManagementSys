@@ -483,10 +483,16 @@
       "deniedTitle": "Notifications blocked",
       "deniedBody": "You've blocked notifications for this site. To re-enable, open your browser's site settings, allow notifications for Crazy Hikers, and reload this page.",
       "prefsTitle": "Notify me about",
+      "memberGroupTitle": "For everyone",
+      "managerGroupTitle": "As a manager",
       "prefSaveFailed": "Could not update preference. Please try again.",
       "prefs": {
         "activity_created": "New activities",
-        "registration_confirmed": "My registration is confirmed"
+        "registration_confirmed": "My registration is confirmed",
+        "comanager_invited": "Co-manager invitations I receive",
+        "comanager_response": "Co-manager accepts or declines my invitation",
+        "confirm_registrations_reminder": "Reminder to confirm registrations after the deadline",
+        "finalize_activity_reminder": "Reminder to mark activity as finished or cancelled"
       }
     },
     "settings": {

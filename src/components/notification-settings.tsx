@@ -17,9 +17,25 @@ type Status =
 type Prefs = {
   activity_created: boolean;
   registration_confirmed: boolean;
+  comanager_invited: boolean;
+  comanager_response: boolean;
+  confirm_registrations_reminder: boolean;
+  finalize_activity_reminder: boolean;
 };
 
-const PREF_KEYS: (keyof Prefs)[] = ["activity_created", "registration_confirmed"];
+const MEMBER_PREF_KEYS: (keyof Prefs)[] = [
+  "activity_created",
+  "registration_confirmed",
+];
+
+const MANAGER_PREF_KEYS: (keyof Prefs)[] = [
+  "comanager_invited",
+  "comanager_response",
+  "confirm_registrations_reminder",
+  "finalize_activity_reminder",
+];
+
+const MANAGER_ROLES = ["manager", "admin", "dev"];
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -48,8 +64,9 @@ function isStandalone(): boolean {
   );
 }
 
-export function NotificationSettings() {
+export function NotificationSettings({ userRole }: { userRole?: string }) {
   const t = useTranslations("dashboard.notifications");
+  const showManagerPrefs = !!userRole && MANAGER_ROLES.includes(userRole);
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
@@ -251,25 +268,42 @@ export function NotificationSettings() {
             </div>
 
             {prefs && (
-              <div className="border-t pt-3">
-                <p className="text-sm font-medium mb-2">{t("prefsTitle")}</p>
-                <div className="space-y-2">
-                  {PREF_KEYS.map((key) => (
-                    <label
-                      key={key}
-                      className="flex items-center gap-2 text-sm cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
+              <div className="border-t pt-3 space-y-4">
+                <div>
+                  <p className="text-sm font-medium mb-2">
+                    {t("memberGroupTitle")}
+                  </p>
+                  <div className="space-y-2">
+                    {MEMBER_PREF_KEYS.map((key) => (
+                      <PrefCheckbox
+                        key={key}
+                        label={t(`prefs.${key}`)}
                         checked={prefs[key]}
-                        onChange={(e) => togglePref(key, e.target.checked)}
                         disabled={savingPrefs}
-                        className="h-4 w-4 rounded border-gray-300"
+                        onChange={(v) => togglePref(key, v)}
                       />
-                      <span>{t(`prefs.${key}`)}</span>
-                    </label>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+
+                {showManagerPrefs && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">
+                      {t("managerGroupTitle")}
+                    </p>
+                    <div className="space-y-2">
+                      {MANAGER_PREF_KEYS.map((key) => (
+                        <PrefCheckbox
+                          key={key}
+                          label={t(`prefs.${key}`)}
+                          checked={prefs[key]}
+                          disabled={savingPrefs}
+                          onChange={(v) => togglePref(key, v)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -292,6 +326,31 @@ export function NotificationSettings() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function PrefCheckbox({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="h-4 w-4 rounded border-gray-300"
+      />
+      <span>{label}</span>
+    </label>
   );
 }
 
