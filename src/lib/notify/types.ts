@@ -10,8 +10,8 @@
 //     used by the notify lib for per-user preference filtering. Channels
 //     don't see the kind.
 
-export type ChannelId = "web-push" | "telegram";
-// Future: | "discord" | "wechat";
+export type ChannelId = "web-push" | "telegram" | "discord";
+// Future: | "wechat";
 
 export type NotificationKind =
   | "activity_created"

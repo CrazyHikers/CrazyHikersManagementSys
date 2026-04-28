@@ -52,6 +52,8 @@ model User {
   webPushSubscriptions WebPushSubscription[]
   telegramSubscription TelegramSubscription?
   telegramLinkTokens   TelegramLinkToken[]
+  discordSubscription  DiscordSubscription?
+  discordLinkTokens    DiscordLinkToken[]
 
   @@index([role])
   @@map("users")
@@ -392,4 +394,36 @@ model TelegramLinkToken {
   @@index([userEmail])
   @@index([expiresAt])
   @@map("telegram_link_tokens")
+}
+
+// One linked Discord account per user. Bot can DM via the cached
+// dmChannelId (avoids re-creating the DM channel on every send).
+model DiscordSubscription {
+  id            String   @id @default(uuid())
+  userEmail     String   @unique @map("user_email")
+  discordUserId String   @unique @map("discord_user_id")
+  username      String?
+  dmChannelId   String?  @map("dm_channel_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@map("discord_subscriptions")
+}
+
+// State tokens for the OAuth linking flow. The token id is sent as the
+// `state` parameter on the Discord redirect; the callback looks it up,
+// verifies ownership, and consumes it.
+model DiscordLinkToken {
+  id        String   @id @default(uuid())
+  userEmail String   @map("user_email")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@index([userEmail])
+  @@index([expiresAt])
+  @@map("discord_link_tokens")
 }

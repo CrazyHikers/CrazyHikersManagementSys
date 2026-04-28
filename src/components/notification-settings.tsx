@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Bell, BellOff, AlertTriangle, MessageCircle } from "lucide-react";
+import { Bell, BellOff, AlertTriangle, MessageCircle, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -15,6 +15,12 @@ type PushStatus =
   | { kind: "ready"; subscribed: boolean };
 
 type TelegramStatus =
+  | { kind: "loading" }
+  | { kind: "not-configured" }
+  | { kind: "not-linked" }
+  | { kind: "linked"; username: string | null };
+
+type DiscordStatus =
   | { kind: "loading" }
   | { kind: "not-configured" }
   | { kind: "not-linked" }
@@ -82,14 +88,44 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
   });
   const [telegramBusy, setTelegramBusy] = useState(false);
 
+  const [discordStatus, setDiscordStatus] = useState<DiscordStatus>({
+    kind: "loading",
+  });
+  const [discordBusy, setDiscordBusy] = useState(false);
+
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
     void detectPushStatus().then(setPushStatus);
     void fetchTelegramStatus();
+    void fetchDiscordStatus();
     void fetchPrefs();
+    handleDiscordCallbackParams();
   }, []);
+
+  // The Discord OAuth flow redirects back to this page with ?discord=<status>.
+  // Translate that into a toast and clean the URL so a refresh doesn't
+  // re-fire the message.
+  function handleDiscordCallbackParams() {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("discord");
+    if (!status) return;
+
+    if (status === "linked") toast.success(t("discordLinked"));
+    else if (status === "not_in_guild") toast.error(t("discordNotInGuild"));
+    else if (status === "already_linked")
+      toast.error(t("discordAlreadyLinked"));
+    else if (status === "denied") toast.error(t("discordDenied"));
+    else toast.error(t("discordLinkFailed"));
+
+    params.delete("discord");
+    const cleaned =
+      window.location.pathname +
+      (params.toString() ? `?${params.toString()}` : "");
+    window.history.replaceState({}, "", cleaned);
+  }
 
   async function fetchPrefs() {
     try {
@@ -115,6 +151,24 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     } catch (err) {
       console.error("[notifications] telegram status failed:", err);
       setTelegramStatus({ kind: "not-configured" });
+    }
+  }
+
+  async function fetchDiscordStatus() {
+    try {
+      const res = await fetch("/api/notifications/discord/status");
+      if (!res.ok) {
+        setDiscordStatus({ kind: "not-configured" });
+        return;
+      }
+      const data = await res.json();
+      if (!data.configured) setDiscordStatus({ kind: "not-configured" });
+      else if (data.linked)
+        setDiscordStatus({ kind: "linked", username: data.username });
+      else setDiscordStatus({ kind: "not-linked" });
+    } catch (err) {
+      console.error("[notifications] discord status failed:", err);
+      setDiscordStatus({ kind: "not-configured" });
     }
   }
 
@@ -279,6 +333,41 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     }
   }
 
+  async function handleDiscordLink() {
+    setDiscordBusy(true);
+    try {
+      const res = await fetch("/api/notifications/discord/link-token", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      // Full-page redirect — the OAuth flow needs to come back to our
+      // callback, which then redirects to this page with ?discord=<status>.
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[notifications] discord link failed:", err);
+      toast.error(t("discordLinkFailed"));
+      setDiscordBusy(false);
+    }
+  }
+
+  async function handleDiscordUnlink() {
+    setDiscordBusy(true);
+    try {
+      const res = await fetch("/api/notifications/discord/unlink", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setDiscordStatus({ kind: "not-linked" });
+      toast.success(t("discordUnlinked"));
+    } catch (err) {
+      console.error("[notifications] discord unlink failed:", err);
+      toast.error(t("discordUnlinkFailed"));
+    } finally {
+      setDiscordBusy(false);
+    }
+  }
+
   async function togglePref(key: keyof Prefs, value: boolean) {
     if (!prefs) return;
     const previous = prefs;
@@ -306,7 +395,8 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
   // point asking them to choose what to receive when nothing's wired up.
   const anyChannelActive =
     (pushStatus.kind === "ready" && pushStatus.subscribed) ||
-    telegramStatus.kind === "linked";
+    telegramStatus.kind === "linked" ||
+    discordStatus.kind === "linked";
 
   return (
     <Card>
@@ -343,6 +433,21 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
             t={t}
             onLink={handleTelegramLink}
             onUnlink={handleTelegramUnlink}
+          />
+        </div>
+
+        {/* Discord channel */}
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-2 flex items-center gap-2">
+            <Hash className="h-4 w-4" />
+            {t("discordSectionTitle")}
+          </p>
+          <DiscordChannelBody
+            status={discordStatus}
+            busy={discordBusy}
+            t={t}
+            onLink={handleDiscordLink}
+            onUnlink={handleDiscordUnlink}
           />
         </div>
 
@@ -547,6 +652,66 @@ function TelegramChannelBody(props: {
       </Button>
       <p className="text-xs text-muted-foreground mt-2">
         {t("telegramLinkHint")}
+      </p>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function DiscordChannelBody(props: {
+  status: DiscordStatus;
+  busy: boolean;
+  t: any;
+  onLink: () => void;
+  onUnlink: () => void;
+}) {
+  const { status, busy, t, onLink, onUnlink } = props;
+
+  if (status.kind === "loading") {
+    return <p className="text-sm text-muted-foreground">{t("checking")}</p>;
+  }
+
+  if (status.kind === "not-configured") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("discordNotConfigured")}
+      </p>
+    );
+  }
+
+  if (status.kind === "linked") {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm flex items-center gap-2">
+          <Hash className="h-4 w-4 text-green-600" />
+          {status.username
+            ? t("discordLinkedAs", { username: status.username })
+            : t("discordLinkedNoUsername")}
+        </p>
+        <Button
+          variant="outline"
+          onClick={onUnlink}
+          disabled={busy}
+          className="gap-2"
+        >
+          {busy ? "..." : t("discordUnlink")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Button
+        onClick={onLink}
+        disabled={busy}
+        className="bg-indigo-600 hover:bg-indigo-700 gap-2"
+      >
+        <Hash className="h-4 w-4" />
+        {busy ? "..." : t("discordLink")}
+      </Button>
+      <p className="text-xs text-muted-foreground mt-2">
+        {t("discordLinkHint")}
       </p>
     </div>
   );
