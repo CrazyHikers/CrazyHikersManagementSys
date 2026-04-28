@@ -488,8 +488,8 @@
       "prefs": {
         "activity_created": "新活动发布",
         "registration_confirmed": "报名被确认",
-        "comanager_invited": "我收到协管邀请",
-        "comanager_response": "协管接受或拒绝我的邀请",
+        "comanager_invited": "我收到副领邀请",
+        "comanager_response": "副领接受或拒绝我的邀请",
         "confirm_registrations_reminder": "报名截止后提醒确认报名",
         "finalize_activity_reminder": "提醒将活动标记为完成或取消"
       }

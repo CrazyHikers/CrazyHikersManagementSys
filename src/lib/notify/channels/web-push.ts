@@ -49,7 +49,7 @@ function formatPayload(payload: NotificationPayload): string {
     case "comanager_invited":
       return JSON.stringify({
         title: "Crazy Hikers",
-        body: `${payload.inviterName} 邀请你协管 / invited you to co-manage: ${payload.activityTitle}`,
+        body: `${payload.inviterName} 邀请你副领 / invited you to co-manage: ${payload.activityTitle}`,
         url: payload.url,
         icon: "/icon.png",
         tag: `comanager-invite-${payload.activityId}`,
@@ -58,8 +58,8 @@ function formatPayload(payload: NotificationPayload): string {
       return JSON.stringify({
         title: "Crazy Hikers",
         body: payload.accepted
-          ? `${payload.responderName} 接受了协管邀请 / accepted co-manage invite: ${payload.activityTitle}`
-          : `${payload.responderName} 拒绝了协管邀请 / declined co-manage invite: ${payload.activityTitle}`,
+          ? `${payload.responderName} 接受了副领邀请 / accepted co-manage invite: ${payload.activityTitle}`
+          : `${payload.responderName} 拒绝了副领邀请 / declined co-manage invite: ${payload.activityTitle}`,
         url: payload.url,
         icon: "/icon.png",
         tag: `comanager-response-${payload.activityId}-${payload.responderName}`,
