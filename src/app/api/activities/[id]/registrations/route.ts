@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
-import { notify } from "@/lib/notify";
+import { notify, registrationConfirmedDispatch } from "@/lib/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -132,15 +132,14 @@ export async function PATCH(
       // push completes. A delivery failure must not roll back the confirm.
       if (activity) {
         const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-        const activityTitle = activity.title;
+        const dispatch = registrationConfirmedDispatch({
+          activityId,
+          activityTitle: activity.title,
+          url: `${baseUrl}/activities/${activityId}`,
+        });
         after(async () => {
           try {
-            await notify(userEmail, {
-              kind: "registration_confirmed",
-              activityId,
-              activityTitle,
-              url: `${baseUrl}/activities/${activityId}`,
-            });
+            await notify(userEmail, dispatch);
           } catch (err) {
             console.error("[notify] registration_confirmed failed:", err);
           }

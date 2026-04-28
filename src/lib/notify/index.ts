@@ -2,7 +2,9 @@ import { db } from "@/lib/db";
 import type {
   Channel,
   ChannelId,
-  NotificationPayload,
+  NotificationDispatch,
+  NotificationKind,
+  NotificationMeta,
   NotificationPreferences,
   SendResult,
   UserToggleableKind,
@@ -11,8 +13,9 @@ import { DEFAULT_PREFS, USER_TOGGLEABLE_KINDS } from "./types";
 import { webPushChannel, sendWebPushToEndpoint } from "./channels/web-push";
 
 export type {
-  NotificationPayload,
+  NotificationDispatch,
   NotificationKind,
+  NotificationMeta,
   NotificationPreferences,
   ChannelId,
   SendResult,
@@ -27,12 +30,22 @@ export {
   DEFAULT_PREFS,
 } from "./types";
 
+// Re-export the dispatch builders so callers have a single import surface.
+export {
+  activityCreatedDispatch,
+  registrationConfirmedDispatch,
+  comanagerInvitedDispatch,
+  comanagerResponseDispatch,
+  confirmRegistrationsReminderDispatch,
+  finalizeActivityReminderDispatch,
+} from "./messages";
+
 const channels: Record<ChannelId, Channel> = {
   "web-push": webPushChannel,
 };
 
-function isUserToggleable(kind: string): kind is UserToggleableKind {
-  return (USER_TOGGLEABLE_KINDS as readonly string[]).includes(kind);
+function isUserToggleable(kind: NotificationKind): kind is UserToggleableKind {
+  return (USER_TOGGLEABLE_KINDS as readonly NotificationKind[]).includes(kind);
 }
 
 // Resolve a user's effective prefs, applying defaults for missing keys.
@@ -53,10 +66,8 @@ export function resolvePrefs(
 
 async function userHasKindEnabled(
   userEmail: string,
-  kind: NotificationPayload["kind"]
+  kind: NotificationKind
 ): Promise<boolean> {
-  // `test` bypasses prefs — it's only used for the confirmation push when
-  // the user explicitly subscribes a device.
   if (!isUserToggleable(kind)) return true;
 
   const user = await db.user.findUnique({
@@ -68,27 +79,28 @@ async function userHasKindEnabled(
   return prefs[kind];
 }
 
-// Send to a single device (web push only — Discord/WeChat have their own
-// per-account models). Bypasses per-kind preferences since this is used
-// for device-targeted confirmations like the post-subscribe welcome push.
+// Send a meta to a single device (web push only — Discord/WeChat have their
+// own per-account models). Bypasses preferences since this is used for
+// device-targeted confirmations like the post-subscribe welcome push, where
+// pref-filtering is irrelevant: the user just enabled push on this device.
 export async function notifyDevice(
   endpoint: string,
-  payload: NotificationPayload
+  meta: NotificationMeta
 ): Promise<void> {
-  await sendWebPushToEndpoint(endpoint, payload);
+  await sendWebPushToEndpoint(endpoint, meta);
 }
 
 // Send to a single user. Respects their per-kind preferences.
 export async function notify(
   userEmail: string,
-  payload: NotificationPayload
+  dispatch: NotificationDispatch
 ): Promise<SendResult[]> {
-  if (!(await userHasKindEnabled(userEmail, payload.kind))) {
+  if (!(await userHasKindEnabled(userEmail, dispatch.kind))) {
     return [];
   }
 
   const results = await Promise.allSettled(
-    Object.values(channels).map((c) => c.send(userEmail, payload))
+    Object.values(channels).map((c) => c.send(userEmail, dispatch.meta))
   );
 
   const out: SendResult[] = [];
@@ -105,7 +117,7 @@ export async function notify(
 // Fan out to every user who has at least one push subscription and hasn't
 // opted out of this kind. Used for activity-wide announcements.
 export async function broadcast(
-  payload: NotificationPayload
+  dispatch: NotificationDispatch
 ): Promise<{ sent: number; skipped: number }> {
   // Pull subscribed users in one query, with their prefs, deduped by email.
   const subscribers = await db.user.findMany({
@@ -119,9 +131,9 @@ export async function broadcast(
   // Sequential to avoid hammering Neon's connection pool with hundreds of
   // parallel deliveries. Web push fan-out per user is already parallel.
   for (const user of subscribers) {
-    if (isUserToggleable(payload.kind)) {
+    if (isUserToggleable(dispatch.kind)) {
       const prefs = resolvePrefs(user.notificationPrefs);
-      if (!prefs[payload.kind]) {
+      if (!prefs[dispatch.kind]) {
         skipped++;
         continue;
       }
@@ -129,7 +141,7 @@ export async function broadcast(
 
     try {
       await Promise.all(
-        Object.values(channels).map((c) => c.send(user.email, payload))
+        Object.values(channels).map((c) => c.send(user.email, dispatch.meta))
       );
       sent++;
     } catch (err) {

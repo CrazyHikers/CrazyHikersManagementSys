@@ -6,7 +6,12 @@ import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
-import { broadcast, notify } from "@/lib/notify";
+import {
+  broadcast,
+  notify,
+  activityCreatedDispatch,
+  comanagerInvitedDispatch,
+} from "@/lib/notify";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -159,15 +164,15 @@ export async function POST(request: NextRequest) {
         inviteUrl
       ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
 
+      const dispatch = comanagerInvitedDispatch({
+        activityId: activity.id,
+        activityTitle: title,
+        inviterName: managerName,
+        url: inviteUrl,
+      });
       after(async () => {
         try {
-          await notify(cm.userEmail, {
-            kind: "comanager_invited",
-            activityId: activity.id,
-            activityTitle: title,
-            inviterName: managerName,
-            url: inviteUrl,
-          });
+          await notify(cm.userEmail, dispatch);
         } catch (err) {
           console.error("[notify] comanager_invited failed:", err);
         }
@@ -185,16 +190,14 @@ export async function POST(request: NextRequest) {
     const creatorIsIntern = manager?.managerProfile?.intern === true;
     if (!creatorIsIntern) {
       const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-      const activityId = activity.id;
-      const activityTitle = title;
+      const dispatch = activityCreatedDispatch({
+        activityId: activity.id,
+        activityTitle: title,
+        url: `${baseUrl}/activities/${activity.id}`,
+      });
       after(async () => {
         try {
-          await broadcast({
-            kind: "activity_created",
-            activityId,
-            activityTitle,
-            url: `${baseUrl}/activities/${activityId}`,
-          });
+          await broadcast(dispatch);
         } catch (err) {
           console.error("[notify] activity_created broadcast failed:", err);
         }

@@ -54,14 +54,14 @@ export async function POST(request: NextRequest) {
   // global welcome would be confusing. Wrapped in `after()` so Vercel
   // keeps the function alive until the push completes; a bare promise
   // would risk being killed when the response is returned, which earlier
-  // showed up as multi-minute delivery delays.
+  // showed up as multi-minute delivery delays. Welcome pushes don't
+  // belong to any toggleable kind, so we pass meta directly.
   after(async () => {
     try {
       await notifyDevice(body.endpoint, {
-        kind: "test",
         title: "Crazy Hikers",
         body: "此设备已启用推送通知 / Push notifications enabled on this device",
-        url: "/dashboard/my-profile",
+        link: "/dashboard/my-profile",
       });
     } catch (err) {
       console.error("[subscribe] welcome push failed:", err);

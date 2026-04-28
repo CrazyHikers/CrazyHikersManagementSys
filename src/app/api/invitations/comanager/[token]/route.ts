@@ -3,7 +3,12 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
-import { broadcast, notify } from "@/lib/notify";
+import {
+  broadcast,
+  notify,
+  activityCreatedDispatch,
+  comanagerResponseDispatch,
+} from "@/lib/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -149,20 +154,17 @@ export async function POST(
   });
   if (mainManager) {
     const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-    const responderName = responder?.name || am.userEmail;
-    const activityId = am.activityId;
-    const activityTitle = am.activity.title;
-    const responseAccepted = accepted;
+    const dispatch = comanagerResponseDispatch({
+      activityId: am.activityId,
+      activityTitle: am.activity.title,
+      responderName: responder?.name || am.userEmail,
+      accepted,
+      url: `${baseUrl}/dashboard/activities/${am.activityId}`,
+    });
+    const recipient = mainManager.userEmail;
     after(async () => {
       try {
-        await notify(mainManager.userEmail, {
-          kind: "comanager_response",
-          activityId,
-          activityTitle,
-          responderName,
-          accepted: responseAccepted,
-          url: `${baseUrl}/dashboard/activities/${activityId}`,
-        });
+        await notify(recipient, dispatch);
       } catch (err) {
         console.error("[notify] comanager_response failed:", err);
       }
@@ -198,16 +200,14 @@ export async function POST(
       });
       if (nonInternConfirmedCount === 1) {
         const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-        const activityId = am.activityId;
-        const activityTitle = am.activity.title;
+        const dispatch = activityCreatedDispatch({
+          activityId: am.activityId,
+          activityTitle: am.activity.title,
+          url: `${baseUrl}/activities/${am.activityId}`,
+        });
         after(async () => {
           try {
-            await broadcast({
-              kind: "activity_created",
-              activityId,
-              activityTitle,
-              url: `${baseUrl}/activities/${activityId}`,
-            });
+            await broadcast(dispatch);
           } catch (err) {
             console.error("[notify] activity_created broadcast failed:", err);
           }

@@ -1,6 +1,6 @@
 import webpush from "web-push";
 import { db } from "@/lib/db";
-import type { Channel, NotificationPayload, SendResult } from "../types";
+import type { Channel, NotificationMeta, SendResult } from "../types";
 
 let configured = false;
 function ensureConfigured() {
@@ -26,71 +26,19 @@ function isGone(err: unknown): boolean {
   return status === 404 || status === 410;
 }
 
-function formatPayload(payload: NotificationPayload): string {
-  // Keep under ~4KB. Each channel knows how to render the kind-discriminated
-  // payload in its own format; here we render for the service worker.
-  switch (payload.kind) {
-    case "activity_created":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: `新活动发布 / New activity: ${payload.activityTitle}`,
-        url: payload.url,
-        icon: "/icon.png",
-        tag: `activity-created-${payload.activityId}`,
-      });
-    case "registration_confirmed":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: `报名已确认 / Registration confirmed: ${payload.activityTitle}`,
-        url: payload.url,
-        icon: "/icon.png",
-        tag: `activity-${payload.activityId}`,
-      });
-    case "comanager_invited":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: `${payload.inviterName} 邀请你副领 / invited you to co-manage: ${payload.activityTitle}`,
-        url: payload.url,
-        icon: "/icon.png",
-        tag: `comanager-invite-${payload.activityId}`,
-      });
-    case "comanager_response":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: payload.accepted
-          ? `${payload.responderName} 接受了副领邀请 / accepted co-manage invite: ${payload.activityTitle}`
-          : `${payload.responderName} 拒绝了副领邀请 / declined co-manage invite: ${payload.activityTitle}`,
-        url: payload.url,
-        icon: "/icon.png",
-        tag: `comanager-response-${payload.activityId}-${payload.responderName}`,
-      });
-    case "confirm_registrations_reminder":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: `提醒：${payload.activityTitle} 还有 ${payload.pendingCount} 个待确认报名 / Reminder: ${payload.pendingCount} pending registration(s) to confirm`,
-        url: payload.url,
-        icon: "/icon.png",
-        // Daily reminders use a date-stamped tag so each day's reminder
-        // replaces the previous (no growing stack), but two distinct
-        // activities don't dedupe each other.
-        tag: `confirm-reminder-${payload.activityId}-${new Date().toISOString().slice(0, 10)}`,
-      });
-    case "finalize_activity_reminder":
-      return JSON.stringify({
-        title: "Crazy Hikers",
-        body: `提醒：请将活动「${payload.activityTitle}」标记为完成或取消 / Reminder: please mark activity "${payload.activityTitle}" as finished or cancelled`,
-        url: payload.url,
-        icon: "/icon.png",
-        tag: `finalize-reminder-${payload.activityId}-${new Date().toISOString().slice(0, 10)}`,
-      });
-    case "test":
-      return JSON.stringify({
-        title: payload.title,
-        body: payload.body,
-        url: payload.url ?? "/",
-        icon: "/icon.png",
-      });
-  }
+// Wrap channel-agnostic meta into the JSON envelope our service worker
+// expects. This is the only point where transport-specific formatting lives;
+// everything upstream operates on NotificationMeta.
+function toServiceWorkerPayload(meta: NotificationMeta): string {
+  // Keep under ~4KB.
+  return JSON.stringify({
+    title: meta.title,
+    body: meta.body,
+    url: meta.link ?? "/",
+    icon: "/icon.png",
+    tag: meta.tag,
+    renotify: !!meta.tag,
+  });
 }
 
 async function sendToOne(
@@ -119,13 +67,13 @@ async function sendToOne(
   }
 }
 
-// Send a payload to a single web-push subscription (looked up by endpoint).
+// Send a meta to a single web-push subscription (looked up by endpoint).
 // Used for actions whose target is a specific device rather than a user —
 // e.g. the welcome push fired when a device subscribes for the first time.
 // Stale subscriptions are cleaned up the same way as in the fan-out path.
 export async function sendWebPushToEndpoint(
   endpoint: string,
-  payload: NotificationPayload
+  meta: NotificationMeta
 ): Promise<void> {
   ensureConfigured();
   const sub = await db.webPushSubscription.findUnique({ where: { endpoint } });
@@ -135,7 +83,7 @@ export async function sendWebPushToEndpoint(
     sub.endpoint,
     sub.p256dh,
     sub.auth,
-    formatPayload(payload)
+    toServiceWorkerPayload(meta)
   );
 
   if (result === "gone") {
@@ -151,7 +99,7 @@ export async function sendWebPushToEndpoint(
 
 export const webPushChannel: Channel = {
   id: "web-push",
-  async send(userEmail, payload): Promise<SendResult> {
+  async send(userEmail, meta): Promise<SendResult> {
     ensureConfigured();
 
     const subs = await db.webPushSubscription.findMany({ where: { userEmail } });
@@ -159,7 +107,7 @@ export const webPushChannel: Channel = {
       return { channel: "web-push", attempted: 0, delivered: 0, removed: 0 };
     }
 
-    const body = formatPayload(payload);
+    const body = toServiceWorkerPayload(meta);
     const results = await Promise.all(
       subs.map((s) => sendToOne(s.endpoint, s.p256dh, s.auth, body))
     );

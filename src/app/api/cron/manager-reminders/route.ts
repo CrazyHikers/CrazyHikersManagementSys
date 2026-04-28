@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { notify } from "@/lib/notify";
+import {
+  notify,
+  confirmRegistrationsReminderDispatch,
+  finalizeActivityReminderDispatch,
+} from "@/lib/notify";
 import { findSameDayCommitment } from "@/lib/activity";
 import { getFlagSettings, isBanActive, unexpiredCutoff } from "@/lib/flags";
 
@@ -103,16 +107,15 @@ export async function POST(request: NextRequest) {
 
       if (confirmable.length === 0) continue;
 
-      const url = `${baseUrl}/dashboard/activities/${activity.id}`;
+      const dispatch = confirmRegistrationsReminderDispatch({
+        activityId: activity.id,
+        activityTitle: activity.title,
+        pendingCount: confirmable.length,
+        url: `${baseUrl}/dashboard/activities/${activity.id}`,
+      });
       for (const am of activity.activityManagers) {
         try {
-          await notify(am.userEmail, {
-            kind: "confirm_registrations_reminder",
-            activityId: activity.id,
-            activityTitle: activity.title,
-            pendingCount: confirmable.length,
-            url,
-          });
+          await notify(am.userEmail, dispatch);
           confirmRemindersSent++;
         } catch (err) {
           console.error(
@@ -139,15 +142,14 @@ export async function POST(request: NextRequest) {
     });
 
     for (const activity of finalizeCandidates) {
-      const url = `${baseUrl}/dashboard/activities/${activity.id}`;
+      const dispatch = finalizeActivityReminderDispatch({
+        activityId: activity.id,
+        activityTitle: activity.title,
+        url: `${baseUrl}/dashboard/activities/${activity.id}`,
+      });
       for (const am of activity.activityManagers) {
         try {
-          await notify(am.userEmail, {
-            kind: "finalize_activity_reminder",
-            activityId: activity.id,
-            activityTitle: activity.title,
-            url,
-          });
+          await notify(am.userEmail, dispatch);
           finalizeRemindersSent++;
         } catch (err) {
           console.error(

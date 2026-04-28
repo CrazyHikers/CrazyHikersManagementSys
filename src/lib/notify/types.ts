@@ -1,10 +1,14 @@
 // Channel-agnostic notification types.
 //
-// Adding a new channel (Discord, WeChat, etc.) means implementing the Channel
-// interface and registering it in `./index.ts` — call sites stay unchanged.
-// Adding a new event kind means extending NotificationKind + the
-// NotificationPayload union, plus a row in MEMBER_KINDS or MANAGER_KINDS for
-// the settings UI.
+// Two-layer separation:
+//   - NotificationMeta: what gets shown (title, body, link, tag). Built by
+//     callers (or by helpers in ./messages.ts) and dispatched to channels.
+//     Channels know how to wrap meta in their transport (web-push JSON,
+//     Discord embed, WeChat template) but never see the kind or domain
+//     event data.
+//   - NotificationKind: identifies which event the dispatch represents,
+//     used by the notify lib for per-user preference filtering. Channels
+//     don't see the kind.
 
 export type ChannelId = "web-push";
 // Future: | "discord" | "wechat";
@@ -15,8 +19,7 @@ export type NotificationKind =
   | "comanager_invited"
   | "comanager_response"
   | "confirm_registrations_reminder"
-  | "finalize_activity_reminder"
-  | "test";
+  | "finalize_activity_reminder";
 
 // Toggleable kinds visible to all users (members + managers + admins).
 export const MEMBER_KINDS = [
@@ -47,9 +50,6 @@ export type NotificationPreferences = Partial<
   Record<UserToggleableKind, boolean>
 >;
 
-// Default prefs for users who haven't customized — all kinds on. The
-// manager-only kinds being on for a non-manager has no effect: the events
-// that fire those kinds only target manager users.
 export const DEFAULT_PREFS: Required<NotificationPreferences> = {
   activity_created: true,
   registration_confirmed: true,
@@ -59,55 +59,25 @@ export const DEFAULT_PREFS: Required<NotificationPreferences> = {
   finalize_activity_reminder: true,
 };
 
-// Channel-agnostic payload. Each channel formats this for its own transport
-// (web push: JSON in 4KB; Discord: embed; WeChat: template message).
-export type NotificationPayload =
-  | {
-      kind: "activity_created";
-      activityId: string;
-      activityTitle: string;
-      url: string;
-    }
-  | {
-      kind: "registration_confirmed";
-      activityId: string;
-      activityTitle: string;
-      url: string;
-    }
-  | {
-      kind: "comanager_invited";
-      activityId: string;
-      activityTitle: string;
-      inviterName: string;
-      url: string;
-    }
-  | {
-      kind: "comanager_response";
-      activityId: string;
-      activityTitle: string;
-      responderName: string;
-      accepted: boolean;
-      url: string;
-    }
-  | {
-      kind: "confirm_registrations_reminder";
-      activityId: string;
-      activityTitle: string;
-      pendingCount: number;
-      url: string;
-    }
-  | {
-      kind: "finalize_activity_reminder";
-      activityId: string;
-      activityTitle: string;
-      url: string;
-    }
-  | {
-      kind: "test";
-      title: string;
-      body: string;
-      url?: string;
-    };
+// The unified message contract — what every channel ultimately delivers.
+// Constructed outside the channel (typically via helpers in ./messages.ts)
+// and passed in as opaque content the channel only formats for transport.
+export type NotificationMeta = {
+  title: string;
+  body: string;
+  // Where the click handler navigates. Absolute or origin-relative.
+  link?: string;
+  // Optional dedup key. Channels that support it (web-push) replace earlier
+  // notifications with the same tag instead of stacking.
+  tag?: string;
+};
+
+// What callers pass to notify() / broadcast(). Bundles the kind (for prefs
+// filtering) with the rendered meta (for delivery).
+export type NotificationDispatch = {
+  kind: NotificationKind;
+  meta: NotificationMeta;
+};
 
 export type SendResult = {
   channel: ChannelId;
@@ -118,5 +88,5 @@ export type SendResult = {
 
 export interface Channel {
   id: ChannelId;
-  send(userEmail: string, payload: NotificationPayload): Promise<SendResult>;
+  send(userEmail: string, meta: NotificationMeta): Promise<SendResult>;
 }
