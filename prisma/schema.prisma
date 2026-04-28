@@ -50,6 +50,8 @@ model User {
   invalidatedFlags  UserFlag[]          @relation("flagInvalidator")
   promotionRequests PromotionRequest[]
   webPushSubscriptions WebPushSubscription[]
+  telegramSubscription TelegramSubscription?
+  telegramLinkTokens   TelegramLinkToken[]
 
   @@index([role])
   @@map("users")
@@ -358,4 +360,36 @@ model WebPushSubscription {
 
   @@index([userEmail])
   @@map("web_push_subscriptions")
+}
+
+// One linked Telegram account per user. chatId is the user's Telegram chat
+// (we DM the bot, so chat = user-bot DM); both fields are unique so neither
+// the user nor a Telegram account can link twice.
+model TelegramSubscription {
+  id        String   @id @default(uuid())
+  userEmail String   @unique @map("user_email")
+  chatId    String   @unique @map("chat_id")
+  username  String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@map("telegram_subscriptions")
+}
+
+// Short-lived one-time tokens for the deep-link onboarding flow:
+// website generates a token, user opens t.me/<bot>?start=<token>,
+// bot's /start handler looks up the row and binds the chatId to userEmail.
+model TelegramLinkToken {
+  id        String   @id @default(uuid())
+  userEmail String   @map("user_email")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@index([userEmail])
+  @@index([expiresAt])
+  @@map("telegram_link_tokens")
 }

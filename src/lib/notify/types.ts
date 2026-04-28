@@ -10,7 +10,7 @@
 //     used by the notify lib for per-user preference filtering. Channels
 //     don't see the kind.
 
-export type ChannelId = "web-push";
+export type ChannelId = "web-push" | "telegram";
 // Future: | "discord" | "wechat";
 
 export type NotificationKind =

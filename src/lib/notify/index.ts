@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { DEFAULT_PREFS, USER_TOGGLEABLE_KINDS } from "./types";
 import { webPushChannel, sendWebPushToEndpoint } from "./channels/web-push";
+import { telegramChannel } from "./channels/telegram";
 
 export type {
   NotificationDispatch,
@@ -42,6 +43,7 @@ export {
 
 const channels: Record<ChannelId, Channel> = {
   "web-push": webPushChannel,
+  telegram: telegramChannel,
 };
 
 function isUserToggleable(kind: NotificationKind): kind is UserToggleableKind {

@@ -3,16 +3,22 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Bell, BellOff, AlertTriangle } from "lucide-react";
+import { Bell, BellOff, AlertTriangle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type Status =
+type PushStatus =
   | { kind: "loading" }
   | { kind: "unsupported" }
   | { kind: "needs-pwa-ios" }
   | { kind: "permission-denied" }
   | { kind: "ready"; subscribed: boolean };
+
+type TelegramStatus =
+  | { kind: "loading" }
+  | { kind: "not-configured" }
+  | { kind: "not-linked" }
+  | { kind: "linked"; username: string | null };
 
 type Prefs = {
   activity_created: boolean;
@@ -67,13 +73,21 @@ function isStandalone(): boolean {
 export function NotificationSettings({ userRole }: { userRole?: string }) {
   const t = useTranslations("dashboard.notifications");
   const showManagerPrefs = !!userRole && MANAGER_ROLES.includes(userRole);
-  const [status, setStatus] = useState<Status>({ kind: "loading" });
-  const [busy, setBusy] = useState(false);
+
+  const [pushStatus, setPushStatus] = useState<PushStatus>({ kind: "loading" });
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus>({
+    kind: "loading",
+  });
+  const [telegramBusy, setTelegramBusy] = useState(false);
+
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
-    void detectStatus().then(setStatus);
+    void detectPushStatus().then(setPushStatus);
+    void fetchTelegramStatus();
     void fetchPrefs();
   }, []);
 
@@ -86,7 +100,25 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     }
   }
 
-  async function detectStatus(): Promise<Status> {
+  async function fetchTelegramStatus() {
+    try {
+      const res = await fetch("/api/notifications/telegram/status");
+      if (!res.ok) {
+        setTelegramStatus({ kind: "not-configured" });
+        return;
+      }
+      const data = await res.json();
+      if (!data.configured) setTelegramStatus({ kind: "not-configured" });
+      else if (data.linked)
+        setTelegramStatus({ kind: "linked", username: data.username });
+      else setTelegramStatus({ kind: "not-linked" });
+    } catch (err) {
+      console.error("[notifications] telegram status failed:", err);
+      setTelegramStatus({ kind: "not-configured" });
+    }
+  }
+
+  async function detectPushStatus(): Promise<PushStatus> {
     if (typeof window === "undefined") return { kind: "loading" };
 
     const supported =
@@ -96,10 +128,8 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     if (!supported) return { kind: "unsupported" };
 
     if (isIos() && !isStandalone()) return { kind: "needs-pwa-ios" };
-
-    if (Notification.permission === "denied") {
+    if (Notification.permission === "denied")
       return { kind: "permission-denied" };
-    }
 
     let registration: ServiceWorkerRegistration;
     try {
@@ -117,12 +147,13 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     return { kind: "ready", subscribed: !!sub };
   }
 
-  async function handleEnable() {
-    setBusy(true);
+  async function handlePushEnable() {
+    setPushBusy(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        if (permission === "denied") setStatus({ kind: "permission-denied" });
+        if (permission === "denied")
+          setPushStatus({ kind: "permission-denied" });
         toast.error(t("permissionRequired"));
         return;
       }
@@ -151,18 +182,18 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
         throw new Error(await res.text());
       }
 
-      setStatus({ kind: "ready", subscribed: true });
+      setPushStatus({ kind: "ready", subscribed: true });
       toast.success(t("enabled"));
     } catch (err) {
       console.error("[notifications] enable failed:", err);
       toast.error(t("enableFailed"));
     } finally {
-      setBusy(false);
+      setPushBusy(false);
     }
   }
 
-  async function handleDisable() {
-    setBusy(true);
+  async function handlePushDisable() {
+    setPushBusy(true);
     try {
       const registration = await navigator.serviceWorker.ready;
       const sub = await registration.pushManager.getSubscription();
@@ -176,13 +207,75 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
         body: JSON.stringify(endpoint ? { endpoint } : { all: true }),
       });
 
-      setStatus({ kind: "ready", subscribed: false });
+      setPushStatus({ kind: "ready", subscribed: false });
       toast.success(t("disabled"));
     } catch (err) {
       console.error("[notifications] disable failed:", err);
       toast.error(t("disableFailed"));
     } finally {
-      setBusy(false);
+      setPushBusy(false);
+    }
+  }
+
+  async function handleTelegramLink() {
+    setTelegramBusy(true);
+    try {
+      const res = await fetch("/api/notifications/telegram/link-token", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      // Open Telegram in a new tab. Once the user clicks Start in Telegram,
+      // the bot's webhook binds the chat to their account; we poll status
+      // for ~2 minutes to update the UI without requiring a refresh.
+      window.open(data.url, "_blank", "noopener,noreferrer");
+      pollTelegramStatusUntilLinked();
+      toast.info(t("telegramLinkOpening"));
+    } catch (err) {
+      console.error("[notifications] telegram link failed:", err);
+      toast.error(t("telegramLinkFailed"));
+    } finally {
+      setTelegramBusy(false);
+    }
+  }
+
+  function pollTelegramStatusUntilLinked() {
+    let elapsed = 0;
+    const interval = setInterval(async () => {
+      elapsed += 3000;
+      try {
+        const res = await fetch("/api/notifications/telegram/status");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.linked) {
+            setTelegramStatus({ kind: "linked", username: data.username });
+            toast.success(t("telegramLinked"));
+            clearInterval(interval);
+            return;
+          }
+        }
+      } catch {
+        // Ignore transient failures; keep polling.
+      }
+      if (elapsed >= 120_000) clearInterval(interval);
+    }, 3000);
+  }
+
+  async function handleTelegramUnlink() {
+    setTelegramBusy(true);
+    try {
+      const res = await fetch("/api/notifications/telegram/unlink", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setTelegramStatus({ kind: "not-linked" });
+      toast.success(t("telegramUnlinked"));
+    } catch (err) {
+      console.error("[notifications] telegram unlink failed:", err);
+      toast.error(t("telegramUnlinkFailed"));
+    } finally {
+      setTelegramBusy(false);
     }
   }
 
@@ -209,6 +302,12 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
     }
   }
 
+  // Show prefs only once the user has at least one active channel — no
+  // point asking them to choose what to receive when nothing's wired up.
+  const anyChannelActive =
+    (pushStatus.kind === "ready" && pushStatus.subscribed) ||
+    telegramStatus.kind === "linked";
+
   return (
     <Card>
       <CardHeader>
@@ -217,115 +316,239 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
           {t("title")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <p className="text-sm text-muted-foreground">{t("description")}</p>
 
-        {status.kind === "loading" && (
-          <p className="text-sm text-muted-foreground">{t("checking")}</p>
-        )}
+        {/* Push channel */}
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-2">{t("pushSectionTitle")}</p>
+          <PushChannelBody
+            status={pushStatus}
+            busy={pushBusy}
+            t={t}
+            onEnable={handlePushEnable}
+            onDisable={handlePushDisable}
+          />
+        </div>
 
-        {status.kind === "unsupported" && (
-          <Notice tone="warn">
-            <p className="font-medium">{t("unsupportedTitle")}</p>
-            <p className="text-sm">{t("unsupportedBody")}</p>
-          </Notice>
-        )}
+        {/* Telegram channel */}
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-2 flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            {t("telegramSectionTitle")}
+          </p>
+          <TelegramChannelBody
+            status={telegramStatus}
+            busy={telegramBusy}
+            t={t}
+            onLink={handleTelegramLink}
+            onUnlink={handleTelegramUnlink}
+          />
+        </div>
 
-        {status.kind === "needs-pwa-ios" && (
-          <Notice tone="info">
-            <p className="font-medium">{t("iosTitle")}</p>
-            <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
-              <li>{t("iosStep1")}</li>
-              <li>{t("iosStep2")}</li>
-              <li>{t("iosStep3")}</li>
-            </ol>
-          </Notice>
-        )}
-
-        {status.kind === "permission-denied" && (
-          <Notice tone="warn">
-            <p className="font-medium">{t("deniedTitle")}</p>
-            <p className="text-sm">{t("deniedBody")}</p>
-          </Notice>
-        )}
-
-        {status.kind === "ready" && status.subscribed && (
-          <>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm flex items-center gap-2">
-                <Bell className="h-4 w-4 text-green-600" />
-                {t("subscribedOnDevice")}
+        {/* Per-event preferences (shared across all channels) */}
+        {anyChannelActive && prefs && (
+          <div className="border-t pt-4 space-y-4">
+            <p className="text-sm font-medium">{t("prefsTitle")}</p>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">
+                {t("memberGroupTitle")}
               </p>
-              <Button
-                variant="outline"
-                onClick={handleDisable}
-                disabled={busy}
-                className="gap-2"
-              >
-                <BellOff className="h-4 w-4" />
-                {busy ? "..." : t("disable")}
-              </Button>
+              <div className="space-y-2">
+                {MEMBER_PREF_KEYS.map((key) => (
+                  <PrefCheckbox
+                    key={key}
+                    label={t(`prefs.${key}`)}
+                    checked={prefs[key]}
+                    disabled={savingPrefs}
+                    onChange={(v) => togglePref(key, v)}
+                  />
+                ))}
+              </div>
             </div>
 
-            {prefs && (
-              <div className="border-t pt-3 space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-2">
-                    {t("memberGroupTitle")}
-                  </p>
-                  <div className="space-y-2">
-                    {MEMBER_PREF_KEYS.map((key) => (
-                      <PrefCheckbox
-                        key={key}
-                        label={t(`prefs.${key}`)}
-                        checked={prefs[key]}
-                        disabled={savingPrefs}
-                        onChange={(v) => togglePref(key, v)}
-                      />
-                    ))}
-                  </div>
+            {showManagerPrefs && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {t("managerGroupTitle")}
+                </p>
+                <div className="space-y-2">
+                  {MANAGER_PREF_KEYS.map((key) => (
+                    <PrefCheckbox
+                      key={key}
+                      label={t(`prefs.${key}`)}
+                      checked={prefs[key]}
+                      disabled={savingPrefs}
+                      onChange={(v) => togglePref(key, v)}
+                    />
+                  ))}
                 </div>
-
-                {showManagerPrefs && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">
-                      {t("managerGroupTitle")}
-                    </p>
-                    <div className="space-y-2">
-                      {MANAGER_PREF_KEYS.map((key) => (
-                        <PrefCheckbox
-                          key={key}
-                          label={t(`prefs.${key}`)}
-                          checked={prefs[key]}
-                          disabled={savingPrefs}
-                          onChange={(v) => togglePref(key, v)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
-          </>
-        )}
-
-        {status.kind === "ready" && !status.subscribed && (
-          <div>
-            <Button
-              onClick={handleEnable}
-              disabled={busy}
-              className="bg-green-600 hover:bg-green-700 gap-2"
-            >
-              <Bell className="h-4 w-4" />
-              {busy ? "..." : t("enable")}
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              {t("enableHint")}
-            </p>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PushChannelBody(props: {
+  status: PushStatus;
+  busy: boolean;
+  t: any;
+  onEnable: () => void;
+  onDisable: () => void;
+}) {
+  const { status, busy, t, onEnable, onDisable } = props;
+
+  if (status.kind === "loading") {
+    return <p className="text-sm text-muted-foreground">{t("checking")}</p>;
+  }
+
+  if (status.kind === "unsupported") {
+    return (
+      <>
+        <Notice tone="warn">
+          <p className="font-medium">{t("unsupportedTitle")}</p>
+          <p className="text-sm">{t("unsupportedBody")}</p>
+        </Notice>
+        <DisabledEnableButton t={t} className="mt-3" />
+      </>
+    );
+  }
+
+  if (status.kind === "needs-pwa-ios") {
+    return (
+      <>
+        <Notice tone="info">
+          <p className="font-medium">{t("iosTitle")}</p>
+          <ol className="text-sm list-decimal list-inside space-y-1 mt-2">
+            <li>{t("iosStep1")}</li>
+            <li>{t("iosStep2")}</li>
+            <li>{t("iosStep3")}</li>
+          </ol>
+        </Notice>
+        <DisabledEnableButton t={t} className="mt-3" />
+      </>
+    );
+  }
+
+  if (status.kind === "permission-denied") {
+    return (
+      <>
+        <Notice tone="warn">
+          <p className="font-medium">{t("deniedTitle")}</p>
+          <p className="text-sm">{t("deniedBody")}</p>
+        </Notice>
+        <DisabledEnableButton t={t} className="mt-3" />
+      </>
+    );
+  }
+
+  // ready
+  if (status.subscribed) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm flex items-center gap-2">
+          <Bell className="h-4 w-4 text-green-600" />
+          {t("subscribedOnDevice")}
+        </p>
+        <Button
+          variant="outline"
+          onClick={onDisable}
+          disabled={busy}
+          className="gap-2"
+        >
+          <BellOff className="h-4 w-4" />
+          {busy ? "..." : t("disable")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Button
+        onClick={onEnable}
+        disabled={busy}
+        className="bg-green-600 hover:bg-green-700 gap-2"
+      >
+        <Bell className="h-4 w-4" />
+        {busy ? "..." : t("enable")}
+      </Button>
+      <p className="text-xs text-muted-foreground mt-2">{t("enableHint")}</p>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function DisabledEnableButton({ t, className }: { t: any; className?: string }) {
+  return (
+    <Button disabled className={`gap-2 ${className ?? ""}`}>
+      <Bell className="h-4 w-4" />
+      {t("enable")}
+    </Button>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function TelegramChannelBody(props: {
+  status: TelegramStatus;
+  busy: boolean;
+  t: any;
+  onLink: () => void;
+  onUnlink: () => void;
+}) {
+  const { status, busy, t, onLink, onUnlink } = props;
+
+  if (status.kind === "loading") {
+    return <p className="text-sm text-muted-foreground">{t("checking")}</p>;
+  }
+
+  if (status.kind === "not-configured") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("telegramNotConfigured")}
+      </p>
+    );
+  }
+
+  if (status.kind === "linked") {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-green-600" />
+          {status.username
+            ? t("telegramLinkedAs", { username: status.username })
+            : t("telegramLinkedNoUsername")}
+        </p>
+        <Button
+          variant="outline"
+          onClick={onUnlink}
+          disabled={busy}
+          className="gap-2"
+        >
+          {busy ? "..." : t("telegramUnlink")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Button
+        onClick={onLink}
+        disabled={busy}
+        className="bg-blue-600 hover:bg-blue-700 gap-2"
+      >
+        <MessageCircle className="h-4 w-4" />
+        {busy ? "..." : t("telegramLink")}
+      </Button>
+      <p className="text-xs text-muted-foreground mt-2">
+        {t("telegramLinkHint")}
+      </p>
+    </div>
   );
 }
 
