@@ -231,6 +231,7 @@
       "activityHistoryLabel": "活动记录",
       "confirmed": "已确认",
       "capacityReached": "已达上限",
+      "internCannotApprove": "实习领队无法审批通过",
       "removeUnconfirmed": "移除未确认报名",
       "removeUnconfirmedConfirmTitle": "移除所有未确认报名？",
       "removeUnconfirmedConfirmDescription": "这将移除 {count} 条尚未确认的报名记录。此操作无法撤销。",

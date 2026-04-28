@@ -231,6 +231,7 @@
       "activityHistoryLabel": "Activity History",
       "confirmed": "confirmed",
       "capacityReached": "Capacity reached",
+      "internCannotApprove": "Intern managers cannot approve",
       "removeUnconfirmed": "Remove unconfirmed",
       "removeUnconfirmedConfirmTitle": "Remove all unconfirmed registrations?",
       "removeUnconfirmedConfirmDescription": "This will remove {count} registration(s) that are still pending confirmation. This action cannot be undone.",

@@ -12,6 +12,7 @@ export type Permission =
   | "activities.cancel"
   // Registrations
   | "registrations.manage"
+  | "registrations.approve"
   | "registrations.flag"
   // Members
   | "members.list"
@@ -54,6 +55,9 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
 
   // Registrations
   "registrations.manage": ["manager", "admin", "dev"],
+  // `approve` is the registration_confirmed transition. Role-only check;
+  // intern managers also need to clear isInternManager() — see below.
+  "registrations.approve": ["manager", "admin", "dev"],
   "registrations.flag": ["manager", "admin", "dev"],
 
   // Members
@@ -110,6 +114,25 @@ export function can(session: any, permission: Permission): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getUserRole(session: any): UserRole {
   return (session?.user?.role as UserRole) || "member";
+}
+
+/**
+ * True for managers whose ManagerProfile.intern is still true.
+ * `isIntern` is populated on the JWT in the auth callbacks.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isInternManager(session: any): boolean {
+  return getUserRole(session) === "manager" && session?.user?.isIntern === true;
+}
+
+/**
+ * Approving a registration into an activity (status → registration_confirmed)
+ * requires the manage permission AND that the actor is not an intern manager.
+ * Interns can do every other registration op (mark attended/absent, flag, edit).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function canApproveRegistrations(session: any): boolean {
+  return can(session, "registrations.approve") && !isInternManager(session);
 }
 
 /**

@@ -25,6 +25,8 @@ export default async function ActivityDetailPage({
   const t = await getTranslations("dashboard.activities");
   const session = await auth();
   const canViewMemberDetail = session?.user ? can(session, "members.viewDetail") : false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const viewerIsIntern = (session?.user as any)?.isIntern === true;
   const flagSettings = await getFlagSettings();
 
   const activity = await db.activity.findUnique({
@@ -355,6 +357,7 @@ export default async function ActivityDetailPage({
           activityStatus={activity.status}
           canViewMemberDetail={canViewMemberDetail}
           capacity={activity.capacity}
+          viewerIsIntern={viewerIsIntern}
         />
       )}
     </div>

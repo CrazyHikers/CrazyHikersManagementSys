@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
+import { can, canApproveRegistrations } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
 import { notify, registrationConfirmedDispatch } from "@/lib/notify";
@@ -85,6 +85,16 @@ export async function PATCH(
 
   try {
     if (status === "registration_confirmed") {
+      // Approving a member into the activity is reserved for non-intern
+      // managers. Even if an intern is the main manager of this activity,
+      // a qualified co-manager must perform the confirm.
+      if (!canApproveRegistrations(session)) {
+        return NextResponse.json(
+          { error: "Intern managers cannot approve registrations" },
+          { status: 403 }
+        );
+      }
+
       // Confirm registration and cancel conflicting same-day registrations
       const activity = await db.activity.findUnique({
         where: { id: activityId },

@@ -177,11 +177,13 @@ export function RegistrationManager({
   activityStatus,
   canViewMemberDetail,
   capacity,
+  viewerIsIntern = false,
 }: {
   activityId: string;
   activityStatus: string;
   canViewMemberDetail: boolean;
   capacity: number;
+  viewerIsIntern?: boolean;
 }) {
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
@@ -852,11 +854,14 @@ export function RegistrationManager({
                         size="sm"
                         className="h-8 text-xs bg-green-600 hover:bg-green-700"
                         onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
-                        disabled={saving === reg.userEmail || isAtCapacity}
+                        disabled={saving === reg.userEmail || isAtCapacity || viewerIsIntern}
                       >
                         {saving === reg.userEmail ? "..." : t("confirmRegistration")}
                       </Button>
-                      {isAtCapacity && (
+                      {viewerIsIntern && (
+                        <span className="text-xs text-orange-600">{t("internCannotApprove")}</span>
+                      )}
+                      {!viewerIsIntern && isAtCapacity && (
                         <span className="text-xs text-orange-600">{t("capacityReached")}</span>
                       )}
                     </div>
