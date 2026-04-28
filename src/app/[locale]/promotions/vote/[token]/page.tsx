@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ type VoteData = {
 
 export default function VotePage() {
   const params = useParams();
+  const locale = useLocale();
   const token = params.token as string;
 
   const [data, setData] = useState<VoteData | null>(null);
@@ -158,7 +160,7 @@ export default function VotePage() {
                   </p>
                   <p>
                     <span className="font-medium">Expires:</span>{" "}
-                    {new Date(data.vote.request.expiresAt).toLocaleString()}
+                    {new Date(data.vote.request.expiresAt).toLocaleString(locale)}
                   </p>
                 </div>
 

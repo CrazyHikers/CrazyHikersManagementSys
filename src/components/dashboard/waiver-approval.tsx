@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ const statusFilters = ["all", "approved", "expired"] as const;
 
 export function WaiverAuditLog({ waivers }: { waivers: Waiver[] }) {
   const t = useTranslations("dashboard.members");
+  const locale = useLocale();
   const [filter, setFilter] = useState<string>("all");
 
   const filtered = filter === "all" ? waivers : waivers.filter((w) => w.status === filter);
@@ -61,7 +62,7 @@ export function WaiverAuditLog({ waivers }: { waivers: Waiver[] }) {
                       {w.userEmailDisplay}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(w.signedAt).toLocaleString()}
+                      {new Date(w.signedAt).toLocaleString(locale)}
                     </div>
                     {w.signedName && (
                       <div className="text-xs text-muted-foreground">

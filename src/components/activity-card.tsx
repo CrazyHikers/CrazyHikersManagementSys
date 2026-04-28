@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Card,
   CardContent,
@@ -46,6 +46,7 @@ export function ActivityCard({
   sameDayConflict,
 }: ActivityCardProps) {
   const t = useTranslations("home");
+  const locale = useLocale();
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
   const showSubmissions = !!maximumRegistration && maximumRegistration > 0;
   // Only show the conflict state when the user isn't already involved with
@@ -85,11 +86,11 @@ export function ActivityCard({
               <div className="flex flex-col gap-1 text-sm text-muted-foreground mb-3">
                 <div>
                   {t("activityDate")}:{" "}
-                  {new Date(date).toLocaleDateString()}
+                  {new Date(date).toLocaleDateString(locale)}
                 </div>
                 <div>
                   {t("deadline")}:{" "}
-                  {new Date(deadline).toLocaleDateString()}
+                  {new Date(deadline).toLocaleDateString(locale)}
                 </div>
                 <div>
                   {t("managers")}: {managerNames}

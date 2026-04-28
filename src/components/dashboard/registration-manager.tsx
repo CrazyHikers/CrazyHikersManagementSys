@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Loader2Icon, CheckIcon, ClockIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -190,6 +190,7 @@ export function RegistrationManager({
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
   const ta = useTranslations("activity");
+  const locale = useLocale();
   const router = useRouter();
   const { registrations, setRegistrations } = useRegistrationsStore();
   const [saving, setSaving] = useState<string | null>(null);
@@ -735,7 +736,7 @@ export function RegistrationManager({
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   Attended {reg.totalAttended} activities ·{" "}
-                  {new Date(reg.registeredAt).toLocaleDateString()}
+                  {new Date(reg.registeredAt).toLocaleDateString(locale)}
                 </div>
                 {reg.notes && (
                   <div className="text-sm mt-2 p-2 bg-gray-50 rounded text-gray-600">
@@ -861,7 +862,7 @@ export function RegistrationManager({
                                   </span>
                                 </div>
                                 <div className="text-muted-foreground">
-                                  {tp("issuedBy")} {flag.issuerName} {tp("on")} {new Date(flag.issuedAt).toLocaleDateString()}
+                                  {tp("issuedBy")} {flag.issuerName} {tp("on")} {new Date(flag.issuedAt).toLocaleDateString(locale)}
                                 </div>
                                 {flag.reason && (
                                   <div>{tp("reason")}: {flag.reason}</div>
@@ -884,7 +885,7 @@ export function RegistrationManager({
                                 </Link>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <span className="text-muted-foreground text-xs">
-                                    {new Date(ah.activityDate).toLocaleDateString()}
+                                    {new Date(ah.activityDate).toLocaleDateString(locale)}
                                   </span>
                                   <Badge className={statusColors[ah.status] || "bg-gray-100 text-gray-800"}>
                                     {statusLabels[ah.status] || ah.status}

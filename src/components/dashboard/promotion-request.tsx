@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ export function PromotionRequest({
 }: {
   eligibility: PromotionEligibility;
 }) {
+  const locale = useLocale();
   const [selectedReferrals, setSelectedReferrals] = useState<string[]>([]);
   const [applicationText, setApplicationText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -109,7 +111,7 @@ export function PromotionRequest({
           </div>
           <div>
             <span className="font-medium">Expires:</span>{" "}
-            {new Date(pendingRequest.expiresAt).toLocaleString()}
+            {new Date(pendingRequest.expiresAt).toLocaleString(locale)}
           </div>
           <div>
             <span className="font-medium">Vote progress:</span>{" "}
