@@ -108,6 +108,32 @@ async function postMessage(
   }
 }
 
+// Post a meta as a public announcement in a guild channel (not a DM). The
+// bot must already be in the guild with permission to send messages in
+// the target channel. No-ops if DISCORD_ANNOUNCEMENTS_CHANNEL_ID is unset,
+// so previews/dev environments without the env var stay silent.
+//
+// This is conceptually different from Channel.send() — that fans out to
+// per-user DMs respecting prefs; this posts once to a shared channel
+// regardless of who's subscribed. Failures are logged but never surfaced
+// (the per-user broadcast already covers the user-facing notification).
+export async function announceToDiscordChannel(
+  meta: NotificationMeta
+): Promise<void> {
+  const channelId = process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID;
+  if (!channelId || !process.env.DISCORD_BOT_TOKEN) return;
+
+  const outcome = await postMessage(channelId, meta);
+  if (outcome !== "delivered") {
+    console.error(
+      "[discord] channel announcement outcome:",
+      outcome,
+      "channel:",
+      channelId
+    );
+  }
+}
+
 // Verify a Discord user is a member of the configured guild. Required
 // before saving a subscription — without guild membership the bot can't
 // DM them, so the link would silently fail at first send. Bot auth, no

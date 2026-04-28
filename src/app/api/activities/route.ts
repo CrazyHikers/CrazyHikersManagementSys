@@ -12,6 +12,7 @@ import {
   activityCreatedDispatch,
   comanagerInvitedDispatch,
 } from "@/lib/notify";
+import { announceToDiscordChannel } from "@/lib/notify/channels/discord";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -200,6 +201,13 @@ export async function POST(request: NextRequest) {
           await broadcast(dispatch);
         } catch (err) {
           console.error("[notify] activity_created broadcast failed:", err);
+        }
+        // Post to the public Discord announcements channel (separate from
+        // the per-user DM fan-out; no-op if the channel isn't configured).
+        try {
+          await announceToDiscordChannel(dispatch.meta);
+        } catch (err) {
+          console.error("[notify] activity_created announcement failed:", err);
         }
       });
     }

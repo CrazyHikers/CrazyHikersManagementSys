@@ -9,6 +9,7 @@ import {
   activityCreatedDispatch,
   comanagerResponseDispatch,
 } from "@/lib/notify";
+import { announceToDiscordChannel } from "@/lib/notify/channels/discord";
 
 export async function GET(
   _req: NextRequest,
@@ -210,6 +211,17 @@ export async function POST(
             await broadcast(dispatch);
           } catch (err) {
             console.error("[notify] activity_created broadcast failed:", err);
+          }
+          // Public Discord announcement, same as the non-intern creator
+          // path — fires only on the 0→1 transition so each activity is
+          // announced exactly once.
+          try {
+            await announceToDiscordChannel(dispatch.meta);
+          } catch (err) {
+            console.error(
+              "[notify] activity_created announcement failed:",
+              err
+            );
           }
         });
       }
