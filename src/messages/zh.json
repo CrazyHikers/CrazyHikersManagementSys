@@ -460,6 +460,34 @@
       "expired": "已过期",
       "reason": "原因"
     },
+    "notifications": {
+      "title": "推送通知",
+      "description": "在此设备上接收报名确认和其他重要更新的推送通知。",
+      "checking": "正在检查浏览器支持...",
+      "enable": "在此设备上启用",
+      "enableHint": "浏览器会请求授权。你可以随时关闭。",
+      "disable": "关闭",
+      "enabled": "推送通知已启用",
+      "disabled": "推送通知已关闭",
+      "enableFailed": "启用失败，请重试。",
+      "disableFailed": "关闭失败，请重试。",
+      "permissionRequired": "需要授权通知权限。",
+      "subscribedOnDevice": "已在此设备启用",
+      "unsupportedTitle": "当前浏览器不支持",
+      "unsupportedBody": "推送通知需要支持 Service Worker 的现代浏览器。请使用 Chrome、Edge、Firefox 或 Safari 16 及以上版本。",
+      "iosTitle": "iPhone/iPad 用户：请先安装到主屏幕",
+      "iosStep1": "点击 Safari 底部的「分享」按钮。",
+      "iosStep2": "选择「添加到主屏幕」。",
+      "iosStep3": "从主屏幕打开 Crazy Hikers，回到此页面后即可启用推送通知。",
+      "deniedTitle": "通知已被屏蔽",
+      "deniedBody": "你已屏蔽本站的通知。请在浏览器设置中允许 Crazy Hikers 发送通知，然后刷新页面。",
+      "prefsTitle": "接收以下通知",
+      "prefSaveFailed": "更新偏好设置失败，请重试。",
+      "prefs": {
+        "activity_created": "新活动发布",
+        "registration_confirmed": "报名被确认"
+      }
+    },
     "settings": {
       "title": "系统设置",
       "appSettings": "应用设置",

@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
+import { broadcast } from "@/lib/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -137,6 +138,39 @@ export async function POST(
   if (accepted) {
     revalidateTag(cacheTags.activity(am.activityId), "max");
     revalidateTag(cacheTags.activities, "max");
+
+    // Broadcast "activity created" iff this acceptance just transitioned the
+    // activity from 0 → 1 confirmed non-intern manager (any role). That
+    // captures the spec: an intern-created activity is "created" only once
+    // a non-intern co-manager accepts. Counting non-intern confirmed
+    // managers also self-prevents double-fire — when a non-intern creator
+    // launched the activity, the count was already 1 at creation, and any
+    // later acceptances see count > 1.
+    const accepterProfile = await db.managerProfile.findUnique({
+      where: { userEmail: am.userEmail },
+    });
+    const accepterIsNonIntern = accepterProfile?.intern === false;
+
+    if (accepterIsNonIntern) {
+      const nonInternConfirmedCount = await db.activityManager.count({
+        where: {
+          activityId: am.activityId,
+          status: "confirmed",
+          user: { managerProfile: { intern: false } },
+        },
+      });
+      if (nonInternConfirmedCount === 1) {
+        const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+        broadcast({
+          kind: "activity_created",
+          activityId: am.activityId,
+          activityTitle: am.activity.title,
+          url: `${baseUrl}/activities/${am.activityId}`,
+        }).catch((err) =>
+          console.error("[notify] activity_created broadcast failed:", err)
+        );
+      }
+    }
   }
 
   return NextResponse.json({

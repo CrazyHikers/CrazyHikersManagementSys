@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
+import { broadcast } from "@/lib/notify";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -155,6 +156,23 @@ export async function POST(request: NextRequest) {
         title,
         inviteUrl
       ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
+    }
+
+    // Broadcast "activity created" only if the creator is a non-intern
+    // manager. For intern-created activities the broadcast is deferred until
+    // the first non-intern co-manager accepts their invitation (handled in
+    // /api/invitations/comanager/[token]).
+    const creatorIsIntern = manager?.managerProfile?.intern === true;
+    if (!creatorIsIntern) {
+      const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+      broadcast({
+        kind: "activity_created",
+        activityId: activity.id,
+        activityTitle: title,
+        url: `${baseUrl}/activities/${activity.id}`,
+      }).catch((err) =>
+        console.error("[notify] activity_created broadcast failed:", err)
+      );
     }
 
     revalidateTag(cacheTags.activities, "max");

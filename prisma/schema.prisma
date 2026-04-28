@@ -35,6 +35,7 @@ model User {
   role         UserRole @default(member)
   passwordHash String?  @map("password_hash")
   profile      Json?    @db.JsonB
+  notificationPrefs Json? @map("notification_prefs") @db.JsonB
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -48,6 +49,7 @@ model User {
   issuedFlags       UserFlag[]          @relation("flagIssuer")
   invalidatedFlags  UserFlag[]          @relation("flagInvalidator")
   promotionRequests PromotionRequest[]
+  webPushSubscriptions WebPushSubscription[]
 
   @@index([role])
   @@map("users")
@@ -333,4 +335,27 @@ model AppSettings {
   value String
 
   @@map("app_settings")
+}
+
+// ============================================================================
+// PUSH NOTIFICATIONS
+// ============================================================================
+
+// One row per browser/device. Other push channels (Discord, WeChat, etc.)
+// will live in their own tables since their identity model and stored fields
+// are different from Web Push's (endpoint + p256dh + auth).
+model WebPushSubscription {
+  id        String   @id @default(uuid())
+  userEmail String   @map("user_email")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  @@index([userEmail])
+  @@map("web_push_subscriptions")
 }

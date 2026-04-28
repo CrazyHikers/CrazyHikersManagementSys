@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
+import { notify } from "@/lib/notify";
 
 export async function GET(
   _req: NextRequest,
@@ -124,6 +125,20 @@ export async function PATCH(
         },
         data: { status: "registration_confirmed", confirmedAt: new Date() },
       });
+
+      // Fire push notification to whatever channels the user has enabled.
+      // Non-blocking: a delivery failure must not roll back the confirmation.
+      if (activity) {
+        const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+        notify(userEmail, {
+          kind: "registration_confirmed",
+          activityId,
+          activityTitle: activity.title,
+          url: `${baseUrl}/activities/${activityId}`,
+        }).catch((err) =>
+          console.error("[notify] registration_confirmed failed:", err)
+        );
+      }
     } else {
       await db.registration.update({
         where: {

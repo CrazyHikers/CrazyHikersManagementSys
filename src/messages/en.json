@@ -461,6 +461,34 @@
       "expired": "Expired",
       "reason": "Reason"
     },
+    "notifications": {
+      "title": "Push Notifications",
+      "description": "Get notified on this device when your registration is confirmed and for other important updates.",
+      "checking": "Checking notification support...",
+      "enable": "Enable on this device",
+      "enableHint": "You'll be asked for permission. You can disable this anytime.",
+      "disable": "Disable",
+      "enabled": "Push notifications enabled",
+      "disabled": "Push notifications disabled",
+      "enableFailed": "Could not enable notifications. Please try again.",
+      "disableFailed": "Could not disable notifications. Please try again.",
+      "permissionRequired": "Notification permission is required.",
+      "subscribedOnDevice": "Enabled on this device",
+      "unsupportedTitle": "Not supported in this browser",
+      "unsupportedBody": "Push notifications need a modern browser with service worker support. Try Chrome, Edge, Firefox, or Safari (16+).",
+      "iosTitle": "On iPhone/iPad: install the app first",
+      "iosStep1": "Tap the Share button at the bottom of Safari.",
+      "iosStep2": "Choose \"Add to Home Screen\".",
+      "iosStep3": "Open Crazy Hikers from your home screen and come back to this page to enable notifications.",
+      "deniedTitle": "Notifications blocked",
+      "deniedBody": "You've blocked notifications for this site. To re-enable, open your browser's site settings, allow notifications for Crazy Hikers, and reload this page.",
+      "prefsTitle": "Notify me about",
+      "prefSaveFailed": "Could not update preference. Please try again.",
+      "prefs": {
+        "activity_created": "New activities",
+        "registration_confirmed": "My registration is confirmed"
+      }
+    },
     "settings": {
       "title": "Settings",
       "appSettings": "App Settings",

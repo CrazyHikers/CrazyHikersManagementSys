@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PromotionRequest } from "@/components/dashboard/promotion-request";
+import { NotificationSettings } from "@/components/notification-settings";
 
 type UserProfile = {
   // Emergency
@@ -548,6 +549,10 @@ export default function MyProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <NotificationSettings />
+      </div>
 
       {promotionEligibility && (
         <div className="mt-6">
