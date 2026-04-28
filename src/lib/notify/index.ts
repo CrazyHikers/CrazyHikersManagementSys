@@ -8,7 +8,7 @@ import type {
   UserToggleableKind,
 } from "./types";
 import { DEFAULT_PREFS, USER_TOGGLEABLE_KINDS } from "./types";
-import { webPushChannel } from "./channels/web-push";
+import { webPushChannel, sendWebPushToEndpoint } from "./channels/web-push";
 
 export type {
   NotificationPayload,
@@ -55,6 +55,16 @@ async function userHasKindEnabled(
   if (!user) return false;
   const prefs = resolvePrefs(user.notificationPrefs);
   return prefs[kind];
+}
+
+// Send to a single device (web push only — Discord/WeChat have their own
+// per-account models). Bypasses per-kind preferences since this is used
+// for device-targeted confirmations like the post-subscribe welcome push.
+export async function notifyDevice(
+  endpoint: string,
+  payload: NotificationPayload
+): Promise<void> {
+  await sendWebPushToEndpoint(endpoint, payload);
 }
 
 // Send to a single user. Respects their per-kind preferences.

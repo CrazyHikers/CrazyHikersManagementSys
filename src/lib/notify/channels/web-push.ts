@@ -76,6 +76,36 @@ async function sendToOne(
   }
 }
 
+// Send a payload to a single web-push subscription (looked up by endpoint).
+// Used for actions whose target is a specific device rather than a user —
+// e.g. the welcome push fired when a device subscribes for the first time.
+// Stale subscriptions are cleaned up the same way as in the fan-out path.
+export async function sendWebPushToEndpoint(
+  endpoint: string,
+  payload: NotificationPayload
+): Promise<void> {
+  ensureConfigured();
+  const sub = await db.webPushSubscription.findUnique({ where: { endpoint } });
+  if (!sub) return;
+
+  const result = await sendToOne(
+    sub.endpoint,
+    sub.p256dh,
+    sub.auth,
+    formatPayload(payload)
+  );
+
+  if (result === "gone") {
+    await db.webPushSubscription
+      .delete({ where: { endpoint } })
+      .catch(() => {});
+  } else if (result === "delivered") {
+    await db.webPushSubscription
+      .update({ where: { endpoint }, data: { lastUsedAt: new Date() } })
+      .catch(() => {});
+  }
+}
+
 export const webPushChannel: Channel = {
   id: "web-push",
   async send(userEmail, payload): Promise<SendResult> {

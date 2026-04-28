@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { notify } from "@/lib/notify";
+import { notifyDevice } from "@/lib/notify";
 
 type SubscribeBody = {
   endpoint: string;
@@ -49,12 +49,14 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Fire a confirmation push so the user sees the system working immediately.
-  // Failures here are non-fatal — the subscription is already saved.
-  notify(session.user.email, {
+  // Fire a confirmation push to *this* device only, not the user's other
+  // subscribed devices — those devices didn't just enable anything, so a
+  // global welcome would be confusing. Failures are non-fatal: the
+  // subscription is already saved.
+  notifyDevice(body.endpoint, {
     kind: "test",
     title: "Crazy Hikers",
-    body: "推送通知已启用 / Push notifications enabled",
+    body: "此设备已启用推送通知 / Push notifications enabled on this device",
     url: "/dashboard/my-profile",
   }).catch((err) => console.error("[subscribe] welcome push failed:", err));
 
