@@ -129,12 +129,19 @@ export async function PATCH(
         }
       }
 
-      await db.registration.update({
-        where: {
-          activityId_userEmail: { activityId, userEmail },
-        },
-        data: { status: "registration_confirmed", confirmedAt: new Date() },
-      });
+      // Confirm and discard any intern proposals — they're meaningless
+      // post-approval and we don't want stale clock icons hanging around.
+      await db.$transaction([
+        db.registration.update({
+          where: {
+            activityId_userEmail: { activityId, userEmail },
+          },
+          data: { status: "registration_confirmed", confirmedAt: new Date() },
+        }),
+        db.registrationProposal.deleteMany({
+          where: { activityId, userEmail },
+        }),
+      ]);
 
       // Fire push notification to whatever channels the user has enabled.
       // `after()` keeps the function alive past the response; a bare

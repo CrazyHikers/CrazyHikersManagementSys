@@ -13,6 +13,7 @@ export type Permission =
   // Registrations
   | "registrations.manage"
   | "registrations.approve"
+  | "registrations.propose"
   | "registrations.flag"
   // Members
   | "members.list"
@@ -58,6 +59,10 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   // `approve` is the registration_confirmed transition. Role-only check;
   // intern managers also need to clear isInternManager() — see below.
   "registrations.approve": ["manager", "admin", "dev"],
+  // `propose` is the soft-endorsement intern managers leave on a pending
+  // registration. Role-only check here; non-intern managers fail the
+  // additional canProposeRegistration() check below.
+  "registrations.propose": ["manager"],
   "registrations.flag": ["manager", "admin", "dev"],
 
   // Members
@@ -133,6 +138,15 @@ export function isInternManager(session: any): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function canApproveRegistrations(session: any): boolean {
   return can(session, "registrations.approve") && !isInternManager(session);
+}
+
+/**
+ * Proposing/withdrawing a registration is reserved for intern managers —
+ * it's the soft-endorsement counterpart to approve.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function canProposeRegistration(session: any): boolean {
+  return can(session, "registrations.propose") && isInternManager(session);
 }
 
 /**

@@ -37,6 +37,7 @@ export default async function ActivityDetailPage({
       },
       registrations: {
         include: {
+          proposals: true,
           user: {
             include: {
               registrations: {
@@ -72,6 +73,7 @@ export default async function ActivityDetailPage({
   // shadow-banned pending registrations and sort so confirmed/attended/absent
   // land on top; still-pending `registered` rows sink to the bottom.
   const now = new Date();
+  const viewerEmail = session?.user?.email ?? null;
   const registrations = activity.registrations
     .filter((r) => {
       if (r.status !== "registered") return true;
@@ -82,6 +84,10 @@ export default async function ActivityDetailPage({
       const activeFlags = r.user.flags;
       const yellowCount = activeFlags.filter((f) => f.flagType === "yellow").length;
       const redCount = activeFlags.filter((f) => f.flagType === "red").length;
+      const proposalCount = r.proposals.length;
+      const viewerProposed = viewerEmail
+        ? r.proposals.some((p) => p.proposerEmail === viewerEmail)
+        : false;
 
       return {
         userEmail: r.userEmail,
@@ -109,6 +115,8 @@ export default async function ActivityDetailPage({
         isBanned: false,
         pendingFlag: r.pendingFlag || null,
         pendingFlagReason: r.pendingFlagReason || null,
+        proposalCount,
+        viewerProposed,
         activityHistory: r.user.registrations
           .filter((reg) => reg.activityId !== id)
           .map((reg) => ({

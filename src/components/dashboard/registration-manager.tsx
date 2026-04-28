@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Loader2Icon, CheckIcon } from "lucide-react";
+import { Loader2Icon, CheckIcon, ClockIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,8 @@ export type Registration = {
   isBanned: boolean;
   pendingFlag: string | null;
   pendingFlagReason: string | null;
+  proposalCount: number;
+  viewerProposed: boolean;
   activityHistory: {
     activityId: string;
     activityTitle: string;
@@ -191,6 +193,7 @@ export function RegistrationManager({
   const router = useRouter();
   const { registrations, setRegistrations } = useRegistrationsStore();
   const [saving, setSaving] = useState<string | null>(null);
+  const [proposing, setProposing] = useState<string | null>(null);
   const [flagging, setFlagging] = useState<string | null>(null);
   const [expandedFormData, setExpandedFormData] = useState<Set<string>>(new Set());
   // 'idle' = nothing ever saved or pending in this session
@@ -274,6 +277,46 @@ export function RegistrationManager({
       }
     },
     [activityId]
+  );
+
+  // Intern action: propose / withdraw proposal on a pending member.
+  // Optimistic — we flip viewerProposed and bump proposalCount immediately
+  // and roll back if the request fails.
+  const toggleProposal = useCallback(
+    async (userEmail: string, currentlyProposed: boolean) => {
+      setProposing(userEmail);
+      const delta = currentlyProposed ? -1 : 1;
+      setRegistrations((prev) =>
+        prev.map((r) =>
+          r.userEmail === userEmail
+            ? { ...r, viewerProposed: !currentlyProposed, proposalCount: r.proposalCount + delta }
+            : r
+        )
+      );
+      try {
+        const res = await fetch(
+          `/api/activities/${activityId}/registrations/${encodeURIComponent(userEmail)}/proposal`,
+          { method: currentlyProposed ? "DELETE" : "POST" }
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to update proposal");
+        }
+      } catch (err) {
+        // Roll back the optimistic update
+        setRegistrations((prev) =>
+          prev.map((r) =>
+            r.userEmail === userEmail
+              ? { ...r, viewerProposed: currentlyProposed, proposalCount: r.proposalCount - delta }
+              : r
+          )
+        );
+        toast.error(err instanceof Error ? err.message : "Failed to update proposal");
+      } finally {
+        setProposing(null);
+      }
+    },
+    [activityId, setRegistrations]
   );
 
   // Drain whatever is currently in the pending buffer and send it as a
@@ -651,6 +694,18 @@ export function RegistrationManager({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium">{reg.userName}</span>
+                  {reg.proposalCount > 0 && (
+                    <span
+                      className="inline-flex items-center text-amber-600"
+                      title={
+                        reg.proposalCount === 1
+                          ? t("proposedByIntern")
+                          : t("proposedByInternCount", { count: reg.proposalCount })
+                      }
+                    >
+                      <ClockIcon className="h-4 w-4" />
+                    </span>
+                  )}
                   <Badge className={statusColors[reg.status]}>
                     {statusLabels[reg.status]}
                   </Badge>
@@ -850,16 +905,33 @@ export function RegistrationManager({
                   {/* Status controls */}
                   {reg.status === "registered" ? (
                     <div className="flex flex-col items-end gap-1">
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs bg-green-600 hover:bg-green-700"
-                        onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
-                        disabled={saving === reg.userEmail || isAtCapacity || viewerIsIntern}
-                      >
-                        {saving === reg.userEmail ? "..." : t("confirmRegistration")}
-                      </Button>
-                      {viewerIsIntern && (
-                        <span className="text-xs text-orange-600">{t("internCannotApprove")}</span>
+                      {viewerIsIntern ? (
+                        <Button
+                          size="sm"
+                          variant={reg.viewerProposed ? "outline" : "default"}
+                          className={`h-8 text-xs ${
+                            reg.viewerProposed
+                              ? "border-amber-400 text-amber-700 hover:bg-amber-50"
+                              : "bg-amber-500 hover:bg-amber-600 text-white"
+                          }`}
+                          onClick={() => toggleProposal(reg.userEmail, reg.viewerProposed)}
+                          disabled={proposing === reg.userEmail}
+                        >
+                          {proposing === reg.userEmail
+                            ? "..."
+                            : reg.viewerProposed
+                              ? t("withdrawProposalAction")
+                              : t("proposeAction")}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs bg-green-600 hover:bg-green-700"
+                          onClick={() => updateStatus(reg.userEmail, "registration_confirmed")}
+                          disabled={saving === reg.userEmail || isAtCapacity}
+                        >
+                          {saving === reg.userEmail ? "..." : t("confirmRegistration")}
+                        </Button>
                       )}
                       {!viewerIsIntern && isAtCapacity && (
                         <span className="text-xs text-orange-600">{t("capacityReached")}</span>
