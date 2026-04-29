@@ -29,31 +29,32 @@ enum UserRole {
 }
 
 model User {
-  email        String   @id
-  uid          String   @unique @default(uuid())
-  name         String
-  role         UserRole @default(member)
-  passwordHash String?  @map("password_hash")
-  profile      Json?    @db.JsonB
-  notificationPrefs Json? @map("notification_prefs") @db.JsonB
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  email             String   @id
+  uid               String   @unique @default(uuid())
+  name              String
+  role              UserRole @default(member)
+  passwordHash      String?  @map("password_hash")
+  profile           Json?    @db.JsonB
+  notificationPrefs Json?    @map("notification_prefs") @db.JsonB
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  managerProfile    ManagerProfile?
-  activityManagers  ActivityManager[]
-  activityUpdates   ActivityUpdate[]
-  waivers           UserWaiver[]
-  registrations     Registration[]
-  flags             UserFlag[]          @relation("flaggedUser")
-  issuedFlags       UserFlag[]          @relation("flagIssuer")
-  invalidatedFlags  UserFlag[]          @relation("flagInvalidator")
-  promotionRequests PromotionRequest[]
-  webPushSubscriptions WebPushSubscription[]
-  telegramSubscription TelegramSubscription?
-  telegramLinkTokens   TelegramLinkToken[]
-  discordSubscription  DiscordSubscription?
-  discordLinkTokens    DiscordLinkToken[]
+  managerProfile        ManagerProfile?
+  activityManagers      ActivityManager[]
+  activityUpdates       ActivityUpdate[]
+  waivers               UserWaiver[]
+  registrations         Registration[]
+  flags                 UserFlag[]             @relation("flaggedUser")
+  issuedFlags           UserFlag[]             @relation("flagIssuer")
+  invalidatedFlags      UserFlag[]             @relation("flagInvalidator")
+  promotionRequests     PromotionRequest[]
+  registrationProposals RegistrationProposal[] @relation("registrationProposer")
+  webPushSubscriptions  WebPushSubscription[]
+  telegramSubscription  TelegramSubscription?
+  telegramLinkTokens    TelegramLinkToken[]
+  discordSubscription   DiscordSubscription?
+  discordLinkTokens     DiscordLinkToken[]
 
   @@index([role])
   @@map("users")
@@ -213,24 +214,44 @@ enum RegistrationStatus {
 }
 
 model Registration {
-  activityId   String             @map("activity_id")
-  userEmail    String             @map("user_email")
-  status       RegistrationStatus @default(registered)
-  registeredAt DateTime           @default(now()) @map("registered_at")
-  confirmedAt  DateTime?          @map("confirmed_at")
-  notes        String?
-  formData     Json?              @map("form_data") @db.JsonB
+  activityId        String             @map("activity_id")
+  userEmail         String             @map("user_email")
+  status            RegistrationStatus @default(registered)
+  registeredAt      DateTime           @default(now()) @map("registered_at")
+  confirmedAt       DateTime?          @map("confirmed_at")
+  notes             String?
+  formData          Json?              @map("form_data") @db.JsonB
   pendingFlag       String?            @map("pending_flag")
   pendingFlagReason String?            @map("pending_flag_reason")
 
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  activity  Activity               @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  proposals RegistrationProposal[]
 
   @@id([activityId, userEmail])
   @@index([activityId])
   @@index([userEmail])
   @@index([status])
   @@map("registrations")
+}
+
+// Soft endorsement that an intern manager added to a member's pending
+// registration. Multiple interns may propose the same member; the row
+// keyed by (activityId, userEmail, proposerEmail) represents one such
+// endorsement. Cleared automatically when the registration is confirmed.
+model RegistrationProposal {
+  activityId    String   @map("activity_id")
+  userEmail     String   @map("user_email")
+  proposerEmail String   @map("proposer_email")
+  proposedAt    DateTime @default(now()) @map("proposed_at")
+
+  registration Registration @relation(fields: [activityId, userEmail], references: [activityId, userEmail], onDelete: Cascade)
+  proposer     User         @relation("registrationProposer", fields: [proposerEmail], references: [email], onDelete: Cascade)
+
+  @@id([activityId, userEmail, proposerEmail])
+  @@index([activityId, userEmail])
+  @@index([proposerEmail])
+  @@map("registration_proposals")
 }
 
 model ActivityUpdate {
@@ -276,7 +297,7 @@ model PromotionRequest {
   expiresAt       DateTime        @map("expires_at")
   resolvedAt      DateTime?       @map("resolved_at")
 
-  user  User              @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  user  User            @relation(fields: [userEmail], references: [email], onDelete: Cascade)
   votes PromotionVote[]
 
   @@index([userEmail])
@@ -286,13 +307,13 @@ model PromotionRequest {
 }
 
 model PromotionVote {
-  id         String   @id @default(uuid())
-  requestId  String   @map("request_id")
-  voterEmail String   @map("voter_email")
+  id         String    @id @default(uuid())
+  requestId  String    @map("request_id")
+  voterEmail String    @map("voter_email")
   approved   Boolean?
   reason     String?
   votedAt    DateTime? @map("voted_at")
-  token      String   @unique
+  token      String    @unique
 
   request PromotionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
@@ -349,13 +370,13 @@ model AppSettings {
 // will live in their own tables since their identity model and stored fields
 // are different from Web Push's (endpoint + p256dh + auth).
 model WebPushSubscription {
-  id        String   @id @default(uuid())
-  userEmail String   @map("user_email")
-  endpoint  String   @unique
-  p256dh    String
-  auth      String
-  userAgent String?  @map("user_agent")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String    @id @default(uuid())
+  userEmail  String    @map("user_email")
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
   lastUsedAt DateTime? @map("last_used_at")
 
   user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
@@ -383,10 +404,10 @@ model TelegramSubscription {
 // website generates a token, user opens t.me/<bot>?start=<token>,
 // bot's /start handler looks up the row and binds the chatId to userEmail.
 model TelegramLinkToken {
-  id        String   @id @default(uuid())
-  userEmail String   @map("user_email")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(uuid())
+  userEmail String    @map("user_email")
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
   usedAt    DateTime? @map("used_at")
 
   user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
@@ -415,10 +436,10 @@ model DiscordSubscription {
 // `state` parameter on the Discord redirect; the callback looks it up,
 // verifies ownership, and consumes it.
 model DiscordLinkToken {
-  id        String   @id @default(uuid())
-  userEmail String   @map("user_email")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(uuid())
+  userEmail String    @map("user_email")
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
   usedAt    DateTime? @map("used_at")
 
   user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)

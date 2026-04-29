@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -21,6 +22,7 @@ type ErrorState = {
 
 export default function ComanagerInvitationPage() {
   const params = useParams();
+  const locale = useLocale();
   const token = params.token as string;
   const [data, setData] = useState<InvitationData | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
@@ -121,7 +123,7 @@ export default function ComanagerInvitationPage() {
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Date: </span>
-                  {new Date(data.activityDate).toLocaleDateString()}
+                  {new Date(data.activityDate).toLocaleDateString(locale)}
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Your role: </span>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
+import { can, canApproveRegistrations } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
 import { notify, registrationConfirmedDispatch } from "@/lib/notify";
@@ -86,6 +86,16 @@ export async function PATCH(
 
   try {
     if (status === "registration_confirmed") {
+      // Approving a member into the activity is reserved for non-intern
+      // managers. Even if an intern is the main manager of this activity,
+      // a qualified co-manager must perform the confirm.
+      if (!canApproveRegistrations(session)) {
+        return NextResponse.json(
+          { error: "Intern managers cannot approve registrations" },
+          { status: 403 }
+        );
+      }
+
       // Confirm registration and cancel conflicting same-day registrations
       const activity = await db.activity.findUnique({
         where: { id: activityId },
@@ -120,12 +130,19 @@ export async function PATCH(
         }
       }
 
-      await db.registration.update({
-        where: {
-          activityId_userEmail: { activityId, userEmail },
-        },
-        data: { status: "registration_confirmed", confirmedAt: new Date() },
-      });
+      // Confirm and discard any intern proposals — they're meaningless
+      // post-approval and we don't want stale clock icons hanging around.
+      await db.$transaction([
+        db.registration.update({
+          where: {
+            activityId_userEmail: { activityId, userEmail },
+          },
+          data: { status: "registration_confirmed", confirmedAt: new Date() },
+        }),
+        db.registrationProposal.deleteMany({
+          where: { activityId, userEmail },
+        }),
+      ]);
 
       // Fire push notification to whatever channels the user has enabled.
       // `after()` keeps the function alive past the response; a bare

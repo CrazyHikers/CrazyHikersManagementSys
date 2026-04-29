@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ type TemplateInfo = {
 
 export function WaiverTemplateUpload() {
   const t = useTranslations("dashboard.settings");
+  const locale = useLocale();
   const [info, setInfo] = useState<TemplateInfo>({ version: null });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -93,7 +94,7 @@ export function WaiverTemplateUpload() {
             <div>
               <span className="text-muted-foreground">{t("waiverUploadedAt")}: </span>
               {info.uploadedAt
-                ? new Date(info.uploadedAt).toLocaleString()
+                ? new Date(info.uploadedAt).toLocaleString(locale)
                 : "-"}
             </div>
             <div>

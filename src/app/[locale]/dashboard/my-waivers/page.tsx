@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,7 @@ const statusColors: Record<string, string> = {
 
 export default function MyWaiversPage() {
   const t = useTranslations("dashboard.myWaivers");
+  const locale = useLocale();
   const [waivers, setWaivers] = useState<Waiver[]>([]);
   const [waiverStatus, setWaiverStatus] = useState<WaiverStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +93,7 @@ export default function MyWaiversPage() {
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {t("validUntil", {
-                    date: new Date(waiverStatus!.expiresAt!).toLocaleDateString(),
+                    date: new Date(waiverStatus!.expiresAt!).toLocaleDateString(locale),
                   })}
                 </div>
               </div>
@@ -127,7 +128,7 @@ export default function MyWaiversPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm text-muted-foreground">
-                      {t("submittedOn")}: {new Date(w.signedAt).toLocaleString()}
+                      {t("submittedOn")}: {new Date(w.signedAt).toLocaleString(locale)}
                     </div>
                     {w.signedName && (
                       <div className="text-sm text-muted-foreground">
