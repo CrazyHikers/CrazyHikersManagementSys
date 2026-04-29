@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sendWelcomeSignupEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { getBaseUrl } from "@/lib/url";
 
 // Signup tokens share the verification_tokens table with password resets.
 // Same prefix as reset because the downstream /api/auth/reset-password
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const baseUrl = (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const baseUrl = getBaseUrl();
     const localePart = locale === "en" ? "en" : "zh";
     const url = `${baseUrl}/${localePart}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
 

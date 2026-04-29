@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { getBaseUrl } from "@/lib/url";
 
 // Identifier prefix keeps password-reset tokens from colliding with Auth.js's
 // own magic-link tokens that share the same `verification_tokens` table.
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const baseUrl = (process.env.AUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const baseUrl = getBaseUrl();
     const localePart = locale === "en" ? "en" : "zh";
     const url = `${baseUrl}/${localePart}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
 

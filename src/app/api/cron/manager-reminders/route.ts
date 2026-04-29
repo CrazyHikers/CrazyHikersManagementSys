@@ -5,6 +5,7 @@ import {
   confirmRegistrationsReminderDispatch,
   finalizeActivityReminderDispatch,
 } from "@/lib/notify";
+import { getBaseUrl } from "@/lib/url";
 import { findSameDayCommitment } from "@/lib/activity";
 import { getFlagSettings, isBanActive, unexpiredCutoff } from "@/lib/flags";
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+  const baseUrl = getBaseUrl();
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 

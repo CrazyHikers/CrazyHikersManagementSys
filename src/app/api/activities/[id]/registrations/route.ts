@@ -6,6 +6,7 @@ import { can } from "@/lib/permissions";
 import { findSameDayCommitment } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
 import { notify, registrationConfirmedDispatch } from "@/lib/notify";
+import { getBaseUrl } from "@/lib/url";
 
 export async function GET(
   _req: NextRequest,
@@ -131,7 +132,7 @@ export async function PATCH(
       // unawaited promise would risk being killed by Vercel before the
       // push completes. A delivery failure must not roll back the confirm.
       if (activity) {
-        const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+        const baseUrl = getBaseUrl();
         const dispatch = registrationConfirmedDispatch({
           activityId,
           activityTitle: activity.title,

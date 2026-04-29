@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
+import { getBaseUrl } from "@/lib/url";
 
 export async function POST(
   request: NextRequest,
@@ -69,7 +70,7 @@ export async function POST(
   });
 
   // Send invitation email
-  const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+  const baseUrl = getBaseUrl();
   const inviteUrl = `${baseUrl}/invitations/comanager/${token}`;
   await sendComanagerInvitation(
     email,

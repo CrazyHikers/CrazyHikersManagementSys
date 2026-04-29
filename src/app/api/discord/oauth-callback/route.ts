@@ -17,8 +17,13 @@ import { isMemberOfGuild } from "@/lib/notify/channels/discord";
 // /dashboard/my-profile?discord=<status>; the settings UI surfaces it
 // via toast / refreshed status.
 export async function GET(request: NextRequest) {
-  const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
-  const profileUrl = `${baseUrl.replace(/\/$/, "")}/dashboard/my-profile`;
+  // Stays on AUTH_URL (not getBaseUrl()) because both the redirect_uri sent
+  // to Discord during token exchange below AND the registered redirect URI
+  // in the Discord developer portal are tied to the canonical domain. The
+  // OAuth flow is production-only; preview environments can't link unless
+  // their URL is registered with Discord too.
+  const baseUrl = (process.env.AUTH_URL || "http://localhost:3000").replace(/\/$/, "");
+  const profileUrl = `${baseUrl}/dashboard/my-profile`;
 
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -60,7 +65,10 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. Exchange the code for an access token. Form-encoded per OAuth2 spec.
-  const redirectUri = `${baseUrl.replace(/\/$/, "")}/api/discord/oauth-callback`;
+  // Must exactly match the redirect_uri sent in step 1 (link-token route)
+  // and the value registered in the Discord developer portal — see comment
+  // at the top of GET about why this stays on AUTH_URL.
+  const redirectUri = `${baseUrl}/api/discord/oauth-callback`;
   const tokenRes = await fetch("https://discord.com/api/v10/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

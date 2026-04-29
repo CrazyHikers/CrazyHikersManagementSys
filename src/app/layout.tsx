@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { getBaseUrl } from "@/lib/url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,8 +9,9 @@ const geistSans = Geist({
 });
 
 // metadataBase is required for social crawlers (WeChat, Slack, Twitter, etc.)
-// to resolve relative OG image paths into absolute URLs.
-const siteUrl = process.env.AUTH_URL || "http://localhost:3000";
+// to resolve relative OG image paths into absolute URLs. Uses getBaseUrl()
+// so previews link OG images at their own deployment, not production.
+const siteUrl = getBaseUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

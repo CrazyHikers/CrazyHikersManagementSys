@@ -15,6 +15,10 @@ export async function POST() {
   }
 
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
+  // Stays on AUTH_URL (not getBaseUrl()) — the redirect_uri sent here must
+  // exactly match the value registered in the Discord developer portal,
+  // which is tied to the canonical domain. Discord linking is therefore
+  // production-only unless the preview URL is also registered.
   const baseUrl = process.env.AUTH_URL;
   if (!clientId || !process.env.DISCORD_CLIENT_SECRET || !baseUrl) {
     return NextResponse.json(

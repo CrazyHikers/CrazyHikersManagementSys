@@ -13,6 +13,7 @@ import {
   comanagerInvitedDispatch,
 } from "@/lib/notify";
 import { announceToDiscordChannel } from "@/lib/notify/channels/discord";
+import { getBaseUrl } from "@/lib/url";
 import { randomUUID } from "crypto";
 
 export async function GET() {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
     // Send invitation emails to comanagers + push notifications. The push
     // is in addition to the email since not every comanager checks email
     // promptly; both are fire-and-forget so the response isn't blocked.
-    const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const managerName = session.user?.name || userEmail;
     for (const cm of comanagerData) {
       const comanager = await db.user.findUnique({ where: { email: cm.userEmail } });
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
     // a bare unawaited promise once the response is sent.
     const creatorIsIntern = manager?.managerProfile?.intern === true;
     if (!creatorIsIntern) {
-      const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+      const baseUrl = getBaseUrl();
       const dispatch = activityCreatedDispatch({
         activityId: activity.id,
         activityTitle: title,

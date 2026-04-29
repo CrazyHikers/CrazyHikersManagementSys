@@ -10,6 +10,7 @@ import {
 import type { CandidateActivities } from "@/lib/email";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
+import { getBaseUrl } from "@/lib/url";
 import type { PromotionStatus } from "@/generated/prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Fetch candidate activity history for emails
-    const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
 
     const [managedActivities, attendedRegistrations] = await Promise.all([
       db.activityManager.findMany({

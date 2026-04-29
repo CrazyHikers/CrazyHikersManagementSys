@@ -10,6 +10,7 @@ import {
   comanagerResponseDispatch,
 } from "@/lib/notify";
 import { announceToDiscordChannel } from "@/lib/notify/channels/discord";
+import { getBaseUrl } from "@/lib/url";
 
 export async function GET(
   _req: NextRequest,
@@ -154,7 +155,7 @@ export async function POST(
     select: { userEmail: true },
   });
   if (mainManager) {
-    const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const dispatch = comanagerResponseDispatch({
       activityId: am.activityId,
       activityTitle: am.activity.title,
@@ -200,7 +201,7 @@ export async function POST(
         },
       });
       if (nonInternConfirmedCount === 1) {
-        const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+        const baseUrl = getBaseUrl();
         const dispatch = activityCreatedDispatch({
           activityId: am.activityId,
           activityTitle: am.activity.title,
