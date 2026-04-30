@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { sendComanagerInvitation } from "@/lib/email";
+import { notify, comanagerInvitedDispatch } from "@/lib/notify";
 import { getBaseUrl } from "@/lib/url";
 
 export async function POST(
@@ -78,6 +79,20 @@ export async function POST(
     activity.title,
     inviteUrl
   ).catch((err) => console.error("[EMAIL] Comanager invite failed:", err));
+
+  const dispatch = comanagerInvitedDispatch({
+    activityId,
+    activityTitle: activity.title,
+    inviterName: session.user?.name || session.user.email,
+    url: inviteUrl,
+  });
+  after(async () => {
+    try {
+      await notify(email, dispatch);
+    } catch (err) {
+      console.error("[notify] comanager_invited failed:", err);
+    }
+  });
 
   return NextResponse.json({ success: true });
 }
