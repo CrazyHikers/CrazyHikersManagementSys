@@ -83,7 +83,7 @@ export async function POST(
   const dispatch = comanagerInvitedDispatch({
     activityId,
     activityTitle: activity.title,
-    inviterName: session.user?.name || session.user.email,
+    inviterName: session.user?.name || session.user.email || "A manager",
     url: inviteUrl,
   });
   after(async () => {
