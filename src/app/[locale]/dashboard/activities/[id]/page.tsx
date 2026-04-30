@@ -128,11 +128,15 @@ export default async function ActivityDetailPage({
       };
     })
     .sort((a, b) => {
-      // Pending (`registered`) sink below everything else; within each group
-      // preserve registration order.
-      const aPending = a.status === "registered" ? 1 : 0;
-      const bPending = b.status === "registered" ? 1 : 0;
-      if (aPending !== bPending) return aPending - bPending;
+      const statusOrder: Record<string, number> = {
+        registration_confirmed: 0,
+        attended: 1,
+        absent: 2,
+        registered: 3,
+      };
+      const aRank = statusOrder[a.status] ?? 99;
+      const bRank = statusOrder[b.status] ?? 99;
+      if (aRank !== bRank) return aRank - bRank;
       return new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime();
     });
 

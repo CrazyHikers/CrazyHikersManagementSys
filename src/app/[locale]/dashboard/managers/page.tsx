@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { SortableHead, MobileSortBar, type SortState } from "@/components/dashboard/sortable-head";
 
 type Manager = {
   email: string;
@@ -44,12 +45,46 @@ type PendingReview = {
   votes: PromotionVote[];
 };
 
+type ManagerSortKey = "name" | "email" | "tag" | "status" | "kpi";
+
 export default function ManagersPage() {
   const t = useTranslations("dashboard.managers");
   const [managers, setManagers] = useState<Manager[]>([]);
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState<ManagerSortKey>>({
+    key: "name",
+    dir: "asc",
+  });
+
+  const sortedManagers = useMemo(() => {
+    const compare = (a: Manager, b: Manager): number => {
+      switch (sort.key) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "email":
+          return a.email.localeCompare(b.email);
+        case "tag":
+          return (a.managerProfile?.tag ?? "").localeCompare(
+            b.managerProfile?.tag ?? ""
+          );
+        case "status": {
+          // Qualified before intern
+          const rank = (m: Manager) => (m.managerProfile?.intern ? 1 : 0);
+          return rank(a) - rank(b);
+        }
+        case "kpi":
+          return (a.managerProfile?.kpi ?? 0) - (b.managerProfile?.kpi ?? 0);
+      }
+    };
+    const copy = [...managers];
+    copy.sort((a, b) => {
+      const r = compare(a, b);
+      return sort.dir === "asc" ? r : -r;
+    });
+    return copy;
+  }, [managers, sort]);
 
   useEffect(() => {
     fetchManagers();
@@ -177,9 +212,22 @@ export default function ManagersPage() {
         </Card>
       )}
 
+      {/* Mobile sort bar */}
+      <MobileSortBar
+        options={[
+          { key: "name", label: "Name" },
+          { key: "email", label: "Email" },
+          { key: "tag", label: t("tag") },
+          { key: "status", label: "Status" },
+          { key: "kpi", label: t("kpi") },
+        ]}
+        state={sort}
+        onChange={setSort}
+      />
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {managers.map((m) => (
+        {sortedManagers.map((m) => (
           <Link key={m.email} href={`/dashboard/managers/${m.uid}`} prefetch={false}>
             <div className="bg-white rounded-lg border p-4 hover:shadow-sm transition-shadow">
               <div className="flex items-start justify-between">
@@ -214,16 +262,26 @@ export default function ManagersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>{t("tag")}</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>{t("kpi")}</TableHead>
+              <SortableHead sortKey="name" state={sort} onChange={setSort}>
+                Name
+              </SortableHead>
+              <SortableHead sortKey="email" state={sort} onChange={setSort}>
+                Email
+              </SortableHead>
+              <SortableHead sortKey="tag" state={sort} onChange={setSort}>
+                {t("tag")}
+              </SortableHead>
+              <SortableHead sortKey="status" state={sort} onChange={setSort}>
+                Status
+              </SortableHead>
+              <SortableHead sortKey="kpi" state={sort} onChange={setSort}>
+                {t("kpi")}
+              </SortableHead>
               <TableHead>{t("currentActivities")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {managers.map((m) => {
+            {sortedManagers.map((m) => {
               const href = `/dashboard/managers/${m.uid}`;
               return (
                 <TableRow key={m.email} className="cursor-pointer hover:bg-gray-50">
