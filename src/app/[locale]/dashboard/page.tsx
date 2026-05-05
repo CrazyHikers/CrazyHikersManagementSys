@@ -2,19 +2,19 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { getUserRole } from "@/lib/permissions";
 import { db } from "@/lib/db";
+import { getRegisterableOpenActivities } from "@/lib/activity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 async function getManagerStats() {
-  const now = new Date();
-  const [openActivities, totalMembers, totalManagers] =
+  const [registerableActivities, totalMembers, totalManagers] =
     await Promise.all([
-      db.activity.count({ where: { status: "open", deadline: { gt: now } } }),
+      getRegisterableOpenActivities(),
       db.user.count({ where: { role: "member" } }),
       db.user.count({ where: { role: { in: ["manager", "admin", "dev"] } } }),
     ]);
 
-  return { openActivities, totalMembers, totalManagers };
+  return { openActivities: registerableActivities.length, totalMembers, totalManagers };
 }
 
 async function getMemberStats(email: string) {

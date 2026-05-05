@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
 import type { ActivityStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
+import { cacheTags } from "./cache-tags";
 
 export type ActivityDisplayStatus = ActivityStatus | "closed";
 
@@ -173,3 +175,59 @@ export async function computeEffectiveSubmissionCounts(
 
   return result;
 }
+
+/**
+ * Returns the list of activities that are visible and registerable on the
+ * public homepage: status `open`, deadline in the future, not at max
+ * registration, and not intern-led without a confirmed non-intern co-manager.
+ *
+ * Both the homepage and the manager dashboard's "open activities" badge
+ * read from this so the two counts stay in sync.
+ */
+export const getRegisterableOpenActivities = unstable_cache(
+  async () => {
+    const now = new Date();
+    const activities = await db.activity.findMany({
+      where: {
+        status: "open",
+        deadline: { gt: now },
+      },
+      include: {
+        activityManagers: {
+          where: { status: "confirmed" },
+          include: { user: { include: { managerProfile: true } } },
+        },
+        _count: {
+          select: {
+            registrations: {
+              where: {
+                status: { in: ["registration_confirmed", "attended"] },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    const submissionMap = await computeEffectiveSubmissionCounts(
+      activities.map((a) => ({ id: a.id, date: a.date }))
+    );
+
+    return activities
+      .filter((a) => {
+        if (!a.maximumRegistration || a.maximumRegistration === 0) return true;
+        return (submissionMap.get(a.id) ?? 0) < a.maximumRegistration;
+      })
+      .filter((a) => {
+        const creator = a.activityManagers.find((am) => am.role === "manager");
+        if (!creator?.user.managerProfile?.intern) return true;
+        return a.activityManagers.some(
+          (am) => am.role === "comanager" && !am.user.managerProfile?.intern
+        );
+      })
+      .map((a) => ({ ...a, submissionCount: submissionMap.get(a.id) ?? 0 }));
+  },
+  ["registerable-open-activities"],
+  { tags: [cacheTags.activities], revalidate: 86400 }
+);

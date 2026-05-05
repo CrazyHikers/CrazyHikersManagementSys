@@ -1,76 +1,18 @@
-import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import { db } from "@/lib/db";
 import { getPublicUrl } from "@/lib/r2";
-import { cacheTags } from "@/lib/cache-tags";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ActivityList } from "@/components/activity-list";
-import { computeEffectiveSubmissionCounts } from "@/lib/activity";
+import { getRegisterableOpenActivities } from "@/lib/activity";
 
 // 1-day revalidate is a safety net; write sites (activity create/edit,
 // registration change, manager accept/decline, etc.) invalidate via
 // revalidateTag(cacheTags.activities) for correctness.
 export const revalidate = 86400;
 
-const getOpenActivities = unstable_cache(
-  async () => {
-    const now = new Date();
-    const activities = await db.activity.findMany({
-      where: {
-        status: "open",
-        deadline: { gt: now },
-      },
-      include: {
-        activityManagers: {
-          where: { status: "confirmed" },
-          include: { user: { include: { managerProfile: true } } },
-        },
-        _count: {
-          select: {
-            registrations: {
-              where: {
-                status: { in: ["registration_confirmed", "attended"] },
-              },
-            },
-          },
-        },
-      },
-      orderBy: { date: "asc" },
-    });
-
-    // Second count: "effective forms submitted" = registered + confirmed,
-    // excluding phantom pending registrations from users already confirmed
-    // elsewhere on the same day. This matches the cap enforced by the
-    // registration API (see /api/activities/[id]/register/route.ts).
-    const submissionMap = await computeEffectiveSubmissionCounts(
-      activities.map((a) => ({ id: a.id, date: a.date }))
-    );
-
-    // Filter out activities at max registration, and hide intern-led
-    // activities until at least one non-intern manager has accepted.
-    return activities
-      .filter((a) => {
-        if (!a.maximumRegistration || a.maximumRegistration === 0) return true;
-        return (submissionMap.get(a.id) ?? 0) < a.maximumRegistration;
-      })
-      .filter((a) => {
-        const creator = a.activityManagers.find((am) => am.role === "manager");
-        if (!creator?.user.managerProfile?.intern) return true;
-        // Intern-led: require at least one confirmed non-intern co-manager
-        return a.activityManagers.some(
-          (am) => am.role === "comanager" && !am.user.managerProfile?.intern
-        );
-      })
-      .map((a) => ({ ...a, submissionCount: submissionMap.get(a.id) ?? 0 }));
-  },
-  ["open-activities"],
-  { tags: [cacheTags.activities], revalidate: 86400 }
-);
-
 export default async function HomePage() {
   const t = await getTranslations("home");
-  const activities = await getOpenActivities();
+  const activities = await getRegisterableOpenActivities();
 
   const activityData = activities.map((activity) => {
     const managerNames = activity.activityManagers
