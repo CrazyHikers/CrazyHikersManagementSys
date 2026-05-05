@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getPublicUrl } from "@/lib/r2";
-import { getDisplayStatus } from "@/lib/activity";
+import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +67,12 @@ export default async function ActivityViewPage({
 
   if (!activity) notFound();
 
-  const displayStatus = getDisplayStatus(activity);
+  const submissionMap = await computeEffectiveSubmissionCounts([
+    { id: activity.id, date: activity.date },
+  ]);
+  const displayStatus = getDisplayStatus(activity, {
+    effectiveSubmissionCount: submissionMap.get(activity.id) ?? 0,
+  });
   const managers = activity.activityManagers.filter((am) => am.role === "manager");
   const comanagers = activity.activityManagers.filter((am) => am.role === "comanager");
 

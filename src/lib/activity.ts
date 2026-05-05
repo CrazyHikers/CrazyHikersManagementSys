@@ -6,17 +6,33 @@ import { cacheTags } from "./cache-tags";
 export type ActivityDisplayStatus = ActivityStatus | "closed";
 
 /**
- * Returns the status to display for an activity. An `open` activity whose
- * registration deadline has passed is shown as `closed`, even though the
- * underlying DB row is still `open` (so managers can continue managing
- * registrations until they manually finish or cancel the activity).
+ * Returns the status to display for an activity. An `open` activity is
+ * shown as `closed` once it is no longer registerable — either the
+ * deadline has passed, or (when an effective submission count is
+ * supplied) the activity has reached its maximum registration. The
+ * underlying DB row stays `open` so managers can keep managing
+ * registrations until they manually finish or cancel the activity.
+ *
+ * Pass `effectiveSubmissionCount` from `computeEffectiveSubmissionCounts`
+ * to enable the at-max check; omit it to fall back to the deadline-only
+ * rule.
  */
-export function getDisplayStatus(activity: {
-  status: ActivityStatus;
-  deadline: Date | string;
-}): ActivityDisplayStatus {
-  if (activity.status === "open" && new Date(activity.deadline) <= new Date()) {
-    return "closed";
+export function getDisplayStatus(
+  activity: {
+    status: ActivityStatus;
+    deadline: Date | string;
+    maximumRegistration?: number | null;
+  },
+  options?: { effectiveSubmissionCount?: number }
+): ActivityDisplayStatus {
+  if (activity.status === "open") {
+    const deadlinePassed = new Date(activity.deadline) <= new Date();
+    const max = activity.maximumRegistration ?? 0;
+    const atMax =
+      max > 0 &&
+      options?.effectiveSubmissionCount !== undefined &&
+      options.effectiveSubmissionCount >= max;
+    if (deadlinePassed || atMax) return "closed";
   }
   return activity.status;
 }

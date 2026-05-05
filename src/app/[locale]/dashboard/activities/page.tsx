@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getDisplayStatus } from "@/lib/activity";
+import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import {
   Table,
   TableBody,
@@ -49,6 +49,10 @@ export default async function ActivitiesPage() {
     orderBy: { date: "desc" },
   });
 
+  const submissionMap = await computeEffectiveSubmissionCounts(
+    activities.map((a) => ({ id: a.id, date: a.date }))
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -68,7 +72,7 @@ export default async function ActivitiesPage() {
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-medium">{a.title}</h3>
                 {(() => {
-                  const ds = getDisplayStatus(a);
+                  const ds = getDisplayStatus(a, { effectiveSubmissionCount: submissionMap.get(a.id) ?? 0 });
                   return <Badge className={statusColors[ds]}>{ds}</Badge>;
                 })()}
               </div>
@@ -109,7 +113,7 @@ export default async function ActivitiesPage() {
                 </TableCell>
                 <TableCell>
                   {(() => {
-                  const ds = getDisplayStatus(a);
+                  const ds = getDisplayStatus(a, { effectiveSubmissionCount: submissionMap.get(a.id) ?? 0 });
                   return <Badge className={statusColors[ds]}>{ds}</Badge>;
                 })()}
                 </TableCell>

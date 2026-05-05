@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import { getDisplayStatus } from "@/lib/activity";
+import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import {
   Table,
   TableBody,
@@ -46,6 +46,10 @@ export default async function AllActivitiesPage() {
     orderBy: { date: "desc" },
   });
 
+  const submissionMap = await computeEffectiveSubmissionCounts(
+    activities.map((a) => ({ id: a.id, date: a.date }))
+  );
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{t("allActivities")}</h1>
@@ -60,7 +64,7 @@ export default async function AllActivitiesPage() {
               <div className="flex items-start justify-between gap-2">
                 <Link href={`/dashboard/activity-view/${a.id}`} prefetch={false} className="font-medium hover:underline text-green-700">{a.title}</Link>
                 {(() => {
-                    const ds = getDisplayStatus(a);
+                    const ds = getDisplayStatus(a, { effectiveSubmissionCount: submissionMap.get(a.id) ?? 0 });
                     return <Badge className={statusColors[ds]}>{ds}</Badge>;
                   })()}
               </div>
@@ -100,7 +104,7 @@ export default async function AllActivitiesPage() {
                 <TableRow key={a.id} className="cursor-pointer hover:bg-gray-50">
                   {(() => {
                     const href = `/dashboard/activity-view/${a.id}`;
-                    const ds = getDisplayStatus(a);
+                    const ds = getDisplayStatus(a, { effectiveSubmissionCount: submissionMap.get(a.id) ?? 0 });
                     return (<>
                       <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2 font-medium">{a.title}</Link></TableCell>
                       <TableCell className="p-0"><Link href={href} prefetch={false} className="block px-4 py-2"><Badge className={statusColors[ds]}>{ds}</Badge></Link></TableCell>

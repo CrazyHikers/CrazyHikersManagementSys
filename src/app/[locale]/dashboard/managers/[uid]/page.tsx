@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { computeKpi } from "@/lib/kpi";
 import { getFlagSettings, unexpiredCutoff } from "@/lib/flags";
-import { getDisplayStatus } from "@/lib/activity";
+import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 
 const flagColors: Record<string, string> = {
   yellow: "bg-yellow-100 text-yellow-800",
@@ -75,6 +75,11 @@ export default async function ManagerDetailPage({
       }),
       computeKpi(user.email),
     ]);
+
+  const submissionMap = await computeEffectiveSubmissionCounts([
+    ...managedActivities.map((am) => ({ id: am.activity.id, date: am.activity.date })),
+    ...comanagedActivities.map((am) => ({ id: am.activity.id, date: am.activity.date })),
+  ]);
 
   const activityStatusColors: Record<string, string> = {
     completed: "bg-green-100 text-green-800",
@@ -155,7 +160,7 @@ export default async function ManagerDetailPage({
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const ds = getDisplayStatus(am.activity);
+                        const ds = getDisplayStatus(am.activity, { effectiveSubmissionCount: submissionMap.get(am.activity.id) ?? 0 });
                         return (
                           <Badge className={activityStatusColors[ds] || ""}>
                             {ds}
@@ -208,7 +213,7 @@ export default async function ManagerDetailPage({
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const ds = getDisplayStatus(am.activity);
+                        const ds = getDisplayStatus(am.activity, { effectiveSubmissionCount: submissionMap.get(am.activity.id) ?? 0 });
                         return (
                           <Badge className={activityStatusColors[ds] || ""}>
                             {ds}

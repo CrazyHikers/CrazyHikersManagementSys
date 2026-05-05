@@ -13,7 +13,7 @@ import { InviteComanager } from "@/components/dashboard/invite-comanager";
 import { RegistrationManager } from "@/components/dashboard/registration-manager";
 import { RegistrationsStore } from "@/components/dashboard/registrations-store";
 import { RegistrationCountDisplay } from "@/components/dashboard/registration-count-display";
-import { getDisplayStatus } from "@/lib/activity";
+import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
 
 export default async function ActivityDetailPage({
@@ -66,7 +66,12 @@ export default async function ActivityDetailPage({
   if (!activity) notFound();
 
   const isEditable = activity.status === "open";
-  const displayStatus = getDisplayStatus(activity);
+  const submissionMap = await computeEffectiveSubmissionCounts([
+    { id: activity.id, date: activity.date },
+  ]);
+  const displayStatus = getDisplayStatus(activity, {
+    effectiveSubmissionCount: submissionMap.get(activity.id) ?? 0,
+  });
   const existingEmails = new Set(activity.activityManagers.map((am) => am.userEmail));
 
   // Build the registration list for the RegistrationManager. Filter out
