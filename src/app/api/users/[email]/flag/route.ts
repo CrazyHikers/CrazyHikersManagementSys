@@ -112,9 +112,9 @@ export async function GET(
     where: {
       userEmail: decodedEmail,
       invalidated: false,
-      issuedAt: { gt: unexpiredCutoff(flagSettings) },
+      activity: { date: { gt: unexpiredCutoff(flagSettings) } },
     },
-    orderBy: { issuedAt: "desc" },
+    orderBy: { activity: { date: "desc" } },
   });
 
   return NextResponse.json(flags);

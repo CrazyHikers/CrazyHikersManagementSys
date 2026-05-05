@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
               include: {
                 flags: {
                   where: {
-                    issuedAt: { gt: flagCutoff },
+                    activity: { date: { gt: flagCutoff } },
                     invalidated: false,
                   },
+                  include: { activity: { select: { date: true } } },
                 },
               },
             },

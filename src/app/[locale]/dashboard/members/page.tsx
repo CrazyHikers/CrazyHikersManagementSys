@@ -26,8 +26,9 @@ export default async function MembersPage() {
         take: 1,
       },
       flags: {
-        where: { issuedAt: { gt: banActiveCutoff(flagSettings) }, invalidated: false },
-        orderBy: { issuedAt: "desc" },
+        where: { activity: { date: { gt: banActiveCutoff(flagSettings) } }, invalidated: false },
+        orderBy: { activity: { date: "desc" } },
+        include: { activity: { select: { date: true } } },
       },
     },
     orderBy: { name: "asc" },
@@ -43,7 +44,7 @@ export default async function MembersPage() {
       totalAttended: m._count.registrations,
       waiverStatus: m.waivers[0]?.status ?? null,
       banUntil: activeBan
-        ? computeBanUntil(activeBan.issuedAt, activeBan.flagType, flagSettings).toISOString()
+        ? computeBanUntil(activeBan.activity.date, activeBan.flagType, flagSettings).toISOString()
         : null,
       banFlagType: activeBan ? (activeBan.flagType as "yellow" | "red") : null,
     };

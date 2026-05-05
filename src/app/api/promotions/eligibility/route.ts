@@ -46,8 +46,9 @@ export async function GET() {
     where: {
       userEmail: email,
       invalidated: false,
-      issuedAt: { gt: banActiveCutoff(flagSettings, now) },
+      activity: { date: { gt: banActiveCutoff(flagSettings, now) } },
     },
+    include: { activity: { select: { date: true } } },
   });
   const activeFlag = candidateFlags.find(
     (f) => isBanActive(f, flagSettings, now) && !isFlagExpired(f, flagSettings, now)

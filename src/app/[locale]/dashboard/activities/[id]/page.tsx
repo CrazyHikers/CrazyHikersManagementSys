@@ -51,8 +51,8 @@ export default async function ActivityDetailPage({
                 select: { status: true, signedName: true },
               },
               flags: {
-                where: { issuedAt: { gt: unexpiredCutoff(flagSettings) }, invalidated: false },
-                orderBy: { issuedAt: "desc" },
+                where: { activity: { date: { gt: unexpiredCutoff(flagSettings) } }, invalidated: false },
+                orderBy: { activity: { date: "desc" } },
                 include: { activity: true, issuer: true },
               },
             },
@@ -113,7 +113,7 @@ export default async function ActivityDetailPage({
         flagHistory: activeFlags.map((f) => ({
           flagType: f.flagType,
           reason: f.reason,
-          issuedAt: f.issuedAt.toISOString(),
+          activityDate: f.activity.date.toISOString(),
           activityTitle: f.activity.title,
           issuerName: f.issuer.name,
         })),

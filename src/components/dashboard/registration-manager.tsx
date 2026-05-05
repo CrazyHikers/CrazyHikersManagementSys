@@ -58,7 +58,7 @@ export type Registration = {
   flagHistory: {
     flagType: string;
     reason: string | null;
-    issuedAt: string;
+    activityDate: string;
     activityTitle: string;
     issuerName: string;
   }[];
@@ -862,7 +862,7 @@ export function RegistrationManager({
                                   </span>
                                 </div>
                                 <div className="text-muted-foreground">
-                                  {tp("issuedBy")} {flag.issuerName} {tp("on")} {new Date(flag.issuedAt).toLocaleDateString(locale)}
+                                  {tp("issuedBy")} {flag.issuerName} {tp("on")} {new Date(flag.activityDate).toLocaleDateString(locale)}
                                 </div>
                                 {flag.reason && (
                                   <div>{tp("reason")}: {flag.reason}</div>

@@ -101,7 +101,7 @@ export async function PATCH(
                   userEmail: reg.userEmail,
                   flagType: "yellow",
                   invalidated: false,
-                  issuedAt: { gt: unexpiredCutoff(flagSettings, now) },
+                  activity: { date: { gt: unexpiredCutoff(flagSettings, now) } },
                 },
               });
               if (activeYellowCount + 1 >= yellowThreshold) {

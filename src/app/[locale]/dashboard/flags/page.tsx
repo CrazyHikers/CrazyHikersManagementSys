@@ -32,10 +32,10 @@ export default async function FlagsPage() {
   const flagSettings = await getFlagSettings();
 
   const flags = await db.userFlag.findMany({
-    orderBy: { issuedAt: "desc" },
+    orderBy: { activity: { date: "desc" } },
     include: {
       user: { select: { name: true, uid: true, email: true } },
-      activity: { select: { id: true, title: true } },
+      activity: { select: { id: true, title: true, date: true } },
       issuer: { select: { name: true } },
       invalidator: { select: { name: true } },
     },
@@ -80,7 +80,7 @@ export default async function FlagsPage() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">{t("issuedAt")}: </span>
-                    {f.issuedAt.toLocaleDateString()}
+                    {f.activity.date.toLocaleDateString()}
                   </div>
                   {f.reason && (
                     <div>
@@ -91,7 +91,7 @@ export default async function FlagsPage() {
                   {banActive && (
                     <div>
                       <span className="text-muted-foreground">{t("banUntil")}: </span>
-                      {computeBanUntil(f.issuedAt, f.flagType, flagSettings).toLocaleDateString()}
+                      {computeBanUntil(f.activity.date, f.flagType, flagSettings).toLocaleDateString()}
                     </div>
                   )}
                   {f.invalidated && f.invalidator && (
@@ -155,7 +155,7 @@ export default async function FlagsPage() {
                         </Link>
                       </TableCell>
                       <TableCell>{f.issuer.name}</TableCell>
-                      <TableCell>{f.issuedAt.toLocaleDateString()}</TableCell>
+                      <TableCell>{f.activity.date.toLocaleDateString()}</TableCell>
                       <TableCell className="max-w-48 truncate">{f.reason || "—"}</TableCell>
                       <TableCell>
                         {f.invalidated ? (
@@ -171,7 +171,7 @@ export default async function FlagsPage() {
                           <div>
                             <Badge className="bg-red-100 text-red-800">{t("banActive")}</Badge>
                             <div className="text-xs text-muted-foreground mt-1">
-                              {t("until")} {computeBanUntil(f.issuedAt, f.flagType, flagSettings).toLocaleDateString()}
+                              {t("until")} {computeBanUntil(f.activity.date, f.flagType, flagSettings).toLocaleDateString()}
                             </div>
                           </div>
                         ) : (

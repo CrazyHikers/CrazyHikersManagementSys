@@ -18,7 +18,7 @@ export async function getFlagSettings(): Promise<FlagSettings> {
 }
 
 export function computeBanUntil(
-  issuedAt: Date,
+  origin: Date,
   flagType: string,
   settings: FlagSettings
 ): Date {
@@ -26,13 +26,13 @@ export function computeBanUntil(
     flagType === "red"
       ? settings.ban_duration_red
       : settings.ban_duration_yellow;
-  const result = new Date(issuedAt);
+  const result = new Date(origin);
   result.setDate(result.getDate() + days);
   return result;
 }
 
 export function computeExpiresAt(
-  issuedAt: Date,
+  origin: Date,
   flagType: string,
   settings: FlagSettings
 ): Date {
@@ -40,25 +40,26 @@ export function computeExpiresAt(
     flagType === "red"
       ? settings.flag_expiry_days_red
       : settings.flag_expiry_days_yellow;
-  const result = new Date(issuedAt);
+  const result = new Date(origin);
   result.setDate(result.getDate() + days);
   return result;
 }
 
+// Flag windows (ban/expiry) are anchored to the flag's activity date.
 export function isBanActive(
-  flag: { issuedAt: Date; flagType: string },
+  flag: { activity: { date: Date }; flagType: string },
   settings: FlagSettings,
   now: Date = new Date()
 ): boolean {
-  return computeBanUntil(flag.issuedAt, flag.flagType, settings) > now;
+  return computeBanUntil(flag.activity.date, flag.flagType, settings) > now;
 }
 
 export function isFlagExpired(
-  flag: { issuedAt: Date; flagType: string },
+  flag: { activity: { date: Date }; flagType: string },
   settings: FlagSettings,
   now: Date = new Date()
 ): boolean {
-  return computeExpiresAt(flag.issuedAt, flag.flagType, settings) <= now;
+  return computeExpiresAt(flag.activity.date, flag.flagType, settings) <= now;
 }
 
 /** Cutoff date for unexpired flags: uses max of both expiry periods. Refine with isFlagExpired() per flag. */

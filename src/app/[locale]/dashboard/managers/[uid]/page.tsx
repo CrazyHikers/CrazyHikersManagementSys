@@ -68,10 +68,10 @@ export default async function ManagerDetailPage({
       db.userFlag.findMany({
         where: {
           issuedBy: user.email,
-          issuedAt: { gt: unexpiredCutoff(flagSettings) },
+          activity: { date: { gt: unexpiredCutoff(flagSettings) } },
         },
         include: { user: true, activity: true },
-        orderBy: { issuedAt: "desc" },
+        orderBy: { activity: { date: "desc" } },
       }),
       computeKpi(user.email),
     ]);
@@ -263,7 +263,7 @@ export default async function ManagerDetailPage({
                     </Link>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {f.issuedAt.toLocaleDateString()}
+                    {f.activity.date.toLocaleDateString()}
                   </div>
                   {f.reason && (
                     <div className="text-sm mt-1">

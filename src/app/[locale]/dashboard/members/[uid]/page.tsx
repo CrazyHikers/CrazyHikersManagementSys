@@ -61,7 +61,7 @@ export default async function UserDetailPage({
       },
       flags: {
         where: { invalidated: false },
-        orderBy: { issuedAt: "desc" },
+        orderBy: { activity: { date: "desc" } },
         include: { activity: true, issuer: true },
       },
     },
@@ -298,10 +298,10 @@ export default async function UserDetailPage({
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {t("issuedBy")} {f.issuer.name} {t("on")} {f.issuedAt.toLocaleDateString()}
+                    {t("issuedBy")} {f.issuer.name} {t("on")} {f.activity.date.toLocaleDateString()}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {t("banUntil")}: {computeBanUntil(f.issuedAt, f.flagType, flagSettings).toLocaleDateString()}
+                    {t("banUntil")}: {computeBanUntil(f.activity.date, f.flagType, flagSettings).toLocaleDateString()}
                     {isBanActive(f, flagSettings) ? (
                       <Badge className="bg-red-100 text-red-800 ml-2 text-xs">{t("active")}</Badge>
                     ) : (
