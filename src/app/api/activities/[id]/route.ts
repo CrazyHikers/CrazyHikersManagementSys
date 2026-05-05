@@ -78,7 +78,7 @@ export async function PATCH(
           where: {
             activityId: id,
             pendingFlag: { not: null },
-            status: { in: ["registration_confirmed", "attended"] },
+            status: { in: ["registration_confirmed", "attended", "absent"] },
           },
         });
 

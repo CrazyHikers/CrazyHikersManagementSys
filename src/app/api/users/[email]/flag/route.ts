@@ -31,16 +31,16 @@ export async function POST(
     return NextResponse.json({ error: "Reason is required" }, { status: 400 });
   }
 
-  // Verify registration exists and is confirmed or attended
+  // Verify registration exists and is confirmed, attended, or absent
   const registration = await db.registration.findUnique({
     where: { activityId_userEmail: { activityId, userEmail: decodedEmail } },
   });
   if (!registration) {
     return NextResponse.json({ error: "Registration not found" }, { status: 404 });
   }
-  if (!["registration_confirmed", "attended"].includes(registration.status)) {
+  if (!["registration_confirmed", "attended", "absent"].includes(registration.status)) {
     return NextResponse.json(
-      { error: "Can only flag users with confirmed or attended registrations" },
+      { error: "Can only flag users with confirmed, attended, or absent registrations" },
       { status: 400 }
     );
   }
