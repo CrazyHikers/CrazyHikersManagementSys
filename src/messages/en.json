@@ -54,6 +54,8 @@
     "flags": "Flags",
     "waivers": "Waivers",
     "allActivities": "All Activities",
+    "myFiles": "My Files",
+    "internResources": "Intern Files",
     "settings": "Settings",
     "signIn": "Sign In",
     "signUp": "Sign Up"
@@ -569,6 +571,39 @@
       "waiverUploadButton": "Upload New Template",
       "waiverUploadSuccess": "Waiver template updated. All existing signed waivers have been invalidated.",
       "waiverPdfOnly": "Only PDF files are allowed"
+    },
+    "myFiles": {
+      "title": "My Files",
+      "empty": "No files have been shared yet.",
+      "download": "Download",
+      "kind_DOCUMENT": "Document",
+      "kind_VIDEO": "Video"
+    },
+    "internResources": {
+      "title": "Intern Files",
+      "uploadTitle": "Upload File",
+      "fileLabel": "File",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Display name shown to intern managers",
+      "kindLabel": "Type",
+      "kind_DOCUMENT": "Document",
+      "kind_VIDEO": "Video",
+      "uploadButton": "Upload",
+      "uploadSuccess": "File uploaded",
+      "uploadFailed": "Upload failed",
+      "uploadTooLarge": "File too large. Maximum size is {limitMb} MB.",
+      "uploadMissingFile": "Please select a file",
+      "uploadMissingTitle": "Please enter a title",
+      "listTitle": "Existing Files",
+      "empty": "No files uploaded yet.",
+      "uploadedBy": "Uploaded by",
+      "uploadedAt": "Uploaded",
+      "deleteButton": "Delete",
+      "deleteConfirmTitle": "Delete File",
+      "deleteConfirmDescription": "Are you sure you want to delete \"{title}\"? This will remove it from R2 storage. This action cannot be undone.",
+      "confirmDelete": "Delete",
+      "deleteSuccess": "File deleted",
+      "deleteFailed": "Failed to delete file"
     }
   },
   "auth": {

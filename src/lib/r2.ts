@@ -45,11 +45,18 @@ export async function deleteFile(key: string): Promise<void> {
 
 export async function getSignedDownloadUrl(
   key: string,
-  expiresIn = 3600
+  expiresIn = 3600,
+  responseContentDisposition?: string
 ): Promise<string> {
   return getSignedUrl(
     r2,
-    new GetObjectCommand({ Bucket: BUCKET, Key: key }),
+    new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ...(responseContentDisposition
+        ? { ResponseContentDisposition: responseContentDisposition }
+        : {}),
+    }),
     { expiresIn }
   );
 }

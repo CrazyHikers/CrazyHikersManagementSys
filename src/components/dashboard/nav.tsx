@@ -26,20 +26,28 @@ const managerItems: NavItem[] = [
   { key: "activities", href: "/dashboard/activities" },
 ];
 
+const internResourcesItem: NavItem = {
+  key: "myFiles",
+  href: "/dashboard/my-files",
+};
+
 const adminItems: NavItem[] = [
   { key: "allActivities", href: "/dashboard/all-activities" },
   { key: "members", href: "/dashboard/members" },
   { key: "waivers", href: "/dashboard/members/waivers" },
   { key: "flags", href: "/dashboard/flags" },
   { key: "managers", href: "/dashboard/managers" },
+  { key: "internResources", href: "/dashboard/intern-resources" },
   { key: "settings", href: "/dashboard/settings" },
 ];
 
 function NavLinks({
   role,
+  canReadInternResources,
   onClick,
 }: {
   role: string;
+  canReadInternResources: boolean;
   onClick?: () => void;
 }) {
   const t = useTranslations("nav");
@@ -80,6 +88,7 @@ function NavLinks({
           {managerItems.map(renderItem)}
         </>
       )}
+      {canReadInternResources && renderItem(internResourcesItem)}
       {isAdmin && (
         <>
           <Separator className="my-2" />
@@ -93,9 +102,11 @@ function NavLinks({
 export function DashboardNav({
   role,
   userName,
+  canReadInternResources,
 }: {
   role: string;
   userName: string;
+  canReadInternResources: boolean;
 }) {
   const t = useTranslations("common");
   const [open, setOpen] = useState(false);
@@ -111,7 +122,7 @@ export function DashboardNav({
           </Link>
         </div>
         <nav className="flex-1 p-3 space-y-1">
-          <NavLinks role={role} />
+          <NavLinks role={role} canReadInternResources={canReadInternResources} />
         </nav>
         <div className="border-t p-3">
           <div className="text-xs text-muted-foreground mb-2 truncate">
@@ -148,7 +159,11 @@ export function DashboardNav({
               </span>
             </div>
             <nav className="p-3 space-y-1">
-              <NavLinks role={role} onClick={() => setOpen(false)} />
+              <NavLinks
+                role={role}
+                canReadInternResources={canReadInternResources}
+                onClick={() => setOpen(false)}
+              />
             </nav>
             <div className="border-t p-3 mt-auto">
               <div className="text-xs text-muted-foreground mb-2">

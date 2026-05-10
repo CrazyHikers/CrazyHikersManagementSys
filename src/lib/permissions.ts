@@ -34,6 +34,9 @@ export type Permission =
   | "settings.edit"
   // Upload
   | "upload.files"
+  // Intern resources (training files visible to intern managers + admins)
+  | "intern_resources:read"
+  | "intern_resources:manage"
   // Dev-only
   | "users.changeRole";
 
@@ -91,6 +94,11 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   // Upload
   "upload.files": ["member", "manager", "admin", "dev"],
 
+  // Intern resources. Read is granted to admins/dev directly; intern managers
+  // are layered on inside `can()` since the matrix is purely role-driven.
+  "intern_resources:read": ["admin", "dev"],
+  "intern_resources:manage": ["admin", "dev"],
+
   // Dev-only: directly change any user's role
   "users.changeRole": ["dev"],
 };
@@ -110,7 +118,14 @@ export function roleHasPermission(role: UserRole, permission: Permission): boole
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function can(session: any, permission: Permission): boolean {
   const role = (session?.user?.role as UserRole) || "member";
-  return roleHasPermission(role, permission);
+  if (roleHasPermission(role, permission)) return true;
+  // Intern managers (manager role + ManagerProfile.intern) can read intern
+  // resources even though the matrix only lists admins/dev. The matrix
+  // stays role-only; the role+flag combo is layered here.
+  if (permission === "intern_resources:read" && isInternManager(session)) {
+    return true;
+  }
+  return false;
 }
 
 /**

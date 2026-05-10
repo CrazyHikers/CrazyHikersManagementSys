@@ -54,6 +54,8 @@
     "flags": "标记管理",
     "waivers": "免责声明",
     "allActivities": "所有活动",
+    "myFiles": "我的文件",
+    "internResources": "实习领队文件",
     "settings": "系统设置",
     "signIn": "登录",
     "signUp": "注册"
@@ -568,6 +570,39 @@
       "waiverUploadButton": "上传新模板",
       "waiverUploadSuccess": "免责声明模板已更新，所有已签署的免责声明已失效。",
       "waiverPdfOnly": "仅允许上传PDF文件"
+    },
+    "myFiles": {
+      "title": "我的文件",
+      "empty": "暂时还没有共享的文件。",
+      "download": "下载",
+      "kind_DOCUMENT": "文档",
+      "kind_VIDEO": "视频"
+    },
+    "internResources": {
+      "title": "实习领队文件",
+      "uploadTitle": "上传文件",
+      "fileLabel": "文件",
+      "titleLabel": "标题",
+      "titlePlaceholder": "实习领队看到的显示名称",
+      "kindLabel": "类型",
+      "kind_DOCUMENT": "文档",
+      "kind_VIDEO": "视频",
+      "uploadButton": "上传",
+      "uploadSuccess": "文件已上传",
+      "uploadFailed": "上传失败",
+      "uploadTooLarge": "文件过大，最大允许 {limitMb} MB。",
+      "uploadMissingFile": "请选择一个文件",
+      "uploadMissingTitle": "请填写标题",
+      "listTitle": "现有文件",
+      "empty": "尚未上传任何文件。",
+      "uploadedBy": "上传者",
+      "uploadedAt": "上传时间",
+      "deleteButton": "删除",
+      "deleteConfirmTitle": "删除文件",
+      "deleteConfirmDescription": "确定要删除「{title}」吗？此操作会从 R2 存储中移除该文件，无法撤销。",
+      "confirmDelete": "删除",
+      "deleteSuccess": "文件已删除",
+      "deleteFailed": "删除文件失败"
     }
   },
   "auth": {
