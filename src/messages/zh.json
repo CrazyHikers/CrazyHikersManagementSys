@@ -590,6 +590,7 @@
       "uploadButton": "上传",
       "uploadSuccess": "文件已上传",
       "uploadFailed": "上传失败",
+      "uploadStorageFailed": "上传到存储失败，存储桶可能未允许从本站上传。",
       "uploadTooLarge": "文件过大，最大允许 {limitMb} MB。",
       "uploadMissingFile": "请选择一个文件",
       "uploadMissingTitle": "请填写标题",

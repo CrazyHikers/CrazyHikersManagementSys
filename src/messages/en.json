@@ -591,6 +591,7 @@
       "uploadButton": "Upload",
       "uploadSuccess": "File uploaded",
       "uploadFailed": "Upload failed",
+      "uploadStorageFailed": "Upload to storage failed. The bucket may not allow uploads from this site.",
       "uploadTooLarge": "File too large. Maximum size is {limitMb} MB.",
       "uploadMissingFile": "Please select a file",
       "uploadMissingTitle": "Please enter a title",

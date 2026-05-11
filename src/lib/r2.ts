@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -41,6 +42,38 @@ export async function deleteFile(key: string): Promise<void> {
       Key: key,
     })
   );
+}
+
+export async function getSignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 600
+): Promise<string> {
+  return getSignedUrl(
+    r2,
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn }
+  );
+}
+
+export async function headObject(
+  key: string
+): Promise<{ sizeBytes: number; contentType: string } | null> {
+  try {
+    const res = await r2.send(
+      new HeadObjectCommand({ Bucket: BUCKET, Key: key })
+    );
+    return {
+      sizeBytes: Number(res.ContentLength ?? 0),
+      contentType: res.ContentType ?? "application/octet-stream",
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getSignedDownloadUrl(

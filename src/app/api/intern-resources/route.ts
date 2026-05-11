@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { authorize } from "@/lib/permissions";
-import { uploadFile } from "@/lib/r2";
+import { headObject, deleteFile } from "@/lib/r2";
 
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
-
 const ALLOWED_KINDS = ["DOCUMENT", "VIDEO"] as const;
 type Kind = (typeof ALLOWED_KINDS)[number];
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120) || "file";
-}
 
 export async function POST(request: NextRequest) {
   const session = await authorize("intern_resources:manage");
@@ -19,47 +13,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  let body: { key?: unknown; title?: unknown; kind?: unknown };
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const title = (formData.get("title") as string | null)?.trim();
-    const kindRaw = formData.get("kind") as string | null;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-    if (!title) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
-    }
-    if (!kindRaw || !ALLOWED_KINDS.includes(kindRaw as Kind)) {
-      return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
-    }
-    const kind = kindRaw as Kind;
+  const key = typeof body.key === "string" ? body.key : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const kindRaw = typeof body.kind === "string" ? body.kind : "";
 
-    if (file.size > MAX_UPLOAD_BYTES) {
-      return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB.` },
-        { status: 413 }
-      );
-    }
+  if (!title) {
+    return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  }
+  if (!ALLOWED_KINDS.includes(kindRaw as Kind)) {
+    return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
+  }
+  const kind = kindRaw as Kind;
 
-    const r2Key = `intern-resources/${randomUUID()}-${sanitizeFilename(file.name)}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const mime = file.type || "application/octet-stream";
+  // Only accept keys under the prefix we issue presigns for. Prevents an
+  // admin from attaching the DB row to an arbitrary path in the bucket.
+  if (!key.startsWith("intern-resources/")) {
+    return NextResponse.json({ error: "Invalid key" }, { status: 400 });
+  }
 
-    await uploadFile(r2Key, buffer, mime);
+  const head = await headObject(key);
+  if (!head) {
+    return NextResponse.json({ error: "File not uploaded" }, { status: 400 });
+  }
+  if (head.sizeBytes > MAX_UPLOAD_BYTES) {
+    await deleteFile(key).catch(() => {});
+    return NextResponse.json({ error: "File too large" }, { status: 413 });
+  }
 
+  try {
     const resource = await db.internResource.create({
       data: {
         title,
-        r2Key,
+        r2Key: key,
         kind,
-        mime,
-        sizeBytes: file.size,
+        mime: head.contentType,
+        sizeBytes: head.sizeBytes,
         uploadedById: session.user!.email!,
       },
     });
-
     return NextResponse.json({
       id: resource.id,
       title: resource.title,
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
       sizeBytes: resource.sizeBytes,
     });
   } catch (error) {
-    console.error("Intern resource upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("Intern resource confirm error:", error);
+    return NextResponse.json({ error: "Could not save file record" }, { status: 500 });
   }
 }

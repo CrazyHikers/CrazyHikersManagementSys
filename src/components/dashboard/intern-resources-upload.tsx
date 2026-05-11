@@ -44,18 +44,45 @@ export function InternResourcesUpload() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("title", title.trim());
-      formData.append("kind", kind);
+      const mime = file.type || "application/octet-stream";
 
-      const res = await fetch("/api/intern-resources", {
+      const presignRes = await fetch("/api/intern-resources/presign", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          mime,
+          sizeBytes: file.size,
+          kind,
+        }),
       });
+      if (!presignRes.ok) {
+        const data = await presignRes.json().catch(() => ({}));
+        throw new Error(data.error || t("uploadFailed"));
+      }
+      const { uploadUrl, key } = (await presignRes.json()) as {
+        uploadUrl: string;
+        key: string;
+      };
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+      // Direct browser → R2 PUT. Bypasses Vercel's 4.5 MB function body limit.
+      // Requires the R2 bucket to allow PUT from this app's origin via CORS.
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": mime },
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error(t("uploadStorageFailed"));
+      }
+
+      const confirmRes = await fetch("/api/intern-resources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, title: title.trim(), kind }),
+      });
+      if (!confirmRes.ok) {
+        const data = await confirmRes.json().catch(() => ({}));
         throw new Error(data.error || t("uploadFailed"));
       }
 
