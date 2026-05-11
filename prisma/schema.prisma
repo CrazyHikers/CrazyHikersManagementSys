@@ -55,6 +55,7 @@ model User {
   telegramLinkTokens    TelegramLinkToken[]
   discordSubscription   DiscordSubscription?
   discordLinkTokens     DiscordLinkToken[]
+  internResources       InternResource[]
 
   @@index([role])
   @@map("users")
@@ -446,4 +447,32 @@ model DiscordLinkToken {
   @@index([userEmail])
   @@index([expiresAt])
   @@map("discord_link_tokens")
+}
+
+// ============================================================================
+// INTERN RESOURCES
+// ============================================================================
+
+enum InternResourceKind {
+  DOCUMENT
+  VIDEO
+}
+
+// Files uploaded by admins for intern managers to download (training
+// materials, guides, recorded sessions). Visible to admins and any
+// manager whose ManagerProfile.intern is true.
+model InternResource {
+  id           String             @id @default(cuid())
+  title        String
+  r2Key        String             @unique @map("r2_key")
+  kind         InternResourceKind
+  mime         String
+  sizeBytes    Int                @map("size_bytes")
+  uploadedById String             @map("uploaded_by_id")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [email], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("intern_resources")
 }

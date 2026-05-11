@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
+import { can, getUserRole } from "@/lib/permissions";
 import { DashboardNav } from "@/components/dashboard/nav";
 
 export default async function DashboardLayout({
@@ -18,6 +18,7 @@ export default async function DashboardLayout({
   }
 
   const role = getUserRole(session);
+  const canReadInternResources = can(session, "intern_resources:read");
   const userName =
     session.user.name ||
     session.user.email ||
@@ -25,7 +26,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden">
-      <DashboardNav role={role} userName={userName} />
+      <DashboardNav
+        role={role}
+        userName={userName}
+        canReadInternResources={canReadInternResources}
+      />
       <main className="flex-1 overflow-y-auto bg-gray-50">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {children}
