@@ -23,8 +23,16 @@ export async function GET(
   }
 
   try {
-    const filename = resource.r2Key.split("/").pop() || "download";
-    const disposition = `attachment; filename="${filename.replace(/"/g, "")}"`;
+    // r2Key looks like `intern-resources/<uuid>-<original-filename>`.
+    // Strip the UUID prefix so the browser downloads under the original name.
+    const last = resource.r2Key.split("/").pop() || "download";
+    const filename = last.replace(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/i,
+      ""
+    );
+    // RFC 5987: ASCII fallback for old clients, percent-encoded UTF-8 for modern ones.
+    const asciiFallback = filename.replace(/[^\x20-\x7E]/g, "_").replace(/"/g, "");
+    const disposition = `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
     const url = await getSignedDownloadUrl(resource.r2Key, 300, disposition);
     return NextResponse.redirect(url);
   } catch (error) {
