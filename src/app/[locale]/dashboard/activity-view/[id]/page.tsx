@@ -84,10 +84,9 @@ export default async function ActivityViewPage({
       : null;
   let knownTemplates: string[] = [];
   if (canChangeTemplate) {
-    const rows = await db.activity.findMany({
-      where: { metadata: { path: ["template"], not: "" } },
-      select: { metadata: true },
-    });
+    // Cheaper to dedupe in JS than to wrestle with Prisma's JSON path
+    // filters across drivers — the activity table stays small.
+    const rows = await db.activity.findMany({ select: { metadata: true } });
     const set = new Set<string>();
     for (const r of rows) {
       if (r.metadata && typeof r.metadata === "object") {

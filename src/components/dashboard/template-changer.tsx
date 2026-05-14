@@ -10,7 +10,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
@@ -18,6 +17,12 @@ import { toast } from "sonner";
 // mode. Not a real template — handled inline below.
 const CUSTOM_SENTINEL = "__custom__";
 const NONE_SENTINEL = "__none__";
+
+function labelFor(v: string): string {
+  if (v === NONE_SENTINEL) return "(none)";
+  if (v === CUSTOM_SENTINEL) return "Custom…";
+  return v;
+}
 
 export function TemplateChanger({
   activityId,
@@ -110,7 +115,7 @@ export function TemplateChanger({
               onValueChange={(v) => setPicked(v ?? NONE_SENTINEL)}
             >
               <SelectTrigger className="min-w-48">
-                <SelectValue />
+                <span>{labelFor(picked)}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE_SENTINEL}>(none)</SelectItem>
