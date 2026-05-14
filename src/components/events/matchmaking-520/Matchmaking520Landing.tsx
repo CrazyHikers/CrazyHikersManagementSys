@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicUrl } from "@/lib/r2";
+import { ShareButton } from "@/components/share-button";
 import {
   FloatingPetals,
   HeartMountainIcon,
@@ -42,6 +43,14 @@ export async function Matchmaking520Landing({
         user: { name: string; managerProfile: { tag: string | null } | null };
       }) => am.user.managerProfile?.tag || am.user.name
     );
+
+  // Prefer /events/<slug> for sharing when the activity has a slug; falls
+  // back to /activities/<id> so every share still works.
+  const slug = (meta as Record<string, unknown>).slug;
+  const sharePath =
+    typeof slug === "string" && slug.trim() !== ""
+      ? `/${locale}/events/${slug}`
+      : `/${locale}/activities/${activity.id}`;
 
   return (
     <main className={`flex-1 relative ${m520Theme.pageBg}`}>
@@ -157,6 +166,15 @@ export async function Matchmaking520Landing({
           >
             {activity.description}
           </p>
+          {isOpen && (
+            <div className="flex justify-center pt-2">
+              <ShareButton
+                path={sharePath}
+                title={activity.title}
+                text={activity.description}
+              />
+            </div>
+          )}
         </div>
 
         {/* Stat strip — column-separated like a Japanese tabi-card */}
