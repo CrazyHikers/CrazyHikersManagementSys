@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useActivityStatus } from "@/components/activity-status-provider";
+import { WaiverSignInline } from "@/components/waiver-sign-inline";
 import { Matchmaking520Wizard } from "./Matchmaking520Wizard";
 import { PlumBlossom, fontDisplayZh, m520Theme } from "./theme";
 import type { Gender } from "@/lib/events/matchmaking-520";
@@ -33,19 +34,44 @@ export function Matchmaking520RegistrationPanel({
     null
   );
   const [showWizard, setShowWizard] = useState(false);
+  // Preflight: check profile + waiver completeness BEFORE letting the
+  // user start the 20-question wizard. Filling out a long form only to
+  // be rejected on submit because of missing profile/waiver is exactly
+  // the frustration this gates against.
+  const [needsProfile, setNeedsProfile] = useState(false);
+  const [needsWaiver, setNeedsWaiver] = useState(false);
+  const [waiverValidityDays, setWaiverValidityDays] = useState(365);
+  const [preflightChecked, setPreflightChecked] = useState(false);
 
   const email = session?.user?.email ?? null;
   const isManager = activityStatus.managing.has(activityId);
 
   useEffect(() => {
-    if (!email || isManager) return;
+    if (!email || isManager) {
+      setPreflightChecked(true);
+      return;
+    }
     let cancelled = false;
-    fetch(`/api/activities/${activityId}/register/status`)
-      .then((r) => (r.ok ? r.json() : { status: null }))
-      .then((d) => {
-        if (!cancelled) setRegistrationStatus(d?.status ?? null);
+    setPreflightChecked(false);
+    Promise.all([
+      fetch(`/api/activities/${activityId}/register/status`)
+        .then((r) => (r.ok ? r.json() : { status: null })),
+      fetch("/api/users/me/profile/status")
+        .then((r) => (r.ok ? r.json() : { isComplete: true })),
+      fetch("/api/users/me/waivers/status")
+        .then((r) => (r.ok ? r.json() : { hasValidWaiver: true })),
+    ])
+      .then(([reg, profile, waiver]) => {
+        if (cancelled) return;
+        setRegistrationStatus(reg?.status ?? null);
+        setNeedsProfile(!profile?.isComplete);
+        setNeedsWaiver(!waiver?.hasValidWaiver);
+        if (waiver?.validityDays) setWaiverValidityDays(waiver.validityDays);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setPreflightChecked(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -101,6 +127,42 @@ export function Matchmaking520RegistrationPanel({
         <p className="text-[#6a5447] dark:text-[#d4c4b8]">
           {ta("youAreManaging")}
         </p>
+      </ShellCard>
+    );
+  }
+  // Still resolving preflight checks — don't render any state yet to
+  // avoid flashing the wrong gate.
+  if (!preflightChecked) return null;
+  // Profile gate — must come BEFORE the wizard CTA. Already-registered
+  // users skip this entirely (handled below).
+  if (!registrationStatus && needsProfile) {
+    return (
+      <ShellCard>
+        <p className="text-[#6a5447] dark:text-[#d4c4b8] mb-5">
+          {ta("profileRequired")}
+        </p>
+        <Link href="/dashboard/my-profile">
+          <Button className={`${m520Theme.gradientCta} px-6`}>
+            {ta("completeProfile")}
+          </Button>
+        </Link>
+      </ShellCard>
+    );
+  }
+  // Waiver gate — same reasoning; inline signing keeps users on the
+  // page so they can come back to the wizard immediately.
+  if (!registrationStatus && needsWaiver) {
+    return (
+      <ShellCard>
+        <p className="text-[#6a5447] dark:text-[#d4c4b8] mb-5">
+          {ta("waiverRequired")}
+        </p>
+        <div className="text-left">
+          <WaiverSignInline
+            onSigned={() => setNeedsWaiver(false)}
+            validityDays={waiverValidityDays}
+          />
+        </div>
       </ShellCard>
     );
   }
