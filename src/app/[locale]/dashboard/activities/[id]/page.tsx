@@ -12,7 +12,6 @@ import { ShareButton } from "@/components/share-button";
 import { InviteComanager } from "@/components/dashboard/invite-comanager";
 import { RegistrationManager } from "@/components/dashboard/registration-manager";
 import { RegistrationsStore } from "@/components/dashboard/registrations-store";
-import { TemplateChanger } from "@/components/dashboard/template-changer";
 import { RegistrationCountDisplay } from "@/components/dashboard/registration-count-display";
 import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
@@ -65,32 +64,6 @@ export default async function ActivityDetailPage({
   });
 
   if (!activity) notFound();
-
-  // Dev-only template controls. Fetch the distinct set of templates
-  // already in use so the dev can pick from a dropdown rather than
-  // remembering string values.
-  const canChangeTemplate = can(session, "activities.changeTemplate");
-  const currentTemplate =
-    activity.metadata && typeof activity.metadata === "object"
-      ? (((activity.metadata as Record<string, unknown>).template as
-          | string
-          | undefined) ?? null)
-      : null;
-  let knownTemplates: string[] = [];
-  if (canChangeTemplate) {
-    const rows = await db.activity.findMany({
-      where: { metadata: { path: ["template"], not: "" } },
-      select: { metadata: true },
-    });
-    const set = new Set<string>();
-    for (const r of rows) {
-      if (r.metadata && typeof r.metadata === "object") {
-        const t = (r.metadata as Record<string, unknown>).template;
-        if (typeof t === "string" && t.trim() !== "") set.add(t);
-      }
-    }
-    knownTemplates = Array.from(set).sort();
-  }
 
   const isEditable = activity.status === "open";
   const submissionMap = await computeEffectiveSubmissionCounts([
@@ -226,14 +199,6 @@ export default async function ActivityDetailPage({
         </div>
         )}
       </div>
-
-      {canChangeTemplate && (
-        <TemplateChanger
-          activityId={activity.id}
-          currentTemplate={currentTemplate}
-          knownTemplates={knownTemplates}
-        />
-      )}
 
       {activity.coverImgId && (
         <div className="rounded-lg overflow-hidden mb-6 max-h-64 bg-gray-100">
