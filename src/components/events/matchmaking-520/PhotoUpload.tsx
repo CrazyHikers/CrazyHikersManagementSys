@@ -65,6 +65,7 @@ export function PhotoUpload({ value, onChange, publicUrlFor }: Props) {
       {value ? (
         <div className="flex items-start gap-3">
           {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt=""

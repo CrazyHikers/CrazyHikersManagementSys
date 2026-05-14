@@ -38,14 +38,17 @@ export function Matchmaking520RegistrationPanel({
   const isManager = activityStatus.managing.has(activityId);
 
   useEffect(() => {
-    if (!email || isManager) {
-      setRegistrationStatus(null);
-      return;
-    }
+    if (!email || isManager) return;
+    let cancelled = false;
     fetch(`/api/activities/${activityId}/register/status`)
       .then((r) => (r.ok ? r.json() : { status: null }))
-      .then((d) => setRegistrationStatus(d?.status ?? null))
+      .then((d) => {
+        if (!cancelled) setRegistrationStatus(d?.status ?? null);
+      })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [activityId, email, isManager]);
 
   function publicUrlFor(key: string): string {
