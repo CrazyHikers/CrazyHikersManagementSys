@@ -7,6 +7,28 @@ import { verifyTurnstile } from "./turnstile";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
 
+// On Vercel preview deploys the project-level AUTH_URL env var is shared
+// with production, so Auth.js builds sign-in/sign-out redirects pointing
+// at the canonical production host. The browser follows them off the
+// preview deployment and the preview's session cookie ends up not being
+// cleared — leaving the user "still signed in" when they come back.
+//
+// Rewrite AUTH_URL to the actual preview hostname before NextAuth reads
+// it. Production is untouched. Local dev (no VERCEL_ENV) is untouched.
+// Discord OAuth (which intentionally pins to the production redirect_uri
+// registered in the Discord Developer Portal) is unaffected on preview
+// because Discord linking was never functional there to begin with.
+if (
+  process.env.VERCEL_ENV &&
+  process.env.VERCEL_ENV !== "production"
+) {
+  const previewHost =
+    process.env.VERCEL_BRANCH_URL || process.env.VERCEL_URL;
+  if (previewHost) {
+    process.env.AUTH_URL = `https://${previewHost}`;
+  }
+}
+
 // Adapter: maps Auth.js user operations to our unified User table (email PK)
 const userAdapter: Adapter = {
   async createUser(user) {
