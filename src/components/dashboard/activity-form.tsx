@@ -28,28 +28,58 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
 
     const formData = new FormData(e.currentTarget);
     const coverFile = formData.get("coverImage") as File;
+    const homepageThumbnailFile = formData.get("homepageThumbnailImage") as File;
+    const registrationHeroFile = formData.get("registrationHeroImage") as File;
     const qrFile = formData.get("qrCode") as File;
 
     // Upload files first
     let coverImgId = "";
+    let homepageThumbnailImgId: string | null = null;
+    let registrationHeroImgId: string | null = null;
     let qrCodeUrl = "";
 
-    if (coverFile && coverFile.size > 0) {
+    async function uploadImage(file: File, folder: string, label: string): Promise<string | null> {
       const uploadData = new FormData();
-      uploadData.append("file", coverFile);
-      uploadData.append("folder", "covers");
+      uploadData.append("file", file);
+      uploadData.append("folder", folder);
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
         body: uploadData,
       });
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => ({}));
-        toast.error(err.error || "Cover image upload failed");
+        toast.error(err.error || `${label} upload failed`);
+        return null;
+      }
+      const { key } = await uploadRes.json();
+      return key as string;
+    }
+
+    if (coverFile && coverFile.size > 0) {
+      const key = await uploadImage(coverFile, "covers", "Cover image");
+      if (!key) {
         setLoading(false);
         return;
       }
-      const { key } = await uploadRes.json();
       coverImgId = key;
+    }
+
+    if (homepageThumbnailFile && homepageThumbnailFile.size > 0) {
+      const key = await uploadImage(homepageThumbnailFile, "thumbnails", "Homepage thumbnail");
+      if (!key) {
+        setLoading(false);
+        return;
+      }
+      homepageThumbnailImgId = key;
+    }
+
+    if (registrationHeroFile && registrationHeroFile.size > 0) {
+      const key = await uploadImage(registrationHeroFile, "heroes", "Activity page hero");
+      if (!key) {
+        setLoading(false);
+        return;
+      }
+      registrationHeroImgId = key;
     }
 
     if (qrFile && qrFile.size > 0) {
@@ -94,6 +124,8 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
       title: formData.get("title"),
       description: formData.get("description"),
       coverImgId,
+      homepageThumbnailImgId,
+      registrationHeroImgId,
       deadline: formData.get("deadline"),
       date: formData.get("date"),
       capacity: Number(formData.get("capacity")) || 0,
@@ -147,6 +179,35 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
               accept="image/*"
             />
           </div>
+
+          <details className="rounded-md border border-input bg-background">
+            <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium">
+              {t("optionalImages")}
+            </summary>
+            <div className="space-y-4 px-3 pb-3 pt-1">
+              <p className="text-xs text-muted-foreground">{t("optionalImagesHint")}</p>
+              <div className="space-y-2">
+                <Label htmlFor="homepageThumbnailImage">{t("homepageThumbnail")}</Label>
+                <p className="text-xs text-muted-foreground">{t("homepageThumbnailHint")}</p>
+                <Input
+                  id="homepageThumbnailImage"
+                  name="homepageThumbnailImage"
+                  type="file"
+                  accept="image/*"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="registrationHeroImage">{t("registrationHero")}</Label>
+                <p className="text-xs text-muted-foreground">{t("registrationHeroHint")}</p>
+                <Input
+                  id="registrationHeroImage"
+                  name="registrationHeroImage"
+                  type="file"
+                  accept="image/*"
+                />
+              </div>
+            </div>
+          </details>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">

@@ -34,8 +34,12 @@ type ActivityData = {
   capacity: number;
   maximumRegistration: number | null;
   coverImgId: string;
+  homepageThumbnailImgId: string | null;
+  registrationHeroImgId: string | null;
   metadata?: ActivityMetadataFull | null;
 };
+
+type OptionalImageAction = "keep" | "replace" | "clear";
 
 export function ActivityEditForm({
   activity,
@@ -47,6 +51,12 @@ export function ActivityEditForm({
   const t = useTranslations("dashboard.activities");
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [thumbnailAction, setThumbnailAction] = useState<OptionalImageAction>(
+    activity.homepageThumbnailImgId ? "keep" : "replace"
+  );
+  const [heroAction, setHeroAction] = useState<OptionalImageAction>(
+    activity.registrationHeroImgId ? "keep" : "replace"
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,26 +64,72 @@ export function ActivityEditForm({
 
     const formData = new FormData(e.currentTarget);
     const coverFile = formData.get("coverImage") as File;
+    const thumbnailFile = formData.get("homepageThumbnailImage") as File | null;
+    const heroFile = formData.get("registrationHeroImage") as File | null;
     const qrFile = formData.get("qrCode") as File;
 
-    // Upload cover image if a new one is selected
-    let coverImgId = activity.coverImgId;
-    if (coverFile && coverFile.size > 0) {
+    async function uploadImage(file: File, folder: string, label: string): Promise<string | null> {
       const uploadData = new FormData();
-      uploadData.append("file", coverFile);
-      uploadData.append("folder", "covers");
+      uploadData.append("file", file);
+      uploadData.append("folder", folder);
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
         body: uploadData,
       });
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => ({}));
-        toast.error(err.error || "Cover image upload failed");
+        toast.error(err.error || `${label} upload failed`);
+        return null;
+      }
+      const { key } = await uploadRes.json();
+      return key as string;
+    }
+
+    // Upload cover image if a new one is selected
+    let coverImgId = activity.coverImgId;
+    if (coverFile && coverFile.size > 0) {
+      const key = await uploadImage(coverFile, "covers", "Cover image");
+      if (!key) {
         setSaving(false);
         return;
       }
-      const { key } = await uploadRes.json();
       coverImgId = key;
+    }
+
+    // Resolve homepage thumbnail based on selected action
+    let homepageThumbnailImgId: string | null | undefined = undefined;
+    if (thumbnailAction === "clear") {
+      homepageThumbnailImgId = null;
+    } else if (thumbnailAction === "replace") {
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        const key = await uploadImage(thumbnailFile, "thumbnails", "Homepage thumbnail");
+        if (!key) {
+          setSaving(false);
+          return;
+        }
+        homepageThumbnailImgId = key;
+      } else if (!activity.homepageThumbnailImgId) {
+        // No prior image, no new file — leave field unset
+        homepageThumbnailImgId = null;
+      }
+      // else: had a prior image, no file picked — leave as undefined to skip update
+    }
+
+    // Resolve registration hero based on selected action
+    let registrationHeroImgId: string | null | undefined = undefined;
+    if (heroAction === "clear") {
+      registrationHeroImgId = null;
+    } else if (heroAction === "replace") {
+      if (heroFile && heroFile.size > 0) {
+        const key = await uploadImage(heroFile, "heroes", "Activity page hero");
+        if (!key) {
+          setSaving(false);
+          return;
+        }
+        registrationHeroImgId = key;
+      } else if (!activity.registrationHeroImgId) {
+        registrationHeroImgId = null;
+      }
     }
 
     // Upload QR code if a new one is selected
@@ -119,7 +175,7 @@ export function ActivityEditForm({
     // Preserve qrCodeUrl in metadata
     if (qrCodeUrl) metadata.qrCodeUrl = qrCodeUrl;
 
-    const body = {
+    const body: Record<string, unknown> = {
       title: formData.get("title"),
       description: formData.get("description"),
       coverImgId,
@@ -129,6 +185,12 @@ export function ActivityEditForm({
       maximumRegistration: Number(formData.get("maxRegistration")) || 0,
       metadata: Object.keys(metadata).length > 0 ? metadata : null,
     };
+    if (homepageThumbnailImgId !== undefined) {
+      body.homepageThumbnailImgId = homepageThumbnailImgId;
+    }
+    if (registrationHeroImgId !== undefined) {
+      body.registrationHeroImgId = registrationHeroImgId;
+    }
 
     try {
       const res = await fetch(`/api/activities/${activity.id}`, {
@@ -179,6 +241,42 @@ export function ActivityEditForm({
             )}
             <Input id="coverImage" name="coverImage" type="file" accept="image/*" />
           </div>
+
+          <details
+            className="rounded-md border border-input bg-background"
+            open={!!(activity.homepageThumbnailImgId || activity.registrationHeroImgId)}
+          >
+            <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium">
+              {t("optionalImages")}
+            </summary>
+            <div className="space-y-5 px-3 pb-3 pt-1">
+              <p className="text-xs text-muted-foreground">{t("optionalImagesHint")}</p>
+
+              <OptionalImageField
+                label={t("homepageThumbnail")}
+                hint={t("homepageThumbnailHint")}
+                inputName="homepageThumbnailImage"
+                currentKey={activity.homepageThumbnailImgId}
+                action={thumbnailAction}
+                onActionChange={setThumbnailAction}
+                keepLabel={t("imageActionKeep")}
+                replaceLabel={t("imageActionReplace")}
+                clearLabel={t("imageActionClear")}
+              />
+
+              <OptionalImageField
+                label={t("registrationHero")}
+                hint={t("registrationHeroHint")}
+                inputName="registrationHeroImage"
+                currentKey={activity.registrationHeroImgId}
+                action={heroAction}
+                onActionChange={setHeroAction}
+                keepLabel={t("imageActionKeep")}
+                replaceLabel={t("imageActionReplace")}
+                clearLabel={t("imageActionClear")}
+              />
+            </div>
+          </details>
 
           <div className="space-y-2">
             <Label htmlFor="qrCode">{t("qrCode")}</Label>
@@ -313,5 +411,72 @@ export function ActivityEditForm({
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+function OptionalImageField({
+  label,
+  hint,
+  inputName,
+  currentKey,
+  action,
+  onActionChange,
+  keepLabel,
+  replaceLabel,
+  clearLabel,
+}: {
+  label: string;
+  hint: string;
+  inputName: string;
+  currentKey: string | null;
+  action: OptionalImageAction;
+  onActionChange: (a: OptionalImageAction) => void;
+  keepLabel: string;
+  replaceLabel: string;
+  clearLabel: string;
+}) {
+  const hasCurrent = !!currentKey;
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={inputName}>{label}</Label>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+      {hasCurrent && (
+        <div className="flex flex-wrap gap-3 text-sm">
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name={`${inputName}-action`}
+              value="keep"
+              checked={action === "keep"}
+              onChange={() => onActionChange("keep")}
+            />
+            {keepLabel}
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name={`${inputName}-action`}
+              value="replace"
+              checked={action === "replace"}
+              onChange={() => onActionChange("replace")}
+            />
+            {replaceLabel}
+          </label>
+          <label className="flex items-center gap-1">
+            <input
+              type="radio"
+              name={`${inputName}-action`}
+              value="clear"
+              checked={action === "clear"}
+              onChange={() => onActionChange("clear")}
+            />
+            {clearLabel}
+          </label>
+        </div>
+      )}
+      {action === "replace" && (
+        <Input id={inputName} name={inputName} type="file" accept="image/*" />
+      )}
+    </div>
   );
 }

@@ -170,15 +170,19 @@ export default async function ActivityDetailPage({
       <SiteHeader />
       <main className="flex-1 bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
-          {activity.coverImgId && (
-            <div className="rounded-lg overflow-hidden mb-6 max-h-80 bg-gray-100">
-              <img
-                src={getPublicUrl(activity.coverImgId)}
-                alt={activity.title}
-                className="w-full h-full max-h-80 object-contain"
-              />
-            </div>
-          )}
+          {(() => {
+            const heroKey = activity.registrationHeroImgId || activity.coverImgId;
+            if (!heroKey) return null;
+            return (
+              <div className="rounded-lg overflow-hidden mb-6 max-h-80 bg-gray-100">
+                <img
+                  src={getPublicUrl(heroKey)}
+                  alt={activity.title}
+                  className="w-full h-full max-h-80 object-contain"
+                />
+              </div>
+            );
+          })()}
 
           <div className="mb-6">
             <div className="flex items-start justify-between gap-3 mb-2">

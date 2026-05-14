@@ -14,6 +14,8 @@ type ActivityData = {
   capacity: number;
   maximumRegistration: number | null;
   coverImgId: string;
+  homepageThumbnailImgId: string | null;
+  registrationHeroImgId: string | null;
   metadata?: Record<string, unknown> | null;
 };
 
