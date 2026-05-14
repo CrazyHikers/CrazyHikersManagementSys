@@ -156,6 +156,15 @@ export default async function ActivityDetailPage({
       | string
       | undefined) ?? null;
 
+  // Prefer the memorable /events/<slug> URL for sharing when this
+  // activity has a slug. Falls back to /activities/<id> otherwise so
+  // every share still works.
+  const slug = (activity.metadata as Record<string, unknown> | null)?.slug;
+  const sharePath =
+    typeof slug === "string" && slug.trim() !== ""
+      ? `/${locale}/events/${slug}`
+      : `/${locale}/activities/${activity.id}`;
+
   return (
     <>
       <SiteHeader />
@@ -185,7 +194,11 @@ export default async function ActivityDetailPage({
                 </Badge>
               </div>
               {activity.status === "open" && activityDeadline > new Date() && (
-                <ShareButton path={`/${locale}/activities/${activity.id}`} title={activity.title} text={activity.description} />
+                <ShareButton
+                  path={sharePath}
+                  title={activity.title}
+                  text={activity.description}
+                />
               )}
             </div>
             <p className="text-muted-foreground whitespace-pre-wrap">
