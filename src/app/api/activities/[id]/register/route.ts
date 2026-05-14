@@ -138,6 +138,22 @@ export async function POST(
       return NextResponse.json({ error: label }, { status: 400 });
     }
 
+    // Template-specific validation: matchmaking_520 has a strict schema
+    if (
+      activity.metadata &&
+      typeof activity.metadata === "object" &&
+      (activity.metadata as Record<string, unknown>).template === "matchmaking_520"
+    ) {
+      const { validateMatchmaking520 } = await import("@/lib/events/matchmaking-520");
+      const result = validateMatchmaking520(formData);
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: "INVALID_FORM_DATA", details: result.errors },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create registration — shadow ban is checked at query time
     await db.registration.create({
       data: {
