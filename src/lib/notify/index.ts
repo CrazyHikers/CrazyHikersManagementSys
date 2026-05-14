@@ -48,6 +48,14 @@ const channels: Record<ChannelId, Channel> = {
   discord: discordChannel,
 };
 
+// Mute push delivery (web push, Telegram, Discord) on any non-production
+// deploy so preview branches and local dev don't reach real members'
+// devices when test activities are created or confirmed. Email — including
+// self-directed sign-in / password-reset links — is unaffected.
+function pushMuted(): boolean {
+  return process.env.VERCEL_ENV !== "production";
+}
+
 function isUserToggleable(kind: NotificationKind): kind is UserToggleableKind {
   return (USER_TOGGLEABLE_KINDS as readonly NotificationKind[]).includes(kind);
 }
@@ -91,6 +99,10 @@ export async function notifyDevice(
   endpoint: string,
   meta: NotificationMeta
 ): Promise<void> {
+  if (pushMuted()) {
+    console.log("[notify] notifyDevice muted (non-production deploy)");
+    return;
+  }
   await sendWebPushToEndpoint(endpoint, meta);
 }
 
@@ -99,6 +111,10 @@ export async function notify(
   userEmail: string,
   dispatch: NotificationDispatch
 ): Promise<SendResult[]> {
+  if (pushMuted()) {
+    console.log(`[notify] muted (non-production deploy) — ${dispatch.kind} -> ${userEmail}`);
+    return [];
+  }
   if (!(await userHasKindEnabled(userEmail, dispatch.kind))) {
     return [];
   }
@@ -123,6 +139,10 @@ export async function notify(
 export async function broadcast(
   dispatch: NotificationDispatch
 ): Promise<{ sent: number; skipped: number }> {
+  if (pushMuted()) {
+    console.log(`[notify] broadcast muted (non-production deploy) — ${dispatch.kind}`);
+    return { sent: 0, skipped: 0 };
+  }
   // Pull subscribed users in one query, with their prefs, deduped by email.
   const subscribers = await db.user.findMany({
     where: { webPushSubscriptions: { some: {} } },

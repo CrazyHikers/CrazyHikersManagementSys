@@ -121,6 +121,29 @@ export default async function ActivityDetailPage({
     activity._count.registrations >= activity.maximumRegistration
   );
 
+  // Special-template branch: render the bespoke landing for matchmaking_520
+  const template =
+    activity.metadata && typeof activity.metadata === "object"
+      ? (activity.metadata as Record<string, unknown>).template
+      : null;
+  if (template === "matchmaking_520") {
+    const { Matchmaking520Landing } = await import(
+      "@/components/events/matchmaking-520/Matchmaking520Landing"
+    );
+    return (
+      <>
+        <SiteHeader />
+        <Matchmaking520Landing
+          activity={activity}
+          locale={locale}
+          isOpen={isOpen}
+          isFull={isFull}
+        />
+        <SiteFooter />
+      </>
+    );
+  }
+
   const managers = activity.activityManagers
     .filter((am) => am.role === "manager")
     .map((am) => am.user.managerProfile?.tag || am.user.name);

@@ -162,6 +162,121 @@
       "red_4": "Receiving two yellow cards in the same hiking season"
     }
   },
+  "events": {
+    "matchmaking520": {
+      "landing": {
+        "title": "5·20 — Hike & Meet",
+        "subtitle": "A trail, a heart, a chance",
+        "intro": "May 20 — a hike like no other. Besides the scenery, you might meet someone.",
+        "privacyTitle": "Privacy Notice",
+        "cta": "Sign Up Now",
+        "ctaSignIn": "Sign in to register",
+        "ctaRegistered": "View my registration",
+        "ctaClosed": "Registration closed",
+        "ctaFull": "Fully booked",
+        "stepsTitle": "How it works",
+        "step1Title": "Fill the form",
+        "step1Body": "A 5-step questionnaire so we get to know you",
+        "step2Title": "Wait for confirmation",
+        "step2Body": "Managers will balance gender and age band when confirming",
+        "step3Title": "Meet on 5·20",
+        "step3Body": "Meet naturally on the trail"
+      },
+      "wizard": {
+        "stepLabel": "Step {n} of 5",
+        "next": "Next",
+        "prev": "Back",
+        "submit": "Submit",
+        "step1Heading": "Basics",
+        "step2Heading": "Personality",
+        "step3Heading": "Background",
+        "step4Heading": "About you",
+        "step5Heading": "Contact & photo",
+        "fields": {
+          "name": "Your name",
+          "namePlaceholder": "Real name or preferred nickname",
+          "gender": "Gender",
+          "orientation": "Orientation",
+          "birthYearMonth": "Birth year and month",
+          "constellation": "Zodiac",
+          "mbti": "MBTI",
+          "mbtiPlaceholder": "e.g. INFP",
+          "hometown": "Hometown",
+          "school": "School",
+          "major": "Major",
+          "stage": "Current stage",
+          "currentCity": "Current city",
+          "heightCm": "Height (cm)",
+          "weightKg": "Weight (kg)",
+          "hobbies": "Hobbies & talents",
+          "selfIntro": "A quick intro about you",
+          "expectations": "What kind of partner are you hoping for",
+          "wechat": "WeChat ID",
+          "inSwitzerland": "Are you currently in Switzerland?",
+          "photo": "Upload a photo",
+          "photoHelp": "JPG or PNG; portrait or landscape both work",
+          "interestedActivities": "Activities you'd like to join (multi-select)",
+          "consent": "I have read the privacy notice and consent to my information being used for this event"
+        },
+        "options": {
+          "gender": {
+            "male": "Male",
+            "female": "Female"
+          },
+          "orientation": {
+            "same": "Same-sex",
+            "opposite": "Opposite-sex"
+          },
+          "stage": {
+            "bachelor": "Undergraduate",
+            "master": "Master's",
+            "phd": "PhD",
+            "working": "Working",
+            "other": "Other"
+          },
+          "interested": {
+            "hiking": "Offline hiking",
+            "boardgame_offline": "Offline board games",
+            "online_cp_match": "Online CP matching",
+            "boardgame_online": "Online board games"
+          }
+        },
+        "yesNo": {
+          "yes": "Yes",
+          "no": "No"
+        },
+        "errors": {
+          "required": "Required",
+          "invalid": "Invalid format",
+          "too_long": "Too long",
+          "out_of_range": "Out of range",
+          "submitFailed": "Submission failed, please retry"
+        },
+        "uploading": "Uploading…",
+        "photoUploaded": "Uploaded",
+        "photoChange": "Change photo"
+      },
+      "success": {
+        "title": "You're in!",
+        "body": "We received your form. Managers will confirm with gender and age balance in mind — please wait for the email.",
+        "backHome": "Back to event"
+      },
+      "manager": {
+        "balanceTitle": "Gender · age distribution",
+        "totalLabel": "Total",
+        "confirmedLabel": "Confirmed",
+        "pendingLabel": "Pending",
+        "male": "Male",
+        "female": "Female",
+        "band_le22": "≤22",
+        "band_23_26": "23-26",
+        "band_27_30": "27-30",
+        "band_31p": "31+",
+        "viewAnswers": "View answers",
+        "answersTitle": "Form answers"
+      }
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "upcomingActivities": "Upcoming Activities",

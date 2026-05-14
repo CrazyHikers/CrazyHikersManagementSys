@@ -29,6 +29,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { BalanceCard } from "@/components/events/matchmaking-520/BalanceCard";
+import { AnswersDrawer } from "@/components/events/matchmaking-520/AnswersDrawer";
+import { MATCHMAKING_520_TEMPLATE } from "@/lib/events/matchmaking-520";
 
 export type RegistrationFormData = {
   transportTicket?: string;
@@ -180,12 +183,16 @@ export function RegistrationManager({
   canViewMemberDetail,
   capacity,
   viewerIsIntern = false,
+  template,
+  publicUrlPrefix,
 }: {
   activityId: string;
   activityStatus: string;
   canViewMemberDetail: boolean;
   capacity: number;
   viewerIsIntern?: boolean;
+  template?: string | null;
+  publicUrlPrefix?: string;
 }) {
   const t = useTranslations("dashboard.activities");
   const tp = useTranslations("dashboard.myProfile");
@@ -684,6 +691,10 @@ export function RegistrationManager({
         )}
       </div>
 
+      {template === MATCHMAKING_520_TEMPLATE && (
+        <BalanceCard registrations={registrations} />
+      )}
+
       {registrations.map((reg) => (
         <Card
           key={reg.userEmail}
@@ -753,6 +764,14 @@ export function RegistrationManager({
                       {reg.pendingFlag === "yellow" ? "⚠" : "🚫"} {activityStatus === "completed" ? t("flagLabel") : t("pendingFlagLabel")}:
                     </span>{" "}
                     {reg.pendingFlagReason}
+                  </div>
+                )}
+                {template === MATCHMAKING_520_TEMPLATE && reg.formData && (
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <AnswersDrawer
+                      formData={(reg.formData as Record<string, unknown> | null) ?? null}
+                      publicUrlFor={(key) => `${publicUrlPrefix ?? ""}/${key}`}
+                    />
                   </div>
                 )}
                 {(reg.formData || reg.userProfile || reg.flagHistory.length > 0 || reg.activityHistory.length > 0) && (

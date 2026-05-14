@@ -15,6 +15,7 @@ type ActivityData = {
   maximumRegistration: number | null;
   submissionCount: number;
   managerNames: string;
+  template?: string | null;
 };
 
 function dateKey(iso: string): string {

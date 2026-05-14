@@ -38,7 +38,8 @@ export type Permission =
   | "intern_resources:read"
   | "intern_resources:manage"
   // Dev-only
-  | "users.changeRole";
+  | "users.changeRole"
+  | "activities.changeTemplate";
 
 /**
  * Central permission matrix.
@@ -101,6 +102,10 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
 
   // Dev-only: directly change any user's role
   "users.changeRole": ["dev"],
+  // Dev-only: set/clear `Activity.metadata.template` from the dashboard
+  // (used to flip an activity into a bespoke landing template like
+  // matchmaking_520 without DB access).
+  "activities.changeTemplate": ["dev"],
 };
 
 /**

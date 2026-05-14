@@ -375,6 +375,12 @@ export default async function ActivityDetailPage({
           canViewMemberDetail={canViewMemberDetail}
           capacity={activity.capacity}
           viewerIsIntern={viewerIsIntern}
+          template={
+            activity.metadata && typeof activity.metadata === "object"
+              ? ((activity.metadata as Record<string, unknown>).template as string | undefined) ?? null
+              : null
+          }
+          publicUrlPrefix={getPublicUrl("").replace(/\/$/, "")}
         />
       )}
     </div>

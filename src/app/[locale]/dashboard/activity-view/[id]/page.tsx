@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
+import { TemplateChanger } from "@/components/dashboard/template-changer";
 
 const statusColors: Record<string, string> = {
   open: "bg-green-100 text-green-800",
@@ -67,6 +68,35 @@ export default async function ActivityViewPage({
 
   if (!activity) notFound();
 
+  // Dev-only template controls. Fetch the distinct set of templates
+  // already in use so the dev can pick from a dropdown rather than
+  // remembering string values. Lives on this read-only view (which
+  // admins/devs can reach for any activity) because the per-activity
+  // management page requires being one of that activity's managers.
+  const canChangeTemplate = session?.user
+    ? can(session, "activities.changeTemplate")
+    : false;
+  const currentTemplate =
+    activity.metadata && typeof activity.metadata === "object"
+      ? (((activity.metadata as Record<string, unknown>).template as
+          | string
+          | undefined) ?? null)
+      : null;
+  let knownTemplates: string[] = [];
+  if (canChangeTemplate) {
+    // Cheaper to dedupe in JS than to wrestle with Prisma's JSON path
+    // filters across drivers — the activity table stays small.
+    const rows = await db.activity.findMany({ select: { metadata: true } });
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.metadata && typeof r.metadata === "object") {
+        const t = (r.metadata as Record<string, unknown>).template;
+        if (typeof t === "string" && t.trim() !== "") set.add(t);
+      }
+    }
+    knownTemplates = Array.from(set).sort();
+  }
+
   const submissionMap = await computeEffectiveSubmissionCounts([
     { id: activity.id, date: activity.date },
   ]);
@@ -82,6 +112,14 @@ export default async function ActivityViewPage({
         <h1 className="text-2xl font-bold">{activity.title}</h1>
         <Badge className={statusColors[displayStatus]}>{displayStatus}</Badge>
       </div>
+
+      {canChangeTemplate && (
+        <TemplateChanger
+          activityId={activity.id}
+          currentTemplate={currentTemplate}
+          knownTemplates={knownTemplates}
+        />
+      )}
 
       {activity.coverImgId && (
         <div className="rounded-lg overflow-hidden mb-6 max-h-64 bg-gray-100">
