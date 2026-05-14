@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { BalanceCard } from "@/components/events/matchmaking-520/BalanceCard";
+import { AnswersDrawer } from "@/components/events/matchmaking-520/AnswersDrawer";
 import { MATCHMAKING_520_TEMPLATE } from "@/lib/events/matchmaking-520";
 
 export type RegistrationFormData = {
@@ -763,6 +764,14 @@ export function RegistrationManager({
                       {reg.pendingFlag === "yellow" ? "⚠" : "🚫"} {activityStatus === "completed" ? t("flagLabel") : t("pendingFlagLabel")}:
                     </span>{" "}
                     {reg.pendingFlagReason}
+                  </div>
+                )}
+                {template === MATCHMAKING_520_TEMPLATE && reg.formData && (
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <AnswersDrawer
+                      formData={(reg.formData as Record<string, unknown> | null) ?? null}
+                      publicUrlFor={(key) => `${publicUrlPrefix ?? ""}/${key}`}
+                    />
                   </div>
                 )}
                 {(reg.formData || reg.userProfile || reg.flagHistory.length > 0 || reg.activityHistory.length > 0) && (
