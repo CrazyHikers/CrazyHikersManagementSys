@@ -40,7 +40,15 @@ export function Turnstile({ onVerify, onExpire }: TurnstileProps) {
     )
       return;
 
-    const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    // Cloudflare's official "always passes" testing site key — used on any
+    // non-production deploy so Vercel preview URLs work without adding each
+    // random *.vercel.app hostname to the Turnstile allowlist.
+    // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+    const TEST_SITE_KEY_ALWAYS_PASS = "1x00000000000000000000AA";
+    const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+    const sitekey = isProduction
+      ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+      : TEST_SITE_KEY_ALWAYS_PASS;
     if (!sitekey) {
       console.error("[TURNSTILE] NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set");
       return;
