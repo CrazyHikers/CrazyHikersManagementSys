@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
-import { TemplateChanger } from "@/components/dashboard/template-changer";
+import { DevActivityControls } from "@/components/dashboard/dev-activity-controls";
 
 const statusColors: Record<string, string> = {
   open: "bg-green-100 text-green-800",
@@ -68,22 +68,32 @@ export default async function ActivityViewPage({
 
   if (!activity) notFound();
 
-  // Dev-only template controls. Fetch the distinct set of templates
-  // already in use so the dev can pick from a dropdown rather than
-  // remembering string values. Lives on this read-only view (which
-  // admins/devs can reach for any activity) because the per-activity
-  // management page requires being one of that activity's managers.
+  // Dev-only controls. Fetch the distinct set of templates already in
+  // use so the dev can pick from a dropdown rather than remembering
+  // string values. Lives on this read-only view (which admins/devs can
+  // reach for any activity) because the per-activity management page
+  // requires being one of that activity's managers.
   const canChangeTemplate = session?.user
     ? can(session, "activities.changeTemplate")
     : false;
-  const currentTemplate =
+  const canEditSlug = session?.user
+    ? can(session, "activities.editSlug")
+    : false;
+  const showDevControls = canChangeTemplate || canEditSlug;
+  const metadataObj =
     activity.metadata && typeof activity.metadata === "object"
-      ? (((activity.metadata as Record<string, unknown>).template as
-          | string
-          | undefined) ?? null)
+      ? (activity.metadata as Record<string, unknown>)
+      : null;
+  const currentTemplate =
+    metadataObj && typeof metadataObj.template === "string"
+      ? (metadataObj.template as string)
+      : null;
+  const currentSlug =
+    metadataObj && typeof metadataObj.slug === "string"
+      ? (metadataObj.slug as string)
       : null;
   let knownTemplates: string[] = [];
-  if (canChangeTemplate) {
+  if (showDevControls) {
     // Cheaper to dedupe in JS than to wrestle with Prisma's JSON path
     // filters across drivers — the activity table stays small.
     const rows = await db.activity.findMany({ select: { metadata: true } });
@@ -113,11 +123,12 @@ export default async function ActivityViewPage({
         <Badge className={statusColors[displayStatus]}>{displayStatus}</Badge>
       </div>
 
-      {canChangeTemplate && (
-        <TemplateChanger
+      {showDevControls && (
+        <DevActivityControls
           activityId={activity.id}
           currentTemplate={currentTemplate}
           knownTemplates={knownTemplates}
+          currentSlug={currentSlug}
         />
       )}
 
