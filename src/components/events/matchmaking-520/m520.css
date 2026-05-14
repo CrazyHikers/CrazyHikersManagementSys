@@ -1,0 +1,93 @@
+/* ----------------------------------------------------------------- */
+/* 5·20 matchmaking — typography + atmospheric animations             */
+/* ----------------------------------------------------------------- */
+
+/* System Chinese serif stack — gives headings a hand-lettered feel
+   without loading a web font. */
+.font-m520-display {
+  font-family:
+    "Songti SC",
+    "Source Han Serif SC",
+    "Noto Serif SC",
+    "STSong",
+    "Songti TC",
+    "Hiragino Mincho ProN",
+    "Yu Mincho",
+    serif;
+  letter-spacing: 0.04em;
+  font-feature-settings: "palt" on;
+}
+
+/* Single petal falling from above the viewport down past the bottom of
+   its container. Lateral drift and rotation are parameterised by CSS
+   custom properties set on the element. */
+@keyframes m520-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(var(--m520-rotate-start, 0deg));
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate3d(
+        var(--m520-drift, 30px),
+        120vh,
+        0
+      )
+      rotate(calc(var(--m520-rotate-start, 0deg) + 540deg));
+    opacity: 0;
+  }
+}
+
+.m520-petal {
+  animation-name: m520-fall;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.35, 0.05, 0.55, 0.95);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m520-petal {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Soft bloom — used on the success screen heart-mountain mark. */
+@keyframes m520-bloom {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(212, 104, 94, 0));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 18px rgba(212, 104, 94, 0.35));
+  }
+}
+
+.m520-bloom {
+  animation: m520-bloom 3s ease-in-out infinite;
+}
+
+/* Gentle gold-leaf glow used as the card halo on the homepage. */
+@keyframes m520-halo {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(232, 152, 152, 0.35),
+      0 8px 24px -10px rgba(212, 104, 94, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(232, 152, 152, 0.55),
+      0 12px 32px -10px rgba(212, 104, 94, 0.4);
+  }
+}
+
+.m520-halo {
+  animation: m520-halo 4s ease-in-out infinite;
+}

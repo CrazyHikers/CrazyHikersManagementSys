@@ -6,10 +6,10 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useActivityStatus } from "@/components/activity-status-provider";
 import { Matchmaking520Wizard } from "./Matchmaking520Wizard";
-import { m520Theme } from "./theme";
+import { PlumBlossom, fontDisplayZh, m520Theme } from "./theme";
 import type { Gender } from "@/lib/events/matchmaking-520";
 
 type Props = {
@@ -55,58 +55,78 @@ export function Matchmaking520RegistrationPanel({
     return `${publicUrlPrefix}/${key}`;
   }
 
+  // Shared empty-state shell — paper-card look matching the landing
+  function ShellCard({ children }: { children: React.ReactNode }) {
+    return (
+      <Card
+        className={`${m520Theme.cardAccent} shadow-sm relative overflow-hidden`}
+      >
+        <PlumBlossom
+          aria-hidden
+          className="absolute -top-3 -right-3 h-10 w-10 text-[#e89898]/25 rotate-12"
+        />
+        <CardContent className="py-8 text-center">{children}</CardContent>
+      </Card>
+    );
+  }
+
   // CTA region
   if (!isOpen || isFull) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
+      <ShellCard>
+        <p className={`${fontDisplayZh} text-lg text-[#6a5447] dark:text-[#d4c4b8]`}>
           {isFull ? tl("ctaFull") : tl("ctaClosed")}
-        </CardContent>
-      </Card>
+        </p>
+      </ShellCard>
     );
   }
   if (sessionStatus === "loading") return null;
   if (!email) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground mb-4">{ta("signInToRegister")}</p>
-          <Link href="/signin">
-            <Button className={`${m520Theme.gradientCta} text-white`}>
-              {tl("ctaSignIn")}
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <ShellCard>
+        <p className="text-[#6a5447] dark:text-[#d4c4b8] mb-5">
+          {ta("signInToRegister")}
+        </p>
+        <Link href="/signin">
+          <Button className={`${m520Theme.gradientCta} px-6`}>
+            {tl("ctaSignIn")}
+          </Button>
+        </Link>
+      </ShellCard>
     );
   }
   if (isManager) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
+      <ShellCard>
+        <p className="text-[#6a5447] dark:text-[#d4c4b8]">
           {ta("youAreManaging")}
-        </CardContent>
-      </Card>
+        </p>
+      </ShellCard>
     );
   }
   if (registrationStatus) {
     return (
-      <Card>
-        <CardContent className="py-6 text-center space-y-2">
+      <ShellCard>
+        <div className="flex flex-col items-center gap-3">
+          <PlumBlossom className="h-8 w-8 text-[#d4685e]" />
           <Badge
             className={
               registrationStatus === "registration_confirmed"
-                ? "bg-green-100 text-green-800"
-                : "bg-blue-100 text-blue-800"
+                ? "bg-[#7a8a6e] text-[#fdf6ee] hover:bg-[#7a8a6e]"
+                : "bg-[#d4685e] text-[#fdf6ee] hover:bg-[#d4685e]"
             }
           >
             {registrationStatus === "registration_confirmed"
               ? ta("statusConfirmed")
               : ta("statusRegistered")}
           </Badge>
-          <p className="text-sm text-muted-foreground">{tl("ctaRegistered")}</p>
-        </CardContent>
-      </Card>
+          <p
+            className={`${fontDisplayZh} text-base text-[#3a2820] dark:text-[#fdf6ee]`}
+          >
+            {tl("ctaRegistered")}
+          </p>
+        </div>
+      </ShellCard>
     );
   }
   if (showWizard) {
@@ -126,18 +146,24 @@ export function Matchmaking520RegistrationPanel({
     );
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{ta("registrationForm")}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-center">
+    <ShellCard>
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex items-center gap-3 text-[#d4685e]">
+          <PlumBlossom className="h-5 w-5" />
+          <span
+            className={`${fontDisplayZh} text-lg text-[#3a2820] dark:text-[#fdf6ee]`}
+          >
+            {ta("registrationForm")}
+          </span>
+          <PlumBlossom className="h-5 w-5" />
+        </div>
         <Button
-          className={`${m520Theme.gradientCta} text-white text-lg px-8 py-6`}
+          className={`${m520Theme.gradientCta} text-lg px-10 py-6 rounded-full`}
           onClick={() => setShowWizard(true)}
         >
           {tl("cta")}
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </ShellCard>
   );
 }

@@ -27,6 +27,13 @@ export default async function HomePage() {
       .filter(Boolean)
       .join(", ");
 
+    const template =
+      activity.metadata && typeof activity.metadata === "object"
+        ? (((activity.metadata as Record<string, unknown>).template as
+            | string
+            | undefined) ?? null)
+        : null;
+
     return {
       id: activity.id,
       title: activity.title,
@@ -44,6 +51,7 @@ export default async function HomePage() {
       maximumRegistration: activity.maximumRegistration,
       submissionCount: activity.submissionCount,
       managerNames: allNames,
+      template,
     };
   });
 

@@ -11,7 +11,7 @@ import { Step3Background } from "./steps/Step3Background";
 import { Step4Intro } from "./steps/Step4Intro";
 import { Step5Contact } from "./steps/Step5Contact";
 import { SuccessScreen } from "./SuccessScreen";
-import { m520Theme } from "./theme";
+import { PlumBlossom, fontDisplayZh, m520Theme } from "./theme";
 import {
   validateMatchmaking520,
   type Gender,
@@ -131,27 +131,50 @@ export function Matchmaking520Wizard({
   }
 
   return (
-    <Card className={`${m520Theme.cardAccent} ${m520Theme.cardAccentDark}`}>
+    <Card className={`${m520Theme.cardAccent} shadow-sm relative overflow-hidden`}>
+      {/* Decorative corner blossoms */}
+      <PlumBlossom
+        aria-hidden
+        className="absolute -top-3 -left-3 h-12 w-12 text-[#e89898]/25 rotate-12"
+      />
+      <PlumBlossom
+        aria-hidden
+        className="absolute -bottom-3 -right-3 h-10 w-10 text-[#e89898]/25 -rotate-12"
+      />
+
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>{t(HEADINGS[step])}</span>
-          <span className="text-sm font-normal text-muted-foreground">
+          <span className={`${fontDisplayZh} text-xl text-[#3a2820] dark:text-[#fdf6ee]`}>
+            {t(HEADINGS[step])}
+          </span>
+          <span className="text-xs tracking-[0.2em] text-[#6a5447] dark:text-[#d4c4b8]">
             {t("stepLabel", { n: step + 1 })}
           </span>
         </CardTitle>
-        <div className="flex gap-1.5 pt-2">
-          {HEADINGS.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 flex-1 rounded-full ${
-                i < step
-                  ? m520Theme.stepDotComplete
-                  : i === step
-                    ? m520Theme.stepDotActive
-                    : m520Theme.stepDotInactive
-              }`}
-            />
-          ))}
+
+        {/* Blossom-dot step indicator */}
+        <div className="flex items-center justify-center gap-2 pt-3">
+          {HEADINGS.map((_, i) => {
+            const state = i < step ? "complete" : i === step ? "active" : "future";
+            return (
+              <div key={i} className="flex items-center">
+                {state === "active" ? (
+                  <PlumBlossom className="h-5 w-5 text-[#d4685e]" />
+                ) : state === "complete" ? (
+                  <PlumBlossom className="h-4 w-4 text-[#e89898]" />
+                ) : (
+                  <span className="block h-2 w-2 rounded-full bg-[#e8d8d0] dark:bg-stone-700" />
+                )}
+                {i < HEADINGS.length - 1 && (
+                  <span
+                    className={`block h-px w-5 mx-1 ${
+                      i < step ? "bg-[#e89898]" : "bg-[#e8d8d0] dark:bg-stone-700"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </CardHeader>
       <CardContent>
@@ -179,7 +202,7 @@ export function Matchmaking520Wizard({
           {step < 4 ? (
             <Button
               type="button"
-              className={`${m520Theme.gradientCta} text-white`}
+              className={m520Theme.gradientCta}
               onClick={() => setStep((s) => s + 1)}
               disabled={!canAdvance()}
             >
@@ -188,7 +211,7 @@ export function Matchmaking520Wizard({
           ) : (
             <Button
               type="button"
-              className={`${m520Theme.gradientCta} text-white`}
+              className={m520Theme.gradientCta}
               onClick={handleSubmit}
               disabled={!canAdvance() || submitting}
             >
