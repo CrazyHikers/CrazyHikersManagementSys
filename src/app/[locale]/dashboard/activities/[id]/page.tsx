@@ -66,6 +66,14 @@ export default async function ActivityDetailPage({
   if (!activity) notFound();
 
   const isEditable = activity.status === "open";
+
+  // Prefer the memorable /events/<slug> URL for sharing when this
+  // activity has a slug. Falls back to /activities/<id> otherwise.
+  const shareSlug = (activity.metadata as Record<string, unknown> | null)?.slug;
+  const sharePath =
+    typeof shareSlug === "string" && shareSlug.trim() !== ""
+      ? `/${locale}/events/${shareSlug}`
+      : `/${locale}/activities/${activity.id}`;
   const submissionMap = await computeEffectiveSubmissionCounts([
     { id: activity.id, date: activity.date },
   ]);
@@ -181,7 +189,7 @@ export default async function ActivityDetailPage({
         {isEditable && (
         <div className="flex gap-2 flex-wrap items-center">
           {displayStatus === "open" && (
-            <ShareButton path={`/${locale}/activities/${activity.id}`} />
+            <ShareButton path={sharePath} />
           )}
             <EditButton
               activity={{
