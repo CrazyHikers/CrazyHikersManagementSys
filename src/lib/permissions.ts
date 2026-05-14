@@ -39,7 +39,8 @@ export type Permission =
   | "intern_resources:manage"
   // Dev-only
   | "users.changeRole"
-  | "activities.changeTemplate";
+  | "activities.changeTemplate"
+  | "activities.editSlug";
 
 /**
  * Central permission matrix.
@@ -106,6 +107,10 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   // (used to flip an activity into a bespoke landing template like
   // matchmaking_520 without DB access).
   "activities.changeTemplate": ["dev"],
+  // Dev-only: set/clear `Activity.metadata.slug` from the dashboard.
+  // Slugs feed the `/events/<slug>` alias redirect; uniqueness is
+  // enforced at write time in the PATCH route.
+  "activities.editSlug": ["dev"],
 };
 
 /**
