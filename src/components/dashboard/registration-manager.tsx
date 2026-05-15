@@ -29,9 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { BalanceCard } from "@/components/events/matchmaking-520/BalanceCard";
-import { AnswersDrawer } from "@/components/events/matchmaking-520/AnswersDrawer";
-import { MATCHMAKING_520_TEMPLATE } from "@/lib/events/matchmaking-520";
+import { getTemplate } from "@/lib/events/templates";
 
 export type RegistrationFormData = {
   transportTicket?: string;
@@ -691,9 +689,16 @@ export function RegistrationManager({
         )}
       </div>
 
-      {template === MATCHMAKING_520_TEMPLATE && (
-        <BalanceCard registrations={registrations} />
-      )}
+      {(() => {
+        const def = getTemplate(template);
+        if (!def?.ManagerExtras) return null;
+        return (
+          <def.ManagerExtras
+            registrations={registrations}
+            publicUrlPrefix={publicUrlPrefix ?? null}
+          />
+        );
+      })()}
 
       {registrations.map((reg) => (
         <Card
@@ -766,14 +771,16 @@ export function RegistrationManager({
                     {reg.pendingFlagReason}
                   </div>
                 )}
-                {template === MATCHMAKING_520_TEMPLATE && reg.formData && (
-                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                    <AnswersDrawer
-                      formData={(reg.formData as Record<string, unknown> | null) ?? null}
-                      publicUrlFor={(key) => `${publicUrlPrefix ?? ""}/${key}`}
+                {(() => {
+                  const def = getTemplate(template);
+                  if (!def?.PerRegistrationExtras) return null;
+                  return (
+                    <def.PerRegistrationExtras
+                      reg={reg}
+                      publicUrlPrefix={publicUrlPrefix ?? null}
                     />
-                  </div>
-                )}
+                  );
+                })()}
                 {(reg.formData || reg.userProfile || reg.flagHistory.length > 0 || reg.activityHistory.length > 0) && (
                   <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                     <button
