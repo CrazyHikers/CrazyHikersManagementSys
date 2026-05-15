@@ -92,20 +92,6 @@ export default async function ActivityViewPage({
     metadataObj && typeof metadataObj.slug === "string"
       ? (metadataObj.slug as string)
       : null;
-  let knownTemplates: string[] = [];
-  if (showDevControls) {
-    // Cheaper to dedupe in JS than to wrestle with Prisma's JSON path
-    // filters across drivers — the activity table stays small.
-    const rows = await db.activity.findMany({ select: { metadata: true } });
-    const set = new Set<string>();
-    for (const r of rows) {
-      if (r.metadata && typeof r.metadata === "object") {
-        const t = (r.metadata as Record<string, unknown>).template;
-        if (typeof t === "string" && t.trim() !== "") set.add(t);
-      }
-    }
-    knownTemplates = Array.from(set).sort();
-  }
 
   const submissionMap = await computeEffectiveSubmissionCounts([
     { id: activity.id, date: activity.date },
@@ -127,7 +113,6 @@ export default async function ActivityViewPage({
         <DevActivityControls
           activityId={activity.id}
           currentTemplate={currentTemplate}
-          knownTemplates={knownTemplates}
           currentSlug={currentSlug}
         />
       )}

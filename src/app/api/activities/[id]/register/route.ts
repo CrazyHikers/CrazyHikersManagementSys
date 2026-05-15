@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
 import { findSameDayCommitment, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { cacheTags } from "@/lib/cache-tags";
+import { getTemplate } from "@/lib/events/templates";
 
 export async function POST(
   request: NextRequest,
@@ -138,14 +139,17 @@ export async function POST(
       return NextResponse.json({ error: label }, { status: 400 });
     }
 
-    // Template-specific validation: matchmaking_520 has a strict schema
-    if (
-      activity.metadata &&
-      typeof activity.metadata === "object" &&
-      (activity.metadata as Record<string, unknown>).template === "matchmaking_520"
-    ) {
-      const { validateMatchmaking520 } = await import("@/lib/events/matchmaking-520");
-      const result = validateMatchmaking520(formData);
+    // Template-specific validation. The registry's validateFormData
+    // hook runs (when present) before we accept the row.
+    const templateTag =
+      activity.metadata && typeof activity.metadata === "object"
+        ? ((activity.metadata as Record<string, unknown>).template as
+            | string
+            | undefined)
+        : undefined;
+    const templateDef = getTemplate(templateTag);
+    if (templateDef?.validateFormData) {
+      const result = templateDef.validateFormData(formData);
       if (!result.ok) {
         return NextResponse.json(
           { error: "INVALID_FORM_DATA", details: result.errors },

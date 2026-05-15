@@ -12,27 +12,26 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { TEMPLATE_TAGS, type TemplateTag } from "@/lib/events/templates";
 
-// Sentinel values used by the template <Select> trigger to switch into
-// custom-input or "clear" mode. Not real templates — handled inline.
-const CUSTOM_SENTINEL = "__custom__";
+// Sentinel value for the "(none)" entry in the template <Select>.
+// Real template tags come from the registry; this is just a UI marker
+// so we can pass a real string through Radix's Select while still
+// representing "no template assigned".
 const NONE_SENTINEL = "__none__";
 
 function templateLabel(v: string): string {
   if (v === NONE_SENTINEL) return "(none)";
-  if (v === CUSTOM_SENTINEL) return "Custom…";
   return v;
 }
 
 export function DevActivityControls({
   activityId,
   currentTemplate,
-  knownTemplates,
   currentSlug,
 }: {
   activityId: string;
   currentTemplate: string | null;
-  knownTemplates: string[];
   currentSlug: string | null;
 }) {
   return (
@@ -44,7 +43,6 @@ export function DevActivityControls({
         <TemplateSection
           activityId={activityId}
           currentTemplate={currentTemplate}
-          knownTemplates={knownTemplates}
         />
         <SlugSection activityId={activityId} currentSlug={currentSlug} />
       </CardContent>
@@ -58,20 +56,20 @@ export function DevActivityControls({
 function TemplateSection({
   activityId,
   currentTemplate,
-  knownTemplates,
 }: {
   activityId: string;
   currentTemplate: string | null;
-  knownTemplates: string[];
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  // The select's controlled value. Treated separately from `current`
-  // so the user can pick "Custom..." without immediately committing.
+  // Templates come from the code registry — never from the DB. The
+  // current row's tag is only shown as a *(legacy)* item if it isn't
+  // in the registry, so a dev can switch off it.
+  const isLegacy =
+    currentTemplate !== null && !(TEMPLATE_TAGS as string[]).includes(currentTemplate);
   const [picked, setPicked] = useState<string>(
     currentTemplate ?? NONE_SENTINEL
   );
-  const [customDraft, setCustomDraft] = useState("");
 
   async function commit(value: string | null) {
     setSaving(true);
@@ -97,29 +95,10 @@ function TemplateSection({
   }
 
   function handleApply() {
-    if (picked === NONE_SENTINEL) {
-      commit(null);
-      return;
-    }
-    if (picked === CUSTOM_SENTINEL) {
-      const trimmed = customDraft.trim();
-      if (!trimmed) {
-        toast.error("Enter a custom template name");
-        return;
-      }
-      commit(trimmed);
-      return;
-    }
-    commit(picked);
+    commit(picked === NONE_SENTINEL ? null : picked);
   }
 
-  const willClear = picked === NONE_SENTINEL;
-  const willCustom = picked === CUSTOM_SENTINEL;
-  const proposedValue = willClear
-    ? null
-    : willCustom
-      ? customDraft.trim() || null
-      : picked;
+  const proposedValue = picked === NONE_SENTINEL ? null : picked;
   const isUnchanged =
     proposedValue === currentTemplate ||
     (proposedValue === null && currentTemplate === null);
@@ -132,6 +111,11 @@ function TemplateSection({
         <code className="bg-gray-100 px-1 py-0.5 rounded">
           {currentTemplate ?? "(none)"}
         </code>
+        {isLegacy && (
+          <span className="ml-2 text-amber-700">
+            (legacy — not in registry)
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap gap-2 items-center">
         <Select
@@ -143,23 +127,18 @@ function TemplateSection({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={NONE_SENTINEL}>(none)</SelectItem>
-            {knownTemplates.map((t) => (
+            {(TEMPLATE_TAGS as TemplateTag[]).map((t) => (
               <SelectItem key={t} value={t}>
                 {t}
               </SelectItem>
             ))}
-            <SelectItem value={CUSTOM_SENTINEL}>Custom…</SelectItem>
+            {isLegacy && currentTemplate && (
+              <SelectItem value={currentTemplate} disabled>
+                {currentTemplate} (legacy)
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
-        {willCustom && (
-          <Input
-            value={customDraft}
-            onChange={(e) => setCustomDraft(e.target.value)}
-            placeholder="new_template_name"
-            className="max-w-56"
-            maxLength={64}
-          />
-        )}
         <Button
           size="sm"
           variant="default"
@@ -171,9 +150,9 @@ function TemplateSection({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-2">
-        Allowed: letters, digits, <code>_</code> and <code>-</code>.
-        Templates are populated from existing tagged activities; pick
-        &quot;Custom…&quot; to introduce a new one.
+        Templates are defined in{" "}
+        <code>src/lib/events/templates.ts</code>. To add a new one, register
+        it there first.
       </p>
     </div>
   );

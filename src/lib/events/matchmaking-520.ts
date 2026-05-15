@@ -1,4 +1,7 @@
-export const MATCHMAKING_520_TEMPLATE = "matchmaking_520" as const;
+// Keep the literal value; `satisfies TemplateTag` will fail to compile
+// if the matching key is removed from src/lib/events/templates.ts.
+import type { TemplateTag } from "./templates";
+export const MATCHMAKING_520_TEMPLATE = "matchmaking_520" satisfies TemplateTag;
 export const MATCHMAKING_520_SLUG = "520" as const;
 
 export const GENDER_VALUES = ["male", "female"] as const;

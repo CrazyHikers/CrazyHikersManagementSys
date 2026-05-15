@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { cacheTags } from "@/lib/cache-tags";
+import { isKnownTemplate } from "@/lib/events/templates";
 
 // Dev-only: set/clear `Activity.metadata.template` so we can flip an
 // activity into a bespoke landing template (e.g. matchmaking_520) from
@@ -43,14 +44,11 @@ export async function PATCH(
     const trimmed = raw.trim();
     if (trimmed === "") {
       template = null;
-    } else if (trimmed.length > 64) {
+    } else if (!isKnownTemplate(trimmed)) {
       return NextResponse.json(
-        { error: "Template name too long (max 64 chars)" },
-        { status: 400 }
-      );
-    } else if (!/^[a-zA-Z0-9_\-]+$/.test(trimmed)) {
-      return NextResponse.json(
-        { error: "Template must contain only letters, digits, _ and -" },
+        {
+          error: `Unknown template "${trimmed}". Register it in src/lib/events/templates.ts first.`,
+        },
         { status: 400 }
       );
     } else {

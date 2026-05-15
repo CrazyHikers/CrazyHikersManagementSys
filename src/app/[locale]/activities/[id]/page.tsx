@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityRegistrationPanel } from "@/components/activity-registration-panel";
 import { ShareButton } from "@/components/share-button";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
+import { getTemplate } from "@/lib/events/templates";
 
 // Activity payload is shared across all visitors — cache it with a
 // per-ID tag. Write routes call revalidateTag(cacheTags.activity(id))
@@ -121,19 +122,22 @@ export default async function ActivityDetailPage({
     activity._count.registrations >= activity.maximumRegistration
   );
 
-  // Special-template branch: render the bespoke landing for matchmaking_520
+  // Template-specific bespoke landing. When the registry has a
+  // loadLanding for the current activity's tag, hand rendering over
+  // entirely; otherwise fall through to the default detail page below.
   const template =
     activity.metadata && typeof activity.metadata === "object"
-      ? (activity.metadata as Record<string, unknown>).template
-      : null;
-  if (template === "matchmaking_520") {
-    const { Matchmaking520Landing } = await import(
-      "@/components/events/matchmaking-520/Matchmaking520Landing"
-    );
+      ? ((activity.metadata as Record<string, unknown>).template as
+          | string
+          | undefined)
+      : undefined;
+  const templateDef = getTemplate(template);
+  if (templateDef?.loadLanding) {
+    const Landing = await templateDef.loadLanding();
     return (
       <>
         <SiteHeader />
-        <Matchmaking520Landing
+        <Landing
           activity={activity}
           locale={locale}
           isOpen={isOpen}
