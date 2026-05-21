@@ -34,13 +34,12 @@ export default async function HomePage() {
             | undefined) ?? null)
         : null;
 
+    const thumbnailKey = activity.homepageThumbnailImgId || activity.coverImgId;
     return {
       id: activity.id,
       title: activity.title,
       description: activity.description,
-      coverImgUrl: activity.coverImgId
-        ? getPublicUrl(activity.coverImgId)
-        : null,
+      coverImgUrl: thumbnailKey ? getPublicUrl(thumbnailKey) : null,
       // unstable_cache serializes Dates to ISO strings; revive and
       // re-emit so the ActivityList client gets a stable ISO format
       // regardless of cache hit/miss.

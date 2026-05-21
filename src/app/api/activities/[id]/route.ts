@@ -187,6 +187,8 @@ export async function PATCH(
         "title",
         "description",
         "coverImgId",
+        "homepageThumbnailImgId",
+        "registrationHeroImgId",
         "deadline",
         "date",
         "capacity",
@@ -214,6 +216,15 @@ export async function PATCH(
           // Cover image changed
           if (body.coverImgId && current.coverImgId && body.coverImgId !== current.coverImgId) {
             await deleteFile(current.coverImgId).catch(() => {});
+          }
+          // Optional images: delete old when replaced or explicitly cleared
+          for (const field of ["homepageThumbnailImgId", "registrationHeroImgId"] as const) {
+            if (body[field] === undefined) continue;
+            const oldKey = current[field];
+            const newKey = body[field];
+            if (oldKey && oldKey !== newKey) {
+              await deleteFile(oldKey).catch(() => {});
+            }
           }
           // QR code changed
           const oldQr = (current.metadata as Record<string, unknown> | null)?.qrCodeUrl;

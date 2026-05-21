@@ -201,6 +201,8 @@ export default async function ActivityDetailPage({
                 capacity: activity.capacity,
                 maximumRegistration: activity.maximumRegistration,
                 coverImgId: activity.coverImgId,
+                homepageThumbnailImgId: activity.homepageThumbnailImgId,
+                registrationHeroImgId: activity.registrationHeroImgId,
                 metadata: activity.metadata as Record<string, unknown> | null,
               }}
             />
@@ -208,15 +210,19 @@ export default async function ActivityDetailPage({
         )}
       </div>
 
-      {activity.coverImgId && (
-        <div className="rounded-lg overflow-hidden mb-6 max-h-64 bg-gray-100">
-          <img
-            src={getPublicUrl(activity.coverImgId)}
-            alt={activity.title}
-            className="w-full h-full max-h-64 object-contain"
-          />
-        </div>
-      )}
+      {(() => {
+        const heroKey = activity.registrationHeroImgId || activity.coverImgId;
+        if (!heroKey) return null;
+        return (
+          <div className="rounded-lg overflow-hidden mb-6 max-h-64 bg-gray-100">
+            <img
+              src={getPublicUrl(heroKey)}
+              alt={activity.title}
+              className="w-full h-full max-h-64 object-contain"
+            />
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>

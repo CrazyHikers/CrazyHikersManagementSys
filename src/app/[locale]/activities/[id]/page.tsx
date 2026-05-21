@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityRegistrationPanel } from "@/components/activity-registration-panel";
 import { ShareButton } from "@/components/share-button";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
+import { getTemplate } from "@/lib/events/templates";
 
 // Activity payload is shared across all visitors — cache it with a
 // per-ID tag. Write routes call revalidateTag(cacheTags.activity(id))
@@ -121,19 +122,22 @@ export default async function ActivityDetailPage({
     activity._count.registrations >= activity.maximumRegistration
   );
 
-  // Special-template branch: render the bespoke landing for matchmaking_520
+  // Template-specific bespoke landing. When the registry has a
+  // loadLanding for the current activity's tag, hand rendering over
+  // entirely; otherwise fall through to the default detail page below.
   const template =
     activity.metadata && typeof activity.metadata === "object"
-      ? (activity.metadata as Record<string, unknown>).template
-      : null;
-  if (template === "matchmaking_520") {
-    const { Matchmaking520Landing } = await import(
-      "@/components/events/matchmaking-520/Matchmaking520Landing"
-    );
+      ? ((activity.metadata as Record<string, unknown>).template as
+          | string
+          | undefined)
+      : undefined;
+  const templateDef = getTemplate(template);
+  if (templateDef?.loadLanding) {
+    const Landing = await templateDef.loadLanding();
     return (
       <>
         <SiteHeader />
-        <Matchmaking520Landing
+        <Landing
           activity={activity}
           locale={locale}
           isOpen={isOpen}
@@ -187,15 +191,19 @@ export default async function ActivityDetailPage({
       <SiteHeader />
       <main className="flex-1 bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-3xl">
-          {activity.coverImgId && (
-            <div className="rounded-lg overflow-hidden mb-6 max-h-80 bg-gray-100">
-              <img
-                src={getPublicUrl(activity.coverImgId)}
-                alt={activity.title}
-                className="w-full h-full max-h-80 object-contain"
-              />
-            </div>
-          )}
+          {(() => {
+            const heroKey = activity.registrationHeroImgId || activity.coverImgId;
+            if (!heroKey) return null;
+            return (
+              <div className="rounded-lg overflow-hidden mb-6 max-h-80 bg-gray-100">
+                <img
+                  src={getPublicUrl(heroKey)}
+                  alt={activity.title}
+                  className="w-full h-full max-h-80 object-contain"
+                />
+              </div>
+            );
+          })()}
 
           <div className="mb-6">
             <div className="flex items-start justify-between gap-3 mb-2">
