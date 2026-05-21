@@ -1,0 +1,39 @@
+name: Cleanup Neon Branch
+
+# Vercel's native Neon integration creates a database branch named
+# `preview/<git-branch>` for every git branch it builds a preview for, but
+# it does NOT delete those branches when the git branch is merged or its PR
+# is closed. On Neon's free plan (10-branch cap) they pile up until new
+# previews can no longer be created. This workflow deletes the matching
+# Neon branch whenever a PR is closed — whether it was merged or just
+# closed without merging (both leave an orphaned preview branch).
+#
+# One-time setup (repo → Settings → Secrets and variables → Actions):
+#   - Secret    NEON_API_KEY     — Neon Console → Account settings → API keys
+#   - Variable  NEON_PROJECT_ID  — Neon Console → your project → Settings → General
+#
+# NOTE: this workflow only runs from the *base* branch's copy on
+# `pull_request` events, so it must live on `main` to take effect.
+
+on:
+  pull_request:
+    types: [closed]
+
+# This job only talks to the Neon API; it never needs to touch the repo,
+# so drop all GITHUB_TOKEN permissions.
+permissions: {}
+
+jobs:
+  delete-neon-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the preview branch in Neon
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          # The Vercel integration prefixes the git branch with `preview/`.
+          # head.ref is the merged/closed branch (e.g. `claude/foo` →
+          # `preview/claude/foo`). If your integration sanitizes slashes,
+          # adjust this expression to match what you see in the Neon console.
+          branch: preview/${{ github.event.pull_request.head.ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
