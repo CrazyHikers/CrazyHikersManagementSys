@@ -13,7 +13,7 @@ export async function POST(
   try {
     // Rate limit by IP: max 10 registrations per IP per 15 minutes
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
-    const { allowed } = rateLimit(`register:${ip}`, { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+    const { allowed } = await rateLimit(`register:${ip}`, { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
     if (!allowed) {
       return NextResponse.json(
         { error: "Too many registration attempts. Please try again later." },

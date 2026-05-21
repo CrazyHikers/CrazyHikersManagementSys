@@ -129,7 +129,7 @@ export const authConfig: NextAuthConfig = {
         if (!email || !password) return null;
 
         // Rate limit password attempts
-        const { allowed } = rateLimit(`password:${email}`, {
+        const { allowed } = await rateLimit(`password:${email}`, {
           maxAttempts: 5,
           windowMs: 15 * 60 * 1000,
         });

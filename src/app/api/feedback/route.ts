@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  const { allowed } = rateLimit(`feedback:${session.user.email}`, {
+  const { allowed } = await rateLimit(`feedback:${session.user.email}`, {
     maxAttempts: 5,
     windowMs: 60 * 60 * 1000,
   });

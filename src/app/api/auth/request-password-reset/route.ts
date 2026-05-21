@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Bot verification failed" }, { status: 400 });
     }
 
-    const { allowed } = rateLimit(`pwreset:${email}`, {
+    const { allowed } = await rateLimit(`pwreset:${email}`, {
       maxAttempts: 3,
       windowMs: 15 * 60 * 1000,
     });

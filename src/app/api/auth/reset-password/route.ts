@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
 
-    const { allowed } = rateLimit(`pwreset-confirm:${email}`, {
+    const { allowed } = await rateLimit(`pwreset-confirm:${email}`, {
       maxAttempts: 10,
       windowMs: 15 * 60 * 1000,
     });
