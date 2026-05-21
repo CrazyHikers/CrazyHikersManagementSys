@@ -275,6 +275,66 @@
         "viewAnswers": "View answers",
         "answersTitle": "Form answers"
       }
+    },
+    "audience520": {
+      "landing": {
+        "title": "5·20 — Pavilion side",
+        "subtitle": "Audience team · here for the moments",
+        "intro": "May 20 — join as audience. No matching, just bring your curiosity and a quiet blessing as we witness this trail-side meet together.",
+        "privacyTitle": "Privacy Notice",
+        "cta": "Join the audience",
+        "ctaSignIn": "Sign in to register",
+        "ctaRegistered": "You're on the guest list",
+        "ctaClosed": "Registration closed",
+        "ctaFull": "Audience seats full",
+        "stepsTitle": "How it works",
+        "step1Title": "Quick sign-up",
+        "step1Body": "A short form to reserve your audience seat",
+        "step2Title": "Wait for confirmation",
+        "step2Body": "Managers will confirm based on on-site capacity",
+        "step3Title": "Meet on 5·20",
+        "step3Body": "Walk along, cheer them on, share the moment"
+      },
+      "form": {
+        "title": "Audience sign-up",
+        "intro": "Just the basics — we'll add you to the audience chat after confirmation.",
+        "submit": "Submit",
+        "fields": {
+          "name": "Your name",
+          "namePlaceholder": "Real name or preferred nickname",
+          "gender": "Gender",
+          "currentCity": "Current city",
+          "wechat": "WeChat ID",
+          "wechatPlaceholder": "Used to add you to the event chat",
+          "wechatHelp": "After confirmation, the manager will invite you to the audience WeChat group.",
+          "inSwitzerland": "Are you currently in Switzerland?",
+          "willingToBePhotographed": "OK to appear in event photos / short videos?",
+          "expectations": "Anything you'd like to say to the matchmaking team? (optional)",
+          "expectationsPlaceholder": "A blessing, what you'd love to witness, or a scene you'd like to see",
+          "consent": "I have read the privacy notice and consent to my information being used for this event"
+        },
+        "options": {
+          "gender": {
+            "male": "Male",
+            "female": "Female"
+          }
+        },
+        "yesNo": {
+          "yes": "Yes",
+          "no": "No"
+        },
+        "errors": {
+          "required": "Required",
+          "invalid": "Invalid format",
+          "too_long": "Too long",
+          "submitFailed": "Submission failed, please retry"
+        }
+      },
+      "success": {
+        "title": "Your seat is reserved!",
+        "body": "Thanks for joining the audience team. A manager will invite you to the WeChat group shortly — see you on the trail on 5·20.",
+        "backHome": "Back to event"
+      }
     }
   },
   "dashboard": {

@@ -7,6 +7,7 @@ import type {
 } from "@/components/dashboard/template-extras-types";
 import type { ValidationResult } from "./validation-types";
 import { matchmaking520Def } from "@/components/events/matchmaking-520/template-def";
+import { audience520Def } from "@/components/events/audience-520/template-def";
 
 // One TemplateDef per template. Every per-template customization lives
 // inside its def. Generic surfaces (homepage card, activity detail page,
@@ -52,6 +53,7 @@ export type TemplateDef = {
 
 export const TEMPLATES = {
   matchmaking_520: matchmaking520Def,
+  audience_520: audience520Def,
 } as const satisfies Record<string, TemplateDef>;
 
 export type TemplateTag = keyof typeof TEMPLATES;

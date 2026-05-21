@@ -275,6 +275,66 @@
         "viewAnswers": "查看问卷",
         "answersTitle": "问卷答卷"
       }
+    },
+    "audience520": {
+      "landing": {
+        "title": "5·20 灯下看戏",
+        "subtitle": "围观团 · 一起见证心动时刻",
+        "intro": "5月20日，作为观众队加入我们——你不必相亲，只需带着好奇心和一份祝福，与朋友共赏这场山野邂逅。",
+        "privacyTitle": "隐私声明",
+        "cta": "加入围观团",
+        "ctaSignIn": "登录后报名",
+        "ctaRegistered": "你已加入围观团",
+        "ctaClosed": "报名已截止",
+        "ctaFull": "围观席位已满",
+        "stepsTitle": "活动流程",
+        "step1Title": "填写报名",
+        "step1Body": "几分钟完成简短信息，预留一个观众席位",
+        "step2Title": "等待确认",
+        "step2Body": "领队会根据现场容量逐一确认",
+        "step3Title": "5·20 现场围观",
+        "step3Body": "一起出门，一起见证心动瞬间"
+      },
+      "form": {
+        "title": "观众报名",
+        "intro": "只需要常规信息——我们会在活动前把你拉进围观群。",
+        "submit": "提交报名",
+        "fields": {
+          "name": "您的姓名",
+          "namePlaceholder": "真实姓名或常用昵称",
+          "gender": "您的性别",
+          "currentCity": "目前所在城市",
+          "wechat": "您的微信号",
+          "wechatPlaceholder": "用于加入活动群",
+          "wechatHelp": "活动确认后，领队会通过微信邀请你加入观众群。",
+          "inSwitzerland": "您目前是否在瑞士",
+          "willingToBePhotographed": "是否愿意出镜（活动合影 / 短视频）",
+          "expectations": "想对相亲队说点什么？（选填）",
+          "expectationsPlaceholder": "可以留下祝福、围观期待，或者你想看到的桥段",
+          "consent": "我已阅读隐私声明并同意上述信息用于本次活动的组织"
+        },
+        "options": {
+          "gender": {
+            "male": "男",
+            "female": "女"
+          }
+        },
+        "yesNo": {
+          "yes": "是",
+          "no": "否"
+        },
+        "errors": {
+          "required": "此项必填",
+          "invalid": "格式不正确",
+          "too_long": "内容过长",
+          "submitFailed": "提交失败，请重试"
+        }
+      },
+      "success": {
+        "title": "围观席位已就位！",
+        "body": "感谢加入观众队。领队稍后会通过微信邀请你进群，敬请期待 5·20 的山野相会。",
+        "backHome": "返回活动详情"
+      }
     }
   },
   "dashboard": {
