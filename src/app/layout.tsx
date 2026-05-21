@@ -43,7 +43,11 @@ export default function RootLayout({
     <html className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-geist-sans)]">
         {children}
-        <SpeedInsights />
+        {/* sampleRate=0.2: we were 3.4x over the 10K/mo Speed Insights data
+            point quota; sampling 20% lands us at ~6.8K projected. p75 metrics
+            on the homepage and activity detail still get plenty of samples
+            at this rate; low-traffic dashboard routes will be noisier. */}
+        <SpeedInsights sampleRate={0.2} />
         <Analytics />
       </body>
     </html>
