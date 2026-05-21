@@ -113,8 +113,11 @@ export async function PATCH(
     data: { metadata: next as Prisma.InputJsonValue },
   });
 
-  revalidateTag(cacheTags.activity(id), "max");
-  revalidateTag(cacheTags.activities, "max");
+  // expire: 0 so the next /events/<slug> visit sees the new mapping
+  // immediately — "max" would serve the stale (often null → 404) value
+  // while the background refetch runs.
+  revalidateTag(cacheTags.activity(id), { expire: 0 });
+  revalidateTag(cacheTags.activities, { expire: 0 });
 
   return NextResponse.json({
     oldSlug,

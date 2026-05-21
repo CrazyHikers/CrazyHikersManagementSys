@@ -177,8 +177,10 @@ export async function POST(
   // page and the landing page's intern-visibility rule; decline never
   // appears on member-facing pages, so no invalidation needed.
   if (accepted) {
-    revalidateTag(cacheTags.activity(am.activityId), "max");
-    revalidateTag(cacheTags.activities, "max");
+    // expire: 0 so the accepted comanager appears on the activity page
+    // immediately, not after the stale-while-revalidate refresh.
+    revalidateTag(cacheTags.activity(am.activityId), { expire: 0 });
+    revalidateTag(cacheTags.activities, { expire: 0 });
 
     // Broadcast "activity created" iff this acceptance just transitioned the
     // activity from 0 → 1 confirmed non-intern manager (any role). That

@@ -217,7 +217,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    revalidateTag(cacheTags.activities, "max");
+    // expire: 0 so the new activity shows up on the homepage immediately,
+    // not after the background refresh from "max"'s stale-while-revalidate.
+    revalidateTag(cacheTags.activities, { expire: 0 });
     return NextResponse.json({ id: activity.id });
   } catch (error) {
     console.error("Create activity error:", error);

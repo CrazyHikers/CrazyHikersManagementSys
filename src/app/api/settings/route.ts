@@ -44,6 +44,8 @@ export async function PUT(request: NextRequest) {
     });
   }
 
-  revalidateTag("app-settings", "max");
+  // expire: 0 so the new setting takes effect immediately rather than
+  // after a stale-while-revalidate cycle.
+  revalidateTag("app-settings", { expire: 0 });
   return NextResponse.json({ success: true });
 }

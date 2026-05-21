@@ -237,8 +237,10 @@ export async function PATCH(
       }
     }
 
-    revalidateTag(cacheTags.activity(id), "max");
-    revalidateTag(cacheTags.activities, "max");
+    // expire: 0 for read-your-own-writes — the manager who just edited
+    // expects the next view to show the new content, not the stale one.
+    revalidateTag(cacheTags.activity(id), { expire: 0 });
+    revalidateTag(cacheTags.activities, { expire: 0 });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update activity error:", error);

@@ -88,8 +88,10 @@ export async function PATCH(
     data: { metadata: next as Prisma.InputJsonValue },
   });
 
-  revalidateTag(cacheTags.activity(id), "max");
-  revalidateTag(cacheTags.activities, "max");
+  // expire: 0 for read-your-own-writes: managers expect the new template
+  // to render on the very next visit, not after a background refresh.
+  revalidateTag(cacheTags.activity(id), { expire: 0 });
+  revalidateTag(cacheTags.activities, { expire: 0 });
 
   return NextResponse.json({
     oldTemplate,
