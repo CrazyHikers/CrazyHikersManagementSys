@@ -153,6 +153,20 @@ export async function POST(
         );
       }
     }
+    if (
+      activity.metadata &&
+      typeof activity.metadata === "object" &&
+      (activity.metadata as Record<string, unknown>).template === "audience_520"
+    ) {
+      const { validateAudience520 } = await import("@/lib/events/audience-520");
+      const result = validateAudience520(formData);
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: "INVALID_FORM_DATA", details: result.errors },
+          { status: 400 }
+        );
+      }
+    }
 
     // Create registration — shadow ban is checked at query time
     await db.registration.create({

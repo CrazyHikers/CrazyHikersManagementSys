@@ -1,0 +1,123 @@
+/* ----------------------------------------------------------------- */
+/* 5·20 audience team — typography + atmospheric animations           */
+/* ----------------------------------------------------------------- */
+
+/* Shares the Chinese serif stack with matchmaking_520 — the two
+   templates pair visually at the same event, so they share their
+   display font for cohesion. Class name kept distinct so audience-520
+   can diverge later without touching the matchmaking styles. */
+.font-aud520-display {
+  font-family:
+    "Songti SC",
+    "Source Han Serif SC",
+    "Noto Serif SC",
+    "STSong",
+    "Songti TC",
+    "Hiragino Mincho ProN",
+    "Yu Mincho",
+    serif;
+  letter-spacing: 0.04em;
+  font-feature-settings: "palt" on;
+}
+
+/* Firefly — slow upward drift with a soft glow pulse. Lateral drift
+   and start rotation parameterised via CSS custom properties on the
+   element. Replaces the falling-petal motif so the audience-team
+   landing is visually distinct from the matchmaking landing. */
+@keyframes aud520-rise {
+  0% {
+    transform: translate3d(0, 110vh, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(
+      calc(var(--aud520-drift, 30px) * 0.5),
+      55vh,
+      0
+    );
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(
+      var(--aud520-drift, 30px),
+      -10vh,
+      0
+    );
+    opacity: 0;
+  }
+}
+
+@keyframes aud520-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(232, 168, 80, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(232, 168, 80, 0.95));
+  }
+}
+
+.aud520-firefly {
+  animation:
+    aud520-rise var(--aud520-rise-duration, 14s) linear infinite both,
+    aud520-glow 2.2s ease-in-out infinite both;
+  animation-delay: var(--aud520-rise-delay, 0s), 0s;
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aud520-firefly {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Hanging lantern — small idle sway to suggest a gentle evening breeze.
+   The container handles translation; an inner element handles rotation
+   so the swing pivots from the top of the lantern string. */
+@keyframes aud520-sway {
+  0%, 100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+.aud520-sway {
+  transform-origin: top center;
+  animation: aud520-sway 5s ease-in-out infinite;
+}
+
+.aud520-sway-slow {
+  transform-origin: top center;
+  animation: aud520-sway 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aud520-sway,
+  .aud520-sway-slow {
+    animation: none;
+  }
+}
+
+/* Soft warm halo on the success screen lantern. */
+@keyframes aud520-bloom {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(232, 168, 80, 0));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 22px rgba(232, 168, 80, 0.55));
+  }
+}
+
+.aud520-bloom {
+  animation: aud520-bloom 3s ease-in-out infinite;
+}
