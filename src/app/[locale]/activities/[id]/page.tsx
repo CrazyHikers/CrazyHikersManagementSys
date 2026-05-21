@@ -147,23 +147,6 @@ export default async function ActivityDetailPage({
       </>
     );
   }
-  if (template === "audience_520") {
-    const { Audience520Landing } = await import(
-      "@/components/events/audience-520/Audience520Landing"
-    );
-    return (
-      <>
-        <SiteHeader />
-        <Audience520Landing
-          activity={activity}
-          locale={locale}
-          isOpen={isOpen}
-          isFull={isFull}
-        />
-        <SiteFooter />
-      </>
-    );
-  }
 
   const managers = activity.activityManagers
     .filter((am) => am.role === "manager")
