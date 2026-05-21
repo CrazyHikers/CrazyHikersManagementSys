@@ -5,10 +5,12 @@ import { SiteFooter } from "@/components/site-footer";
 import { ActivityList } from "@/components/activity-list";
 import { getRegisterableOpenActivities } from "@/lib/activity";
 
-// 1-day revalidate is a safety net; write sites (activity create/edit,
-// registration change, manager accept/decline, etc.) invalidate via
-// revalidateTag(cacheTags.activities) for correctness.
-export const revalidate = 86400;
+// Hourly revalidate keeps registration counts at most ~1h stale. Activity
+// content edits (create/edit, slug/template, manager accept) still call
+// revalidateTag(cacheTags.activities) for immediate refresh; registration
+// mutations intentionally do NOT invalidate, since busting the cache on
+// every register/withdraw was the dominant CPU cost.
+export const revalidate = 3600;
 
 export default async function HomePage() {
   const t = await getTranslations("home");

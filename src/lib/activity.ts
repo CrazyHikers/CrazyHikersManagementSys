@@ -245,5 +245,5 @@ export const getRegisterableOpenActivities = unstable_cache(
       .map((a) => ({ ...a, submissionCount: submissionMap.get(a.id) ?? 0 }));
   },
   ["registerable-open-activities"],
-  { tags: [cacheTags.activities], revalidate: 86400 }
+  { tags: [cacheTags.activities], revalidate: 3600 }
 );

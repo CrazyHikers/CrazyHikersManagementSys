@@ -14,10 +14,16 @@ import { ShareButton } from "@/components/share-button";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
 import { getTemplate } from "@/lib/events/templates";
 
+// Hourly ISR so the rendered page itself is cached, not just the DB
+// query. Registration counts are at most ~1h stale; the per-user
+// registration panel is hydrated client-side and updates immediately.
+export const revalidate = 3600;
+
 // Activity payload is shared across all visitors — cache it with a
-// per-ID tag. Write routes call revalidateTag(cacheTags.activity(id))
-// on edits, registration changes, manager accept/decline, etc. The
-// 1-day revalidate is a safety net; correctness comes from the tag.
+// per-ID tag. Activity content edits (title/description/dates, manager
+// accept, slug/template) call revalidateTag(cacheTags.activity(id)) for
+// immediate refresh; registration mutations do NOT, since busting the
+// cache on every register/withdraw was the dominant CPU cost.
 function getActivity(id: string) {
   return unstable_cache(
     async () => {
@@ -41,7 +47,7 @@ function getActivity(id: string) {
       });
     },
     ["activity-detail", id],
-    { tags: [cacheTags.activity(id)], revalidate: 86400 }
+    { tags: [cacheTags.activity(id)], revalidate: 3600 }
   )();
 }
 
@@ -54,7 +60,7 @@ function getActivityMetadata(id: string) {
       });
     },
     ["activity-metadata", id],
-    { tags: [cacheTags.activity(id)], revalidate: 86400 }
+    { tags: [cacheTags.activity(id)], revalidate: 3600 }
   )();
 }
 

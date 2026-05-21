@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { canProposeRegistration } from "@/lib/permissions";
-import { cacheTags } from "@/lib/cache-tags";
 
 // POST and DELETE are both idempotent — clicking Propose twice or
 // Withdraw twice in a row both resolve to "no-op success" rather than
@@ -61,7 +59,6 @@ export async function POST(
     create: { activityId, userEmail, proposerEmail },
   });
 
-  revalidateTag(cacheTags.activity(activityId), "max");
   return NextResponse.json({ success: true });
 }
 
@@ -78,6 +75,5 @@ export async function DELETE(
     where: { activityId, userEmail, proposerEmail },
   });
 
-  revalidateTag(cacheTags.activity(activityId), "max");
   return NextResponse.json({ success: true });
 }

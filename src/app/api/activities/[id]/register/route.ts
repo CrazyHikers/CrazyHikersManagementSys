@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
 import { findSameDayCommitment, computeEffectiveSubmissionCounts } from "@/lib/activity";
-import { cacheTags } from "@/lib/cache-tags";
 import { getTemplate } from "@/lib/events/templates";
 
 export async function POST(
@@ -169,8 +167,9 @@ export async function POST(
       } as Parameters<typeof db.registration.create>[0]["data"],
     });
 
-    revalidateTag(cacheTags.activity(activityId), "max");
-    revalidateTag(cacheTags.activities, "max");
+    // Registration mutations intentionally don't bust the public page
+    // cache — counts are allowed to be ~1h stale, the per-user panel
+    // updates immediately client-side.
     return NextResponse.json({ message: "Registration successful" });
   } catch (error) {
     console.error("Registration error:", error);
@@ -226,8 +225,6 @@ export async function DELETE(
       where: { activityId_userEmail: { activityId, userEmail } },
     });
 
-    revalidateTag(cacheTags.activity(activityId), "max");
-    revalidateTag(cacheTags.activities, "max");
     return NextResponse.json({ message: "Registration withdrawn" });
   } catch (error) {
     console.error("Withdraw error:", error);
