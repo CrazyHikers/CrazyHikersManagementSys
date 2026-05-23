@@ -27,14 +27,23 @@ let warnedMissingEnv = false;
 
 function getRedis(): Redis | null {
   if (redis) return redis;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Support both connection conventions. A manual Upstash setup uses the
+  // UPSTASH_REDIS_REST_* names (also what Redis.fromEnv() expects); the
+  // Vercel-Upstash marketplace integration injects the Vercel-KV-style
+  // KV_REST_API_* names instead. We can't use Redis.fromEnv() because it
+  // only knows the former and throws on missing — we want to read either
+  // and fail open if neither is present.
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
   if (!url || !token) {
     if (!warnedMissingEnv) {
       warnedMissingEnv = true;
       console.warn(
-        "[rate-limit] UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set — " +
-          "rate limiting is DISABLED. Set these in your Vercel project to enable."
+        "[rate-limit] No Redis credentials found (checked UPSTASH_REDIS_REST_URL/" +
+          "_TOKEN and KV_REST_API_URL/_TOKEN) — rate limiting is DISABLED. " +
+          "Connect Upstash in Vercel or set these vars to enable."
       );
     }
     return null;
