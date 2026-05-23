@@ -40,7 +40,10 @@ function getRedis(): Redis | null {
   if (!url || !token) {
     if (!warnedMissingEnv) {
       warnedMissingEnv = true;
-      console.warn(
+      // error level (not warn): a disabled rate limiter is an operational
+      // failure of a security control, and `error` is the level most
+      // reliably surfaced by Vercel logs and log drains.
+      console.error(
         "[rate-limit] No Redis credentials found (checked UPSTASH_REDIS_REST_URL/" +
           "_TOKEN and KV_REST_API_URL/_TOKEN) — rate limiting is DISABLED. " +
           "Connect Upstash in Vercel or set these vars to enable."
