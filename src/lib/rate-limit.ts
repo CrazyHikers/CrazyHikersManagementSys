@@ -19,6 +19,24 @@ export type RateLimitResult = {
   resetIn: number;
 };
 
+/**
+ * The client's real IP, for use as a rate-limit key.
+ *
+ * Behind Cloudflare → Vercel, `x-forwarded-for` is a HOP CHAIN
+ * (`client-ip, cf-edge-ip, vercel-proxy-ip`) whose later entries vary
+ * request-to-request, so keying on the whole header silently shards one
+ * client across many keys and leaks through the limit. `CF-Connecting-IP`
+ * is the single, stable origin client IP — prefer it; fall back to the
+ * FIRST entry of `x-forwarded-for`, then `x-real-ip`.
+ */
+export function getClientIp(request: Request): string {
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]?.trim() || "unknown";
+  return request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
 // One shared Redis client per process. Upstash's REST client is HTTP-based
 // so there's no connection to keep alive — but caching the instance avoids
 // re-parsing env on every request.

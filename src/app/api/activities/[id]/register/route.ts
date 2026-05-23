@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { isProfileComplete } from "@/lib/profile";
 import { findSameDayCommitment, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { getTemplate } from "@/lib/events/templates";
@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
     // Rate limit by IP: max 10 registrations per IP per 15 minutes
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const ip = getClientIp(request);
     const { allowed } = await rateLimit(`register:${ip}`, { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
     if (!allowed) {
       return NextResponse.json(
