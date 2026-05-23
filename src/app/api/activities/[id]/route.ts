@@ -206,6 +206,42 @@ export async function PATCH(
         // Fetch current activity to compare old images
         const current = await db.activity.findUnique({ where: { id } });
 
+        // The edit form only owns the hiking-detail + QR keys of metadata.
+        // Other keys — slug (/slug endpoint), template (/template endpoint),
+        // privacyNotice and any future template config — are managed
+        // elsewhere and are NOT sent by the form, so overwriting metadata
+        // wholesale silently wiped them on every edit. Merge instead: keep
+        // all existing keys, then apply the form-owned keys (set when
+        // present in the payload, delete when the form omitted them — which
+        // is how the form signals a cleared field).
+        if ("metadata" in updateData && current) {
+          const FORM_OWNED_META_KEYS = [
+            "route",
+            "distance",
+            "elevationGain",
+            "elevationLoss",
+            "duration",
+            "technicalDifficulty",
+            "enduranceDifficulty",
+            "notes",
+            "qrCodeUrl",
+          ];
+          const existingMeta =
+            (current.metadata as Record<string, unknown> | null) ?? {};
+          const incomingMeta =
+            (updateData.metadata as Record<string, unknown> | null) ?? {};
+          const merged: Record<string, unknown> = { ...existingMeta };
+          for (const key of FORM_OWNED_META_KEYS) {
+            if (incomingMeta[key] !== undefined) {
+              merged[key] = incomingMeta[key];
+            } else {
+              delete merged[key];
+            }
+          }
+          updateData.metadata =
+            Object.keys(merged).length > 0 ? merged : null;
+        }
+
         await db.activity.update({
           where: { id },
           data: updateData,
