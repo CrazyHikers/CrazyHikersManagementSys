@@ -11,6 +11,7 @@ import {
   fontDisplayAud,
 } from "./theme";
 import { Audience520RegistrationPanel } from "./Audience520RegistrationPanel";
+import { HikingDetailsSection } from "@/components/events/HikingDetailsSection";
 
 // Loose-typed payload — matches what activity detail page sends in.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -203,6 +204,16 @@ export async function Audience520Landing({
             </div>
           ))}
         </div>
+
+        {/* Line info — route / elevation / difficulty from metadata */}
+        <HikingDetailsSection
+          metadata={activity.metadata}
+          cardClassName={`${aud520Theme.cardAccent} shadow-sm`}
+          headingClassName={`${fontDisplayAud} text-base text-[#5a8a6e]`}
+          dividerClassName="bg-[#5a8a6e]/20"
+          labelClassName={aud520Theme.inkSoft}
+          valueClassName={`text-base ${aud520Theme.ink} ${fontDisplayAud}`}
+        />
 
         {/* Steps as a three-lantern timeline */}
         <Card className={`${aud520Theme.cardAccent} shadow-sm`}>

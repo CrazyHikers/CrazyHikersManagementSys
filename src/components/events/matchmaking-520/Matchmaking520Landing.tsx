@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicUrl } from "@/lib/r2";
 import { ShareButton } from "@/components/share-button";
+import { HikingDetailsSection } from "@/components/events/HikingDetailsSection";
 import {
   FloatingPetals,
   HeartMountainIcon,
@@ -209,6 +210,16 @@ export async function Matchmaking520Landing({
             </div>
           ))}
         </div>
+
+        {/* Line info — route / elevation / difficulty from metadata */}
+        <HikingDetailsSection
+          metadata={activity.metadata}
+          cardClassName={`${m520Theme.cardAccent} shadow-sm`}
+          headingClassName={`${fontDisplayZh} text-base text-[#d4685e]`}
+          dividerClassName="bg-[#d4685e]/20"
+          labelClassName={m520Theme.inkSoft}
+          valueClassName={`text-base ${m520Theme.ink} ${fontDisplayZh}`}
+        />
 
         {/* Steps as a three-blossom timeline */}
         <Card className={`${m520Theme.cardAccent} shadow-sm`}>
