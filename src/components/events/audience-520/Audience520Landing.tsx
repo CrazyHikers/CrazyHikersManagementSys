@@ -176,7 +176,10 @@ export async function Audience520Landing({
             },
             {
               label: ta("deadline"),
-              value: activityDeadline.toLocaleDateString(locale),
+              value: activityDeadline.toLocaleString(locale, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }),
             },
             {
               label: ta("capacity"),

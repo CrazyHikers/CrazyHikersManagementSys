@@ -126,7 +126,7 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
       coverImgId,
       homepageThumbnailImgId,
       registrationHeroImgId,
-      deadline: formData.get("deadline"),
+      deadline: new Date(formData.get("deadline") as string).toISOString(),
       date: formData.get("date"),
       capacity: Number(formData.get("capacity")) || 0,
       maximumRegistration: Number(formData.get("maxRegistration")) || 0,
@@ -212,7 +212,7 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="deadline">{t("deadline")}</Label>
-              <Input id="deadline" name="deadline" type="date" required />
+              <Input id="deadline" name="deadline" type="datetime-local" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date">{t("activityDate")}</Label>

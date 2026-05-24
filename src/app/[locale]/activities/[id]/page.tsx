@@ -305,7 +305,7 @@ export default async function ActivityDetailPage({
                   {t("deadline")}
                 </div>
                 <div className="font-medium">
-                  {activityDeadline.toLocaleDateString()}
+                  {activityDeadline.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
                 </div>
               </CardContent>
             </Card>

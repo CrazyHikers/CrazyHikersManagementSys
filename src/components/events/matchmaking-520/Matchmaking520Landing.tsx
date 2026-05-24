@@ -184,7 +184,10 @@ export async function Matchmaking520Landing({
             { label: ta("date"), value: activityDate.toLocaleDateString(locale) },
             {
               label: ta("deadline"),
-              value: activityDeadline.toLocaleDateString(locale),
+              value: activityDeadline.toLocaleString(locale, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }),
             },
             {
               label: ta("capacity"),

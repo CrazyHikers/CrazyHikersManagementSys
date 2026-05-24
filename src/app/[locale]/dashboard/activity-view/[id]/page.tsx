@@ -137,7 +137,7 @@ export default async function ActivityViewPage({
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("deadline")}</div>
-            <div className="font-medium">{activity.deadline.toLocaleDateString()}</div>
+            <div className="font-medium">{activity.deadline.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</div>
           </CardContent>
         </Card>
         <Card>
