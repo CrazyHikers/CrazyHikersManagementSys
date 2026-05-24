@@ -71,8 +71,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate deadline is in the future
-    const deadlineDate = new Date(deadline + "T23:59:59");
+    // Validate deadline is in the future. The form sends a full ISO
+    // datetime (hour-precise); fall back to end-of-day for any legacy
+    // date-only ("YYYY-MM-DD") caller.
+    const deadlineDate = new Date(
+      /^\d{4}-\d{2}-\d{2}$/.test(deadline) ? `${deadline}T23:59:59` : deadline
+    );
     const activityDate = new Date(date + "T06:00:00");
     const now = new Date();
 

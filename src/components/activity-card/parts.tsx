@@ -149,7 +149,7 @@ export function CardMetaLines({
         {t("activityDate")}: {new Date(date).toLocaleDateString(locale)}
       </div>
       <div>
-        {t("deadline")}: {new Date(deadline).toLocaleDateString(locale)}
+        {t("deadline")}: {new Date(deadline).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
       </div>
       <div>
         {t("managers")}: {managerNames}

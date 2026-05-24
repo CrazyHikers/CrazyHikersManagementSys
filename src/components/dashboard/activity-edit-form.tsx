@@ -41,6 +41,17 @@ type ActivityData = {
 
 type OptionalImageAction = "keep" | "replace" | "clear";
 
+// Format an ISO timestamp into the "YYYY-MM-DDTHH:mm" value a
+// datetime-local input expects, in the browser's local timezone. Safe to
+// compute at render time because the edit form only mounts client-side
+// (behind the `editing` toggle), so there's no SSR hydration mismatch.
+function toLocalDatetimeInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function ActivityEditForm({
   activity,
   onCancel,
@@ -179,7 +190,7 @@ export function ActivityEditForm({
       title: formData.get("title"),
       description: formData.get("description"),
       coverImgId,
-      deadline: new Date(formData.get("deadline") as string + "T23:59:59").toISOString(),
+      deadline: new Date(formData.get("deadline") as string).toISOString(),
       date: new Date(formData.get("date") as string + "T06:00:00").toISOString(),
       capacity: Number(formData.get("capacity")) || 0,
       maximumRegistration: Number(formData.get("maxRegistration")) || 0,
@@ -292,8 +303,8 @@ export function ActivityEditForm({
               <Input
                 id="deadline"
                 name="deadline"
-                type="date"
-                defaultValue={activity.deadline.split("T")[0]}
+                type="datetime-local"
+                defaultValue={toLocalDatetimeInput(activity.deadline)}
                 required
               />
             </div>
