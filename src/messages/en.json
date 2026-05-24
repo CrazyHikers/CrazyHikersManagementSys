@@ -165,9 +165,9 @@
   "events": {
     "matchmaking520": {
       "landing": {
-        "title": "5·20 — Hike & Meet",
+        "title": "Hike & Meet",
         "subtitle": "A trail, a heart, a chance",
-        "intro": "May 20 — a hike like no other. Besides the scenery, you might meet someone.",
+        "intro": "A hike like no other. Besides the scenery, you might meet someone.",
         "privacyTitle": "Privacy Notice",
         "cta": "Sign Up Now",
         "ctaSignIn": "Sign in to register",
@@ -179,7 +179,7 @@
         "step1Body": "A 5-step questionnaire so we get to know you",
         "step2Title": "Wait for confirmation",
         "step2Body": "Managers will balance gender and age band when confirming",
-        "step3Title": "Meet on 5·20",
+        "step3Title": "Meet in person",
         "step3Body": "Meet naturally on the trail"
       },
       "wizard": {
@@ -278,9 +278,9 @@
     },
     "audience520": {
       "landing": {
-        "title": "5·20 — Pavilion side",
+        "title": "Pavilion side",
         "subtitle": "Audience team · here for the moments",
-        "intro": "May 20 — join as audience. No matching, just bring your curiosity and a quiet blessing as we witness this trail-side meet together.",
+        "intro": "Join as audience. No matching, just bring your curiosity and a quiet blessing as we witness this trail-side meet together.",
         "privacyTitle": "Privacy Notice",
         "cta": "Join the audience",
         "ctaSignIn": "Sign in to register",
@@ -292,7 +292,7 @@
         "step1Body": "A short form to reserve your audience seat",
         "step2Title": "Wait for confirmation",
         "step2Body": "Managers will confirm based on on-site capacity",
-        "step3Title": "Meet on 5·20",
+        "step3Title": "Watch it live",
         "step3Body": "Walk along, cheer them on, share the moment"
       },
       "form": {
@@ -332,7 +332,7 @@
       },
       "success": {
         "title": "Your seat is reserved!",
-        "body": "Thanks for joining the audience team. A manager will invite you to the WeChat group shortly — see you on the trail on 5·20.",
+        "body": "Thanks for joining the audience team. A manager will invite you to the WeChat group shortly — see you on the trail.",
         "backHome": "Back to event"
       }
     }

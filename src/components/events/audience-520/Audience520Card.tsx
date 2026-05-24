@@ -45,7 +45,7 @@ function AudiencePoster() {
         aria-hidden
         className="absolute top-2 right-1/2 translate-x-1/2 text-[10px] tracking-[0.3em] uppercase text-[#fdf6ee]/85"
       >
-        5 · 20
+        围观
       </span>
       <PavilionLanternIcon className="h-20 w-24 text-[#fdf6ee] drop-shadow-[0_2px_8px_rgba(40,30,24,0.25)]" />
     </div>
@@ -86,13 +86,13 @@ export function Audience520Card(props: ActivityCardProps) {
         >
           <HangingLantern className="h-10 w-7" />
         </span>
-        {/* "5·20 围观席" angled banner — green CTA gradient so it reads
-            as the audience pair to matchmaking's red banner */}
+        {/* Co-brand angled banner — green CTA gradient so it reads as the
+            audience pair to matchmaking's red banner */}
         <div className="absolute top-3 left-0 z-10 pointer-events-none">
           <span
-            className={`inline-block ${aud520Theme.gradientCta} text-[10px] tracking-[0.25em] uppercase px-3 py-1 rounded-r-full shadow-sm`}
+            className={`inline-block ${aud520Theme.gradientCta} text-[10px] tracking-[0.08em] whitespace-nowrap px-3 py-1 rounded-r-full shadow-sm`}
           >
-            5 · 20 围观席
+            Crazyhikers × 苏黎世表白墙
           </span>
         </div>
 

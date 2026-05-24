@@ -39,7 +39,7 @@ function MatchmakingPoster() {
         aria-hidden
         className="absolute top-2 right-3 text-[10px] tracking-[0.3em] uppercase text-[#fdf6ee]/80"
       >
-        5 · 20
+        相亲
       </span>
       <HeartMountainIcon className="h-20 w-24 text-[#fdf6ee] drop-shadow-[0_2px_8px_rgba(58,40,32,0.2)]" />
     </div>
@@ -78,12 +78,12 @@ export function Matchmaking520Card(props: ActivityCardProps) {
           aria-hidden
           className="absolute -top-2 -right-2 h-9 w-9 text-[#e89898]/40 rotate-12 pointer-events-none"
         />
-        {/* "5·20 限定" angled banner */}
+        {/* Co-brand angled banner */}
         <div className="absolute top-3 left-0 z-10 pointer-events-none">
           <span
-            className={`inline-block ${m520Theme.gradientCta} text-[10px] tracking-[0.25em] uppercase px-3 py-1 rounded-r-full shadow-sm`}
+            className={`inline-block ${m520Theme.gradientCta} text-[10px] tracking-[0.08em] whitespace-nowrap px-3 py-1 rounded-r-full shadow-sm`}
           >
-            5 · 20 限定
+            Crazyhikers × 苏黎世表白墙
           </span>
         </div>
 
