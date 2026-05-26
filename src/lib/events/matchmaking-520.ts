@@ -27,28 +27,33 @@ export const INTERESTED_ACTIVITY_VALUES = [
 ] as const;
 export type InterestedActivity = (typeof INTERESTED_ACTIVITY_VALUES)[number];
 
+// Required: identity, matching constraints, contact, and consent. Everything
+// else is optional — leaders found the long form was driving sign-ups away
+// (members who just want to come hiking shouldn't have to fill in every box).
 export type Matchmaking520FormData = {
+  // required
   name: string;
   gender: Gender;
   orientation: Orientation;
   birthYearMonth: string; // "YYYY-MM"
-  constellation: string;
-  mbti: string;
-  hometown: string;
-  school: string;
-  major: string;
-  stage: Stage;
-  currentCity: string;
-  heightCm: number;
-  weightKg: number;
-  hobbies: string;
-  selfIntro: string;
-  expectations: string;
   wechat: string;
   inSwitzerland: boolean;
-  photoKey: string;
-  interestedActivities: InterestedActivity[];
   consent: true;
+  // optional — absent or empty-string both mean "not filled"
+  constellation?: string;
+  mbti?: string;
+  hometown?: string;
+  school?: string;
+  major?: string;
+  stage?: Stage;
+  currentCity?: string;
+  heightCm?: number;
+  weightKg?: number;
+  hobbies?: string;
+  selfIntro?: string;
+  expectations?: string;
+  photoKey?: string;
+  interestedActivities?: InterestedActivity[];
 };
 
 export type Matchmaking520Patch = Partial<Matchmaking520FormData>;
@@ -63,9 +68,17 @@ export function validateMatchmaking520(
   const errors: ValidationError[] = [];
   const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
 
+  // Required string: non-empty after trim, ≤ max chars.
   const requireStr = (k: keyof Matchmaking520FormData, max = 500) => {
     const v = o[k];
     if (typeof v !== "string" || !v.trim()) errors.push({ field: k, message: "required" });
+    else if (v.length > max) errors.push({ field: k, message: "too_long" });
+  };
+  // Optional string: absent/null/"" treated as not filled; length bound still enforced when present.
+  const optionalStr = (k: keyof Matchmaking520FormData, max = 500) => {
+    const v = o[k];
+    if (v == null || v === "") return;
+    if (typeof v !== "string") errors.push({ field: k, message: "invalid" });
     else if (v.length > max) errors.push({ field: k, message: "too_long" });
   };
   const requireEnum = <T extends readonly string[]>(
@@ -76,13 +89,25 @@ export function validateMatchmaking520(
       errors.push({ field: k, message: "invalid" });
     }
   };
-  const requireNum = (k: keyof Matchmaking520FormData, min: number, max: number) => {
+  const optionalEnum = <T extends readonly string[]>(
+    k: keyof Matchmaking520FormData,
+    allowed: T
+  ) => {
     const v = o[k];
+    if (v == null || v === "") return;
+    if (typeof v !== "string" || !allowed.includes(v as T[number])) {
+      errors.push({ field: k, message: "invalid" });
+    }
+  };
+  const optionalNum = (k: keyof Matchmaking520FormData, min: number, max: number) => {
+    const v = o[k];
+    if (v == null || v === "") return;
     if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max) {
       errors.push({ field: k, message: "out_of_range" });
     }
   };
 
+  // ---- Required (7) ----
   requireStr("name", 100);
   requireEnum("gender", GENDER_VALUES);
   requireEnum("orientation", ORIENTATION_VALUES);
@@ -93,34 +118,80 @@ export function validateMatchmaking520(
     const currentYear = new Date().getFullYear();
     if (y < 1950 || y > currentYear) errors.push({ field: "birthYearMonth", message: "out_of_range" });
   }
-  requireStr("constellation", 20);
-  requireStr("mbti", 10);
-  requireStr("hometown", 100);
-  requireStr("school", 200);
-  requireStr("major", 200);
-  requireEnum("stage", STAGE_VALUES);
-  requireStr("currentCity", 100);
-  requireNum("heightCm", 100, 250);
-  requireNum("weightKg", 30, 200);
-  requireStr("hobbies", 1000);
-  requireStr("selfIntro", 2000);
-  requireStr("expectations", 2000);
   requireStr("wechat", 100);
   if (typeof o.inSwitzerland !== "boolean") errors.push({ field: "inSwitzerland", message: "invalid" });
-  requireStr("photoKey", 500);
-  if (!Array.isArray(o.interestedActivities) || o.interestedActivities.length === 0) {
-    errors.push({ field: "interestedActivities", message: "required" });
-  } else if (
-    !(o.interestedActivities as unknown[]).every((x) =>
-      INTERESTED_ACTIVITY_VALUES.includes(x as InterestedActivity)
-    )
-  ) {
-    errors.push({ field: "interestedActivities", message: "invalid" });
-  }
   if (o.consent !== true) errors.push({ field: "consent", message: "required" });
 
+  // ---- Optional (everything else) ----
+  optionalStr("constellation", 20);
+  optionalStr("mbti", 10);
+  optionalStr("hometown", 100);
+  optionalStr("school", 200);
+  optionalStr("major", 200);
+  optionalEnum("stage", STAGE_VALUES);
+  optionalStr("currentCity", 100);
+  optionalNum("heightCm", 100, 250);
+  optionalNum("weightKg", 30, 200);
+  optionalStr("hobbies", 1000);
+  optionalStr("selfIntro", 2000);
+  optionalStr("expectations", 2000);
+  optionalStr("photoKey", 500);
+  if (o.interestedActivities != null) {
+    if (!Array.isArray(o.interestedActivities)) {
+      errors.push({ field: "interestedActivities", message: "invalid" });
+    } else if (
+      !(o.interestedActivities as unknown[]).every((x) =>
+        INTERESTED_ACTIVITY_VALUES.includes(x as InterestedActivity)
+      )
+    ) {
+      errors.push({ field: "interestedActivities", message: "invalid" });
+    }
+  }
+
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, data: o as Matchmaking520FormData };
+
+  // Normalize: drop empty/absent optional fields so the DB stores a clean blob
+  // and downstream consumers (manager dashboard, balance card) see undefined
+  // rather than empty strings.
+  const pickStr = (k: string): string | undefined => {
+    const v = o[k];
+    return typeof v === "string" && v.trim() ? v.trim() : undefined;
+  };
+  const pickNum = (k: string): number | undefined => {
+    const v = o[k];
+    return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  };
+  const stageRaw = o.stage;
+  const interested = Array.isArray(o.interestedActivities)
+    ? (o.interestedActivities as InterestedActivity[])
+    : undefined;
+  const data: Matchmaking520FormData = {
+    name: (o.name as string).trim(),
+    gender: o.gender as Gender,
+    orientation: o.orientation as Orientation,
+    birthYearMonth: o.birthYearMonth as string,
+    wechat: (o.wechat as string).trim(),
+    inSwitzerland: o.inSwitzerland as boolean,
+    consent: true,
+    constellation: pickStr("constellation"),
+    mbti: pickStr("mbti"),
+    hometown: pickStr("hometown"),
+    school: pickStr("school"),
+    major: pickStr("major"),
+    stage:
+      typeof stageRaw === "string" && (STAGE_VALUES as readonly string[]).includes(stageRaw)
+        ? (stageRaw as Stage)
+        : undefined,
+    currentCity: pickStr("currentCity"),
+    heightCm: pickNum("heightCm"),
+    weightKg: pickNum("weightKg"),
+    hobbies: pickStr("hobbies"),
+    selfIntro: pickStr("selfIntro"),
+    expectations: pickStr("expectations"),
+    photoKey: pickStr("photoKey"),
+    interestedActivities: interested && interested.length > 0 ? interested : undefined,
+  };
+  return { ok: true, data };
 }
 
 // Age band derivation for the manager balance card.

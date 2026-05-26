@@ -32,46 +32,31 @@ export function Step4Intro({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="gap-0.5">
-          {tf("hobbies")}
-          <span className="text-red-500">*</span>
-        </Label>
+        <Label>{tf("hobbies")}</Label>
         <Textarea
           rows={3}
           value={value.hobbies ?? ""}
           onChange={(e) => onChange({ hobbies: e.target.value })}
-          required
         />
       </div>
       <div className="space-y-2">
-        <Label className="gap-0.5">
-          {tf("selfIntro")}
-          <span className="text-red-500">*</span>
-        </Label>
+        <Label>{tf("selfIntro")}</Label>
         <Textarea
           rows={4}
           value={value.selfIntro ?? ""}
           onChange={(e) => onChange({ selfIntro: e.target.value })}
-          required
         />
       </div>
       <div className="space-y-2">
-        <Label className="gap-0.5">
-          {tf("expectations")}
-          <span className="text-red-500">*</span>
-        </Label>
+        <Label>{tf("expectations")}</Label>
         <Textarea
           rows={4}
           value={value.expectations ?? ""}
           onChange={(e) => onChange({ expectations: e.target.value })}
-          required
         />
       </div>
       <div className="space-y-2">
-        <Label className="gap-0.5">
-          {tf("interestedActivities")}
-          <span className="text-red-500">*</span>
-        </Label>
+        <Label>{tf("interestedActivities")}</Label>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {INTERESTED_ACTIVITY_VALUES.map((opt) => (
             <label key={opt} className="flex items-center gap-2 text-sm">
