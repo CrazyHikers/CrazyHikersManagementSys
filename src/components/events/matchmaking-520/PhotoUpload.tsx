@@ -49,10 +49,7 @@ export function PhotoUpload({ value, onChange, publicUrlFor }: Props) {
 
   return (
     <div className="space-y-2">
-      <Label className="gap-0.5">
-        {tf("photo")}
-        <span className="text-red-500">*</span>
-      </Label>
+      <Label>{tf("photo")}</Label>
       <p className="text-xs text-muted-foreground">{tf("photoHelp")}</p>
       <input
         ref={inputRef}

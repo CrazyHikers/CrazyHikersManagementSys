@@ -58,6 +58,9 @@ export function Matchmaking520Wizard({
   }
 
   // Local "can advance" checks per step — server-side does authoritative validation.
+  // Step 1 (basics) and the final step's contact + consent are the only hard
+  // gates; the personality / background / intro steps are all-optional and
+  // can be skipped entirely.
   function canAdvance(): boolean {
     switch (step) {
       case 0:
@@ -69,33 +72,11 @@ export function Matchmaking520Wizard({
           typeof data.inSwitzerland === "boolean"
         );
       case 1:
-        return (
-          !!data.constellation?.trim() &&
-          !!data.mbti?.trim() &&
-          typeof data.heightCm === "number" &&
-          typeof data.weightKg === "number"
-        );
       case 2:
-        return (
-          !!data.hometown?.trim() &&
-          !!data.school?.trim() &&
-          !!data.major?.trim() &&
-          !!data.stage &&
-          !!data.currentCity?.trim()
-        );
       case 3:
-        return (
-          !!data.hobbies?.trim() &&
-          !!data.selfIntro?.trim() &&
-          !!data.expectations?.trim() &&
-          (data.interestedActivities?.length ?? 0) > 0
-        );
+        return true;
       case 4:
-        return (
-          !!data.wechat?.trim() &&
-          !!data.photoKey &&
-          data.consent === true
-        );
+        return !!data.wechat?.trim() && data.consent === true;
       default:
         return false;
     }

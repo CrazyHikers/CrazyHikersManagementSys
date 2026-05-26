@@ -29,46 +29,31 @@ export function Step3Background({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="gap-0.5">
-          {tf("hometown")}
-          <span className="text-red-500">*</span>
-        </Label>
+        <Label>{tf("hometown")}</Label>
         <Input
           value={value.hometown ?? ""}
           onChange={(e) => onChange({ hometown: e.target.value })}
-          required
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="gap-0.5">
-            {tf("school")}
-            <span className="text-red-500">*</span>
-          </Label>
+          <Label>{tf("school")}</Label>
           <Input
             value={value.school ?? ""}
             onChange={(e) => onChange({ school: e.target.value })}
-            required
           />
         </div>
         <div className="space-y-2">
-          <Label className="gap-0.5">
-            {tf("major")}
-            <span className="text-red-500">*</span>
-          </Label>
+          <Label>{tf("major")}</Label>
           <Input
             value={value.major ?? ""}
             onChange={(e) => onChange({ major: e.target.value })}
-            required
           />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="gap-0.5">
-            {tf("stage")}
-            <span className="text-red-500">*</span>
-          </Label>
+          <Label>{tf("stage")}</Label>
           <Select
             value={value.stage ?? ""}
             onValueChange={(v) => onChange({ stage: v as Stage })}
@@ -86,14 +71,10 @@ export function Step3Background({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="gap-0.5">
-            {tf("currentCity")}
-            <span className="text-red-500">*</span>
-          </Label>
+          <Label>{tf("currentCity")}</Label>
           <Input
             value={value.currentCity ?? ""}
             onChange={(e) => onChange({ currentCity: e.target.value })}
-            required
           />
         </div>
       </div>
