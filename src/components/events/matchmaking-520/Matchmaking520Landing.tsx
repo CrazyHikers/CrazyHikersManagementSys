@@ -34,6 +34,8 @@ export async function Matchmaking520Landing({
   const meta = (activity.metadata as Record<string, unknown> | null) ?? {};
   const privacyNotice =
     typeof meta.privacyNotice === "string" ? meta.privacyNotice : "";
+  const qrCodeUrl =
+    typeof meta.qrCodeUrl === "string" ? meta.qrCodeUrl : null;
   const activityDate = new Date(activity.date);
   const activityDeadline = new Date(activity.deadline);
 
@@ -266,6 +268,7 @@ export async function Matchmaking520Landing({
           isOpen={isOpen}
           isFull={isFull}
           publicUrlPrefix={getPublicUrl("").replace(/\/$/, "")}
+          qrCodeUrl={qrCodeUrl}
         />
       </div>
     </main>
