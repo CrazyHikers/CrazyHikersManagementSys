@@ -18,6 +18,7 @@ type Props = {
   isOpen: boolean;
   isFull: boolean;
   publicUrlPrefix: string;
+  qrCodeUrl: string | null;
 };
 
 export function Matchmaking520RegistrationPanel({
@@ -25,6 +26,7 @@ export function Matchmaking520RegistrationPanel({
   isOpen,
   isFull,
   publicUrlPrefix,
+  qrCodeUrl,
 }: Props) {
   const tl = useTranslations("events.matchmaking520.landing");
   const ta = useTranslations("activity");
@@ -167,6 +169,9 @@ export function Matchmaking520RegistrationPanel({
     );
   }
   if (registrationStatus) {
+    const isConfirmed =
+      registrationStatus === "registration_confirmed" ||
+      registrationStatus === "attended";
     return (
       <ShellCard>
         <div className="flex flex-col items-center gap-3">
@@ -187,6 +192,24 @@ export function Matchmaking520RegistrationPanel({
           >
             {tl("ctaRegistered")}
           </p>
+          {isConfirmed && qrCodeUrl ? (
+            <div className="mt-4 w-full border-t border-[#e8c8c0]/60 pt-4">
+              <p
+                className={`${fontDisplayZh} text-base text-[#d4685e] mb-2`}
+              >
+                {ta("qrCode")}
+              </p>
+              <p className="text-sm text-[#6a5447] dark:text-[#d4c4b8] mb-3">
+                {ta("qrCodeHelp")}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrCodeUrl}
+                alt={ta("qrCode")}
+                className="max-w-64 mx-auto rounded-lg"
+              />
+            </div>
+          ) : null}
         </div>
       </ShellCard>
     );
