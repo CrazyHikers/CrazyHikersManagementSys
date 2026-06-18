@@ -25,9 +25,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run opencode
-        uses: anomalyco/opencode/github@latest
+      - name: Install and run opencode
+        run: |
+          curl -fsSLo /tmp/opencode-install.sh https://opencode.ai/install
+          bash /tmp/opencode-install.sh
+          export PATH="$HOME/.opencode/bin:$PATH"
+          opencode github run
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-        with:
-          model: opencode-go/glm-5.2
+          MODEL: opencode-go/glm-5.2
