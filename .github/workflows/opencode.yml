@@ -25,13 +25,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install opencode CLI
+      - name: Install and run opencode
         run: |
-          curl -fsSL https://opencode.ai/install | bash
-          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
-
-      - name: Run opencode
-        run: opencode github run
+          curl -fsSLo /tmp/opencode-install.sh https://opencode.ai/install
+          bash /tmp/opencode-install.sh
+          export PATH="$HOME/.opencode/bin:$PATH"
+          opencode github run
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           MODEL: opencode-go/glm-5.2
