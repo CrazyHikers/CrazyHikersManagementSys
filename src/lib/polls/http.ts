@@ -8,6 +8,8 @@ export function pollErrorStatus(error: unknown): number {
   switch (error.code) {
     case "POLL_NOT_FOUND":
       return 404;
+    case "FORBIDDEN":
+      return 403;
     case "INVALID_DEADLINE_EXTENSION":
       return 400;
     default:

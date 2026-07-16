@@ -1,9 +1,20 @@
 import { db } from "@/lib/db";
 import {
+  aggregatePollResults,
+  canRoleAccessScope,
   effectivePollStatus,
+  validateBallotInput,
   validatePollInput,
 } from "./rules";
-import type { NormalizedPollInput, PollScope, PollStatus } from "./types";
+import type {
+  NormalizedPollInput,
+  PollDetailDTO,
+  PollListItemDTO,
+  PollParticipantDTO,
+  PollScope,
+  PollStatus,
+  UserRole,
+} from "./types";
 
 export type PollServiceErrorCode =
   | "POLL_NOT_FOUND"
@@ -11,7 +22,9 @@ export type PollServiceErrorCode =
   | "POLL_NOT_DRAFT"
   | "POLL_CLOSED"
   | "DEADLINE_PASSED"
-  | "INVALID_DEADLINE_EXTENSION";
+  | "INVALID_DEADLINE_EXTENSION"
+  | "FORBIDDEN"
+  | "ALREADY_VOTED";
 
 export class PollServiceError extends Error {
   constructor(
@@ -91,9 +104,55 @@ type PollTransaction = {
       }>;
     }): Promise<unknown>;
   };
+  pollParticipation: {
+    create(args: {
+      data: { pollId: string; voterEmail: string; votedAt: Date };
+    }): Promise<unknown>;
+  };
+  pollBallot: {
+    create(args: {
+      data: {
+        pollId: string;
+        optionId: string | null;
+        otherText: string | null;
+      };
+    }): Promise<unknown>;
+  };
   auditLog: {
     create(args: { data: AuditData }): Promise<unknown>;
   };
+};
+
+type PollReadRow = StoredPoll & {
+  _count: { participations: number };
+};
+
+type PollReadDatabase = {
+  poll: {
+    findMany(args: Record<string, unknown>): Promise<PollReadRow[]>;
+    findUnique(args: Record<string, unknown>): Promise<PollReadRow | null>;
+  };
+  pollParticipation: {
+    findUnique(args: Record<string, unknown>): Promise<unknown | null>;
+    findMany(args: Record<string, unknown>): Promise<
+      Array<{
+        pollId: string;
+        voterEmail: string;
+        votedAt: Date;
+        voter?: { email: string; name: string };
+      }>
+    >;
+  };
+  pollBallot: {
+    findMany(args: Record<string, unknown>): Promise<
+      Array<{ optionId: string | null; otherText: string | null }>
+    >;
+  };
+};
+
+export type PollActor = {
+  email: string;
+  role: UserRole;
 };
 
 type PollDatabase = {
@@ -106,6 +165,23 @@ const optionOrder = { options: { orderBy: { sortOrder: "asc" as const } } };
 
 function asDatabase(database: unknown): PollDatabase {
   return database as PollDatabase;
+}
+
+function asReadDatabase(database: unknown): PollReadDatabase {
+  return database as PollReadDatabase;
+}
+
+function isPollManager(actor: PollActor): boolean {
+  return actor.role === "admin" || actor.role === "dev";
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
 }
 
 function asObject(input: unknown): Record<string, unknown> {
@@ -321,6 +397,190 @@ export async function closePoll(
     });
     return poll;
   });
+}
+
+export async function submitBallot(
+  database: unknown,
+  actor: PollActor,
+  pollId: string,
+  input: unknown,
+  now = new Date(),
+): Promise<{ ok: true }> {
+  try {
+    await asDatabase(database).$transaction(async (transaction) => {
+      const poll = await transaction.poll.findUnique({
+        where: { id: pollId },
+        include: optionOrder,
+      });
+      if (!poll) {
+        throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
+      }
+      if (!canRoleAccessScope(actor.role, poll.scope)) {
+        throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
+      }
+      if (effectivePollStatus(poll.status, poll.deadline, now) !== "open") {
+        throw new PollServiceError("POLL_CLOSED", "Poll is closed");
+      }
+
+      const ballot = validateBallotInput(input, {
+        allowOther: poll.allowOther,
+        optionIds: poll.options.map((option) => option.id),
+      });
+      await transaction.pollParticipation.create({
+        data: { pollId, voterEmail: actor.email, votedAt: now },
+      });
+      await transaction.pollBallot.create({
+        data: { pollId, ...ballot },
+      });
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new PollServiceError("ALREADY_VOTED", "User already voted");
+    }
+    throw error;
+  }
+
+  return { ok: true };
+}
+
+function toListItem(
+  poll: PollReadRow,
+  status: PollStatus,
+  hasVoted: boolean,
+): PollListItemDTO {
+  return {
+    id: poll.id,
+    title: poll.title,
+    description: poll.description,
+    scope: poll.scope,
+    status,
+    deadline: poll.deadline.toISOString(),
+    participantCount: poll._count.participations,
+    hasVoted,
+    allowOther: poll.allowOther,
+  };
+}
+
+async function votedPollIds(
+  database: PollReadDatabase,
+  actorEmail: string,
+): Promise<Set<string>> {
+  const rows = await database.pollParticipation.findMany({
+    where: { voterEmail: actorEmail },
+    select: { pollId: true },
+  });
+  return new Set(rows.map((row) => row.pollId));
+}
+
+export async function listPolls(
+  database: unknown,
+  actor: PollActor,
+  now = new Date(),
+): Promise<PollListItemDTO[]> {
+  const reader = asReadDatabase(database);
+  const [polls, voted] = await Promise.all([
+    reader.poll.findMany({
+      include: {
+        options: { orderBy: { sortOrder: "asc" } },
+        _count: { select: { participations: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    votedPollIds(reader, actor.email),
+  ]);
+
+  return polls.flatMap((poll) => {
+    const status = effectivePollStatus(poll.status, poll.deadline, now);
+    if (!isPollManager(actor)) {
+      if (status === "draft" || !canRoleAccessScope(actor.role, poll.scope)) {
+        return [];
+      }
+    }
+    return [toListItem(poll, status, voted.has(poll.id))];
+  });
+}
+
+export async function getPollDetail(
+  database: unknown,
+  actor: PollActor,
+  pollId: string,
+  now = new Date(),
+): Promise<PollDetailDTO> {
+  const reader = asReadDatabase(database);
+  const poll = await reader.poll.findUnique({
+    where: { id: pollId },
+    include: {
+      options: { orderBy: { sortOrder: "asc" } },
+      _count: { select: { participations: true } },
+    },
+  });
+  if (!poll) {
+    throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
+  }
+
+  const status = effectivePollStatus(poll.status, poll.deadline, now);
+  if (
+    !isPollManager(actor) &&
+    (status === "draft" || !canRoleAccessScope(actor.role, poll.scope))
+  ) {
+    throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
+  }
+
+  const participation = await reader.pollParticipation.findUnique({
+    where: {
+      pollId_voterEmail: { pollId, voterEmail: actor.email },
+    },
+    select: { pollId: true },
+  });
+  const detail: PollDetailDTO = {
+    ...toListItem(poll, status, !!participation),
+    options: poll.options.map((option) => ({
+      id: option.id,
+      label: option.label,
+      sortOrder: option.sortOrder,
+    })),
+  };
+
+  if (status === "closed") {
+    const ballots = await reader.pollBallot.findMany({
+      where: { pollId },
+      select: { optionId: true, otherText: true },
+    });
+    detail.results = aggregatePollResults(poll.options, ballots);
+  }
+  return detail;
+}
+
+export async function listParticipants(
+  database: unknown,
+  actor: PollActor,
+  pollId: string,
+): Promise<PollParticipantDTO[]> {
+  if (!isPollManager(actor)) {
+    throw new PollServiceError("FORBIDDEN", "Only admins can view participants");
+  }
+  const reader = asReadDatabase(database);
+  const poll = await reader.poll.findUnique({
+    where: { id: pollId },
+    include: {
+      options: { orderBy: { sortOrder: "asc" } },
+      _count: { select: { participations: true } },
+    },
+  });
+  if (!poll) {
+    throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
+  }
+
+  const rows = await reader.pollParticipation.findMany({
+    where: { pollId },
+    include: { voter: { select: { email: true, name: true } } },
+    orderBy: { votedAt: "asc" },
+  });
+  return rows.map((row) => ({
+    email: row.voter?.email ?? row.voterEmail,
+    name: row.voter?.name ?? row.voterEmail,
+    votedAt: row.votedAt.toISOString(),
+  }));
 }
 
 export const prismaPollDatabase = db;

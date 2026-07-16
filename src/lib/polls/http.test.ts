@@ -15,6 +15,8 @@ describe("pollErrorStatus", () => {
     ["POLL_CLOSED", 409],
     ["DEADLINE_PASSED", 409],
     ["INVALID_DEADLINE_EXTENSION", 400],
+    ["FORBIDDEN", 403],
+    ["ALREADY_VOTED", 409],
   ] as const)("maps %s", (code, status) => {
     expect(pollErrorStatus(new PollServiceError(code, "error"))).toBe(status);
   });

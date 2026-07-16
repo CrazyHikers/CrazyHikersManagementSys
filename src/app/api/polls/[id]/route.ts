@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
-import { prismaPollDatabase, updatePoll } from "@/lib/polls/service";
+import { can, getUserRole } from "@/lib/permissions";
+import {
+  getPollDetail,
+  prismaPollDatabase,
+  updatePoll,
+} from "@/lib/polls/service";
 import { pollErrorCode, pollErrorStatus } from "@/lib/polls/http";
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  }
+  if (!can(session, "polls.read")) {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  try {
+    const poll = await getPollDetail(
+      prismaPollDatabase,
+      { email: session.user.email, role: getUserRole(session) },
+      id,
+    );
+    return NextResponse.json({ poll });
+  } catch (error) {
+    const status = pollErrorStatus(error);
+    if (status === 500) console.error("[polls] detail failed", error);
+    return NextResponse.json({ error: pollErrorCode(error) }, { status });
+  }
+}
 
 export async function PATCH(
   request: NextRequest,
