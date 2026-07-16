@@ -48,6 +48,7 @@
     "myActivities": "My Activities",
     "myWaivers": "My Waivers",
     "myProfile": "My Profile",
+    "polls": "Polls",
     "activities": "Activities",
     "members": "Members",
     "managers": "Managers",
@@ -56,6 +57,7 @@
     "allActivities": "All Activities",
     "myFiles": "My Files",
     "internResources": "Intern Files",
+    "createPoll": "Create Poll",
     "settings": "Settings",
     "signIn": "Sign In",
     "signUp": "Sign Up"
@@ -653,6 +655,94 @@
       "expired": "Expired",
       "reason": "Reason"
     },
+    "polls": {
+      "eyebrow": "Collective decisions",
+      "title": "Polls",
+      "subtitle": "Take part in club decisions and share structured feedback. Your ballot remains anonymous.",
+      "empty": "There are no polls available for your current role.",
+      "status": {
+        "draft": "Draft",
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "scope": {
+        "member_plus": "All members+",
+        "manager_plus": "Managers+",
+        "admin": "Admins"
+      },
+      "voted": "Vote recorded",
+      "participantCount": "{count, plural, one {# participant} other {# participants}}",
+      "voteNow": "Vote now",
+      "view": "View poll",
+      "manage": "Manage",
+      "back": "Back to polls",
+      "closes": "Deadline: {date}",
+      "ballotTitle": "Your ballot",
+      "resultsTitle": "Final results",
+      "draftHint": "This poll is still a draft and is only visible to administrators.",
+      "voteRecorded": "Your vote has been recorded",
+      "voteRecordedHint": "Thank you. Ballots are anonymous and cannot be changed after confirmation.",
+      "privacy": "Participation is recorded separately from ballots. Administrators can see who participated, but cannot connect a person to a choice. Results stay hidden until the poll closes.",
+      "votes": "{count, plural, one {# vote} other {# votes}}",
+      "vote": {
+        "choose": "Choose one option",
+        "other": "Other",
+        "otherPlaceholder": "Write your answer (up to 500 characters)",
+        "review": "Review vote",
+        "confirmTitle": "Confirm your anonymous vote",
+        "confirmBody": "Your choice cannot be changed after confirmation.",
+        "cancel": "Go back",
+        "confirm": "Confirm anonymous vote",
+        "submitting": "Submitting...",
+        "success": "Vote recorded",
+        "error": "Could not record vote"
+      }
+    },
+    "pollAdmin": {
+      "eyebrow": "Administrator",
+      "createTitle": "Create a poll",
+      "createSubtitle": "Prepare the question and audience as a draft. Publishing locks the content and sends one notification attempt through each configured channel.",
+      "viewPoll": "View public poll page",
+      "scope": {
+        "member_plus": "All members and above",
+        "manager_plus": "Managers and above",
+        "admin": "Administrators only"
+      },
+      "editor": {
+        "title": "Title",
+        "description": "Context and question",
+        "scope": "Who can vote",
+        "deadline": "Deadline",
+        "options": "Ballot options",
+        "option": "Option {number}",
+        "addOption": "Add option",
+        "removeOption": "Remove option {number}",
+        "approveReject": "Use Approve / Reject",
+        "approve": "Approve",
+        "reject": "Reject",
+        "allowOther": "Allow an Other free-text response",
+        "otherHint": "Participants can enter one response of up to 500 characters.",
+        "save": "Save draft",
+        "saving": "Saving...",
+        "saved": "Draft saved",
+        "error": "Could not save poll"
+      },
+      "actions": {
+        "publish": "Publish poll",
+        "publishConfirm": "Publish this poll? Its question, audience and options will be locked.",
+        "published": "Poll published",
+        "close": "Close now",
+        "closeConfirm": "Close this poll now? It cannot be reopened.",
+        "closed": "Poll closed",
+        "extend": "Extend deadline",
+        "extended": "Deadline extended",
+        "working": "Working...",
+        "error": "Could not update poll"
+      },
+      "participantsTitle": "Participants ({count})",
+      "participantsPrivacy": "This list confirms participation only. Ballots are stored separately and are never shown next to member identities.",
+      "noParticipants": "No one has voted yet."
+    },
     "notifications": {
       "title": "Push Notifications",
       "description": "Get notified on this device when your registration is confirmed and for other important updates.",
@@ -708,6 +798,7 @@
       "prefs": {
         "activity_created": "New activities",
         "registration_confirmed": "My registration is confirmed",
+        "poll_published": "New polls for my role",
         "comanager_invited": "Co-manager invitations I receive",
         "comanager_response": "Co-manager accepts or declines my invitation",
         "confirm_registrations_reminder": "Reminder to confirm registrations after the deadline",

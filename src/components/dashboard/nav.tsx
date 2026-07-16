@@ -20,6 +20,7 @@ const memberItems: NavItem[] = [
   { key: "myActivities", href: "/dashboard/my-activities" },
   { key: "myWaivers", href: "/dashboard/my-waivers" },
   { key: "myProfile", href: "/dashboard/my-profile" },
+  { key: "polls", href: "/dashboard/polls" },
 ];
 
 const managerItems: NavItem[] = [
@@ -32,6 +33,7 @@ const internResourcesItem: NavItem = {
 };
 
 const adminItems: NavItem[] = [
+  { key: "createPoll", href: "/dashboard/polls/new" },
   { key: "allActivities", href: "/dashboard/all-activities" },
   { key: "members", href: "/dashboard/members" },
   { key: "waivers", href: "/dashboard/members/waivers" },

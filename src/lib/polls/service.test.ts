@@ -152,7 +152,6 @@ describe("poll lifecycle service", () => {
       fake.database,
       "admin@example.com",
       validInput,
-      NOW,
     );
 
     expect(poll.options.map((option) => option.sortOrder)).toEqual([0, 1]);

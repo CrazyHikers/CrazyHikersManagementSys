@@ -201,7 +201,6 @@ export async function createPoll(
   database: unknown,
   actorEmail: string,
   input: unknown,
-  _now = new Date(),
 ): Promise<StoredPoll> {
   const normalized = validatePollInput(input);
 
