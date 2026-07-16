@@ -56,6 +56,8 @@ model User {
   discordSubscription   DiscordSubscription?
   discordLinkTokens     DiscordLinkToken[]
   internResources       InternResource[]
+  createdPolls          Poll[]                 @relation("PollCreator")
+  pollParticipations    PollParticipation[]    @relation("PollVoter")
 
   @@index([role])
   @@map("users")
@@ -326,6 +328,90 @@ model PromotionVote {
 }
 
 // ============================================================================
+// MEMBER POLLS
+// ============================================================================
+
+enum PollScope {
+  member_plus
+  manager_plus
+  admin
+}
+
+enum PollStatus {
+  draft
+  open
+  closed
+}
+
+model Poll {
+  id             String     @id @default(uuid())
+  title          String
+  description    String     @default("")
+  scope          PollScope
+  status         PollStatus @default(draft)
+  allowOther     Boolean    @default(false) @map("allow_other")
+  deadline       DateTime
+  createdByEmail String     @map("created_by_email")
+  publishedAt    DateTime?  @map("published_at")
+  closedAt       DateTime?  @map("closed_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  creator        User                @relation("PollCreator", fields: [createdByEmail], references: [email], onDelete: Restrict)
+  options        PollOption[]
+  participations PollParticipation[]
+  ballots        PollBallot[]
+
+  @@index([scope])
+  @@index([status])
+  @@index([deadline])
+  @@index([createdByEmail])
+  @@map("polls")
+}
+
+model PollOption {
+  id        String @id @default(uuid())
+  pollId    String @map("poll_id")
+  label     String
+  sortOrder Int    @map("sort_order")
+
+  poll    Poll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  ballots PollBallot[]
+
+  @@unique([pollId, sortOrder])
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+model PollParticipation {
+  pollId     String   @map("poll_id")
+  voterEmail String   @map("voter_email")
+  votedAt    DateTime @default(now()) @map("voted_at")
+
+  poll  Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  voter User @relation("PollVoter", fields: [voterEmail], references: [email], onDelete: Cascade)
+
+  @@id([pollId, voterEmail])
+  @@index([voterEmail])
+  @@index([votedAt])
+  @@map("poll_participations")
+}
+
+model PollBallot {
+  id        String  @id @default(uuid())
+  pollId    String  @map("poll_id")
+  optionId  String? @map("option_id")
+  otherText String? @map("other_text")
+
+  poll   Poll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption? @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@index([pollId])
+  @@index([optionId])
+  @@map("poll_ballots")
+}
+
+// ============================================================================
 // SYSTEM
 // ============================================================================
 
@@ -333,6 +419,7 @@ enum AuditEntityType {
   user
   activity
   registration
+  poll
 }
 
 enum AuditAction {
