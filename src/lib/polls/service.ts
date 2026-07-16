@@ -536,7 +536,14 @@ export async function submitBallot(
   pollId: string,
   input: unknown,
   now = new Date(),
-): Promise<{ ok: true }> {
+): Promise<{
+  ok: true;
+  settlement?: {
+    changed: boolean;
+    outcome: PollOutcome | null;
+    promotionId?: string;
+  };
+}> {
   let shouldSettle = false;
   try {
     shouldSettle = await asDatabase(database).$transaction(async (transaction) => {
@@ -593,11 +600,11 @@ export async function submitBallot(
     throw error;
   }
 
-  if (shouldSettle) {
-    await settlePoll(database, pollId, now);
-  }
+  const settlement = shouldSettle
+    ? await settlePoll(database, pollId, now)
+    : undefined;
 
-  return { ok: true };
+  return { ok: true, ...(settlement ? { settlement } : {}) };
 }
 
 function toListItem(

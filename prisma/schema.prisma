@@ -302,33 +302,15 @@ model PromotionRequest {
   requestedAt     DateTime        @default(now()) @map("requested_at")
   expiresAt       DateTime        @map("expires_at")
   resolvedAt      DateTime?       @map("resolved_at")
-  pollId          String?         @unique @map("poll_id")
+  pollId          String          @unique @map("poll_id")
 
-  user  User            @relation(fields: [userEmail], references: [email], onDelete: Cascade)
-  votes PromotionVote[]
-  poll  Poll?           @relation(fields: [pollId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Restrict)
 
   @@index([userEmail])
   @@index([status])
   @@index([expiresAt])
   @@map("promotion_requests")
-}
-
-model PromotionVote {
-  id         String    @id @default(uuid())
-  requestId  String    @map("request_id")
-  voterEmail String    @map("voter_email")
-  approved   Boolean?
-  reason     String?
-  votedAt    DateTime? @map("voted_at")
-  token      String    @unique
-
-  request PromotionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-
-  @@unique([requestId, voterEmail])
-  @@index([requestId])
-  @@index([token])
-  @@map("promotion_votes")
 }
 
 // ============================================================================

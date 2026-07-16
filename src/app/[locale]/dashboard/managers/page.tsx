@@ -28,13 +28,6 @@ type Manager = {
   } | null;
 };
 
-type PromotionVote = {
-  id: string;
-  voterEmail: string;
-  approved: boolean | null;
-  reason: string | null;
-};
-
 type PendingReview = {
   id: string;
   type: string;
@@ -42,7 +35,11 @@ type PendingReview = {
   applicationText: string | null;
   requestedAt: string;
   user: { name: string; email: string };
-  votes: PromotionVote[];
+  poll: {
+    id: string;
+    outcome: "passed" | "rejected" | "no_quorum" | null;
+    _count: { electorate: number; participations: number };
+  };
 };
 
 type ManagerSortKey = "name" | "email" | "tag" | "status" | "kpi";
@@ -153,8 +150,6 @@ export default function ManagersPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {pendingReviews.map((pr) => {
-              const castVotes = pr.votes.filter((v) => v.approved !== null);
-              const approvedVotes = castVotes.filter((v) => v.approved);
               return (
                 <div
                   key={pr.id}
@@ -176,8 +171,14 @@ export default function ManagersPage() {
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Votes: {approvedVotes.length} approved / {castVotes.length} cast / {pr.votes.length} total
+                    Vote passed: {pr.poll._count.participations} cast / {pr.poll._count.electorate} eligible
                   </div>
+                  <Link
+                    href={`/dashboard/polls/${pr.poll.id}`}
+                    className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
+                  >
+                    View poll details
+                  </Link>
                   {pr.applicationText && (
                     <div className="text-sm">
                       <span className="font-medium">Application:</span>{" "}

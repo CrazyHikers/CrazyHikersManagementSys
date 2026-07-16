@@ -99,7 +99,8 @@ CREATE TABLE "public"."poll_ballots" (
 );
 
 -- AlterTable
-ALTER TABLE "public"."promotion_requests" ADD COLUMN "poll_id" TEXT;
+DROP TABLE "public"."promotion_votes";
+ALTER TABLE "public"."promotion_requests" ADD COLUMN "poll_id" TEXT NOT NULL;
 
 -- CreateIndex
 CREATE INDEX "polls_scope_idx" ON "public"."polls"("scope");
