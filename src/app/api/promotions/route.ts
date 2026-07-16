@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
 import { createPromotionWithPoll } from "@/lib/promotions/poll-adapter";
+import {
+  notifyPublishedPoll,
+  type PublishedPoll,
+} from "@/lib/polls/notifications";
 import type { PromotionStatus } from "@/generated/prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -228,9 +232,20 @@ export async function POST(request: NextRequest) {
       approvalRatioPercent,
       applicationText,
     });
+    const publishedPoll = poll as PublishedPoll;
+    after(async () => {
+      try {
+        await notifyPublishedPoll(publishedPoll);
+      } catch (error) {
+        console.error(
+          "[promotions] poll notification audience lookup failed",
+          error,
+        );
+      }
+    });
     return NextResponse.json({
       id: (promotionRequest as { id: string }).id,
-      pollId: (poll as { id: string }).id,
+      pollId: publishedPoll.id,
     });
   } catch (error) {
     console.error("Create promotion request error:", error);
