@@ -30,7 +30,8 @@ export default async function NewPollPage() {
         scope: t("editor.scope"),
         scopes: {
           member_plus: t("scope.member_plus"),
-          manager_plus: t("scope.manager_plus"),
+          intern_manager_plus: t("scope.intern_manager_plus"),
+          qualified_manager_plus: t("scope.qualified_manager_plus"),
           admin: t("scope.admin"),
         },
         deadline: t("editor.deadline"),

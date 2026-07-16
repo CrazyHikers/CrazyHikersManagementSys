@@ -20,7 +20,12 @@ export async function GET(
   try {
     const participants = await listParticipants(
       prismaPollDatabase,
-      { email: session.user.email, role: getUserRole(session) },
+      {
+        email: session.user.email,
+        role: getUserRole(session),
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
+      },
       id,
     );
     return NextResponse.json({ participants });

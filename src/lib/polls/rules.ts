@@ -1,17 +1,39 @@
 import type {
   NormalizedBallotInput,
   NormalizedPollInput,
+  PollActor,
+  PollAudienceMode,
+  PollFeedbackPolicy,
+  PollKind,
   PollResultsDTO,
   PollScope,
   PollStatus,
   UserRole,
 } from "./types";
 
-const POLL_SCOPES: PollScope[] = ["member_plus", "manager_plus", "admin"];
+const POLL_SCOPES: PollScope[] = [
+  "member_plus",
+  "intern_manager_plus",
+  "qualified_manager_plus",
+  "admin",
+];
+
+const POLL_KINDS: PollKind[] = ["choice", "approval"];
+const POLL_AUDIENCE_MODES: PollAudienceMode[] = [
+  "role_scope",
+  "explicit_list",
+];
+const POLL_FEEDBACK_POLICIES: PollFeedbackPolicy[] = [
+  "disabled",
+  "optional",
+  "required_on_reject",
+  "required",
+];
 
 const ROLES_BY_SCOPE: Record<PollScope, UserRole[]> = {
   member_plus: ["member", "manager", "admin", "dev"],
-  manager_plus: ["manager", "admin", "dev"],
+  intern_manager_plus: ["manager", "admin", "dev"],
+  qualified_manager_plus: ["manager", "admin", "dev"],
   admin: ["admin", "dev"],
 };
 
@@ -34,11 +56,15 @@ export class PollValidationError extends Error {
   }
 }
 
-export function canRoleAccessScope(
-  role: UserRole,
+export function canActorAccessScope(
+  actor: Pick<PollActor, "role" | "isIntern">,
   scope: PollScope,
 ): boolean {
-  return ROLES_BY_SCOPE[scope].includes(role);
+  if (actor.role === "admin" || actor.role === "dev") return true;
+  if (actor.role === "member") return scope === "member_plus";
+  if (scope === "admin") return false;
+  if (scope === "qualified_manager_plus") return !actor.isIntern;
+  return true;
 }
 
 export function rolesForPollScope(scope: PollScope): UserRole[] {
@@ -82,6 +108,19 @@ function normalizedText(
   return text;
 }
 
+function normalizedBasisPoints(value: unknown, field: string): number {
+  const threshold = value ?? 0;
+  if (
+    typeof threshold !== "number" ||
+    !Number.isInteger(threshold) ||
+    threshold < 0 ||
+    threshold > 10_000
+  ) {
+    throw new PollValidationError(field, `${field} must be 0-10000`);
+  }
+  return threshold;
+}
+
 export function validatePollInput(input: unknown): NormalizedPollInput {
   const value = asRecord(input);
   const title = normalizedText(value.title, "title", POLL_LIMITS.title);
@@ -92,6 +131,25 @@ export function validatePollInput(input: unknown): NormalizedPollInput {
     true,
   );
 
+  const kind = (value.kind ?? "choice") as PollKind;
+  if (typeof kind !== "string" || !POLL_KINDS.includes(kind)) {
+    throw new PollValidationError("kind", "kind is invalid");
+  }
+
+  const audienceMode = (value.audienceMode ?? "role_scope") as PollAudienceMode;
+  if (
+    typeof audienceMode !== "string" ||
+    !POLL_AUDIENCE_MODES.includes(audienceMode)
+  ) {
+    throw new PollValidationError("audienceMode", "audienceMode is invalid");
+  }
+  if (audienceMode !== "role_scope") {
+    throw new PollValidationError(
+      "audienceMode",
+      "explicit electorates must be configured by the system",
+    );
+  }
+
   if (
     typeof value.scope !== "string" ||
     !POLL_SCOPES.includes(value.scope as PollScope)
@@ -99,6 +157,62 @@ export function validatePollInput(input: unknown): NormalizedPollInput {
     throw new PollValidationError("scope", "scope is invalid");
   }
   const scope = value.scope as PollScope;
+
+  const anonymous = value.anonymous ?? true;
+  if (typeof anonymous !== "boolean") {
+    throw new PollValidationError("anonymous", "anonymous must be a boolean");
+  }
+
+  const feedbackPolicy = (value.feedbackPolicy ??
+    "disabled") as PollFeedbackPolicy;
+  if (
+    typeof feedbackPolicy !== "string" ||
+    !POLL_FEEDBACK_POLICIES.includes(feedbackPolicy)
+  ) {
+    throw new PollValidationError(
+      "feedbackPolicy",
+      "feedbackPolicy is invalid",
+    );
+  }
+
+  const autoSettle = value.autoSettle ?? false;
+  if (typeof autoSettle !== "boolean") {
+    throw new PollValidationError("autoSettle", "autoSettle must be a boolean");
+  }
+
+  const minimumParticipationBps = normalizedBasisPoints(
+    value.minimumParticipationBps,
+    "minimumParticipationBps",
+  );
+  const minimumApprovalBps = normalizedBasisPoints(
+    value.minimumApprovalBps,
+    "minimumApprovalBps",
+  );
+
+  if (kind === "choice") {
+    if (feedbackPolicy !== "disabled") {
+      throw new PollValidationError(
+        "feedbackPolicy",
+        "choice polls do not collect ballot feedback",
+      );
+    }
+    if (autoSettle) {
+      throw new PollValidationError(
+        "autoSettle",
+        "choice polls cannot settle automatically",
+      );
+    }
+    if (minimumParticipationBps !== 0 || minimumApprovalBps !== 0) {
+      const field =
+        minimumParticipationBps !== 0
+          ? "minimumParticipationBps"
+          : "minimumApprovalBps";
+      throw new PollValidationError(
+        field,
+        "choice polls cannot configure settlement thresholds",
+      );
+    }
+  }
 
   if (typeof value.deadline !== "string") {
     throw new PollValidationError("deadline", "deadline is required");
@@ -133,10 +247,32 @@ export function validatePollInput(input: unknown): NormalizedPollInput {
     throw new PollValidationError("options", "options must be unique");
   }
 
+  if (kind === "approval") {
+    if (value.allowOther) {
+      throw new PollValidationError(
+        "allowOther",
+        "approval polls cannot accept other responses",
+      );
+    }
+    if (options.length !== 2) {
+      throw new PollValidationError(
+        "options",
+        "approval polls require approve and reject options",
+      );
+    }
+  }
+
   return {
     title,
     description,
+    kind,
+    audienceMode,
     scope,
+    anonymous,
+    feedbackPolicy,
+    autoSettle,
+    minimumParticipationBps,
+    minimumApprovalBps,
     deadline,
     allowOther: value.allowOther,
     options,

@@ -666,7 +666,8 @@
       },
       "scope": {
         "member_plus": "所有会员+",
-        "manager_plus": "领队+",
+        "intern_manager_plus": "见习领队+",
+        "qualified_manager_plus": "正式领队+",
         "admin": "管理员"
       },
       "voted": "已投票",
@@ -704,7 +705,8 @@
       "viewPoll": "查看投票页面",
       "scope": {
         "member_plus": "所有会员及以上",
-        "manager_plus": "领队及以上",
+        "intern_manager_plus": "见习领队及以上",
+        "qualified_manager_plus": "正式领队及以上",
         "admin": "仅管理员"
       },
       "editor": {

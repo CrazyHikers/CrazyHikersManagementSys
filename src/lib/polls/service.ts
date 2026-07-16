@@ -1,19 +1,19 @@
 import { db } from "@/lib/db";
 import {
   aggregatePollResults,
-  canRoleAccessScope,
+  canActorAccessScope,
   effectivePollStatus,
   validateBallotInput,
   validatePollInput,
 } from "./rules";
 import type {
   NormalizedPollInput,
+  PollActor,
   PollDetailDTO,
   PollListItemDTO,
   PollParticipantDTO,
   PollScope,
   PollStatus,
-  UserRole,
 } from "./types";
 
 export type PollServiceErrorCode =
@@ -148,11 +148,6 @@ type PollReadDatabase = {
       Array<{ optionId: string | null; otherText: string | null }>
     >;
   };
-};
-
-export type PollActor = {
-  email: string;
-  role: UserRole;
 };
 
 type PollDatabase = {
@@ -414,7 +409,7 @@ export async function submitBallot(
       if (!poll) {
         throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
       }
-      if (!canRoleAccessScope(actor.role, poll.scope)) {
+      if (!canActorAccessScope(actor, poll.scope)) {
         throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
       }
       if (effectivePollStatus(poll.status, poll.deadline, now) !== "open") {
@@ -491,7 +486,7 @@ export async function listPolls(
   return polls.flatMap((poll) => {
     const status = effectivePollStatus(poll.status, poll.deadline, now);
     if (!isPollManager(actor)) {
-      if (status === "draft" || !canRoleAccessScope(actor.role, poll.scope)) {
+      if (status === "draft" || !canActorAccessScope(actor, poll.scope)) {
         return [];
       }
     }
@@ -520,7 +515,7 @@ export async function getPollDetail(
   const status = effectivePollStatus(poll.status, poll.deadline, now);
   if (
     !isPollManager(actor) &&
-    (status === "draft" || !canRoleAccessScope(actor.role, poll.scope))
+    (status === "draft" || !canActorAccessScope(actor, poll.scope))
   ) {
     throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
   }

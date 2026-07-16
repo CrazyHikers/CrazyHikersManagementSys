@@ -15,7 +15,8 @@ const copy = {
   scope: "Who can vote",
   scopes: {
     member_plus: "All members and above",
-    manager_plus: "Managers and above",
+    intern_manager_plus: "Intern managers and above",
+    qualified_manager_plus: "Qualified managers and above",
     admin: "Admins only",
   },
   deadline: "Deadline",
@@ -59,7 +60,7 @@ describe("PollEditor", () => {
       target: { value: "Policy details" },
     });
     fireEvent.change(screen.getByLabelText("Who can vote"), {
-      target: { value: "manager_plus" },
+      target: { value: "intern_manager_plus" },
     });
     fireEvent.change(screen.getByLabelText("Deadline"), {
       target: { value: "2099-07-30T12:00" },
@@ -73,7 +74,7 @@ describe("PollEditor", () => {
     expect(JSON.parse(String(request?.body))).toMatchObject({
       title: "Adopt the policy",
       description: "Policy details",
-      scope: "manager_plus",
+      scope: "intern_manager_plus",
       allowOther: true,
       options: ["Approve", "Reject"],
     });

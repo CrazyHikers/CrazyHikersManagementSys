@@ -2,24 +2,33 @@ import { describe, expect, it } from "vitest";
 import {
   PollValidationError,
   aggregatePollResults,
-  canRoleAccessScope,
+  canActorAccessScope,
   effectivePollStatus,
   validateBallotInput,
   validatePollInput,
 } from "./rules";
 
-describe("canRoleAccessScope", () => {
+describe("canActorAccessScope", () => {
+  const member = { role: "member", isIntern: false } as const;
+  const intern = { role: "manager", isIntern: true } as const;
+  const qualified = { role: "manager", isIntern: false } as const;
+  const admin = { role: "admin", isIntern: false } as const;
+  const dev = { role: "dev", isIntern: false } as const;
+
   it.each([
-    ["member", "member_plus", true],
-    ["member", "manager_plus", false],
-    ["member", "admin", false],
-    ["manager", "member_plus", true],
-    ["manager", "manager_plus", true],
-    ["manager", "admin", false],
-    ["admin", "admin", true],
-    ["dev", "admin", true],
-  ] as const)("maps %s to %s", (role, scope, expected) => {
-    expect(canRoleAccessScope(role, scope)).toBe(expected);
+    [member, "member_plus", true],
+    [member, "intern_manager_plus", false],
+    [intern, "member_plus", true],
+    [intern, "intern_manager_plus", true],
+    [intern, "qualified_manager_plus", false],
+    [qualified, "intern_manager_plus", true],
+    [qualified, "qualified_manager_plus", true],
+    [qualified, "admin", false],
+    [admin, "qualified_manager_plus", true],
+    [admin, "admin", true],
+    [dev, "admin", true],
+  ] as const)("maps actor %# to %s", (actor, scope, expected) => {
+    expect(canActorAccessScope(actor, scope)).toBe(expected);
   });
 });
 
@@ -57,7 +66,14 @@ describe("validatePollInput", () => {
   const validInput = {
     title: " Policy ",
     description: " Details ",
+    kind: "choice",
+    audienceMode: "role_scope",
     scope: "member_plus",
+    anonymous: true,
+    feedbackPolicy: "disabled",
+    autoSettle: false,
+    minimumParticipationBps: 0,
+    minimumApprovalBps: 0,
     deadline: "2026-07-20T12:00:00.000Z",
     allowOther: true,
     options: [" Yes ", "No"],
@@ -67,10 +83,42 @@ describe("validatePollInput", () => {
     expect(validatePollInput(validInput)).toEqual({
       title: "Policy",
       description: "Details",
+      kind: "choice",
+      audienceMode: "role_scope",
       scope: "member_plus",
+      anonymous: true,
+      feedbackPolicy: "disabled",
+      autoSettle: false,
+      minimumParticipationBps: 0,
+      minimumApprovalBps: 0,
       deadline: new Date("2026-07-20T12:00:00.000Z"),
       allowOther: true,
       options: ["Yes", "No"],
+    });
+  });
+
+  it("accepts approval settlement and feedback configuration", () => {
+    expect(
+      validatePollInput({
+        ...validInput,
+        kind: "approval",
+        scope: "qualified_manager_plus",
+        anonymous: false,
+        allowOther: false,
+        feedbackPolicy: "required_on_reject",
+        autoSettle: true,
+        minimumParticipationBps: 5000,
+        minimumApprovalBps: 6700,
+        options: ["Approve", "Reject"],
+      }),
+    ).toMatchObject({
+      kind: "approval",
+      scope: "qualified_manager_plus",
+      anonymous: false,
+      feedbackPolicy: "required_on_reject",
+      autoSettle: true,
+      minimumParticipationBps: 5000,
+      minimumApprovalBps: 6700,
     });
   });
 
@@ -84,6 +132,8 @@ describe("validatePollInput", () => {
     [{ ...validInput, options: Array.from({ length: 11 }, (_, i) => `O${i}`) }, "options"],
     [{ ...validInput, options: ["Same", " same "] }, "options"],
     [{ ...validInput, options: ["A", "x".repeat(201)] }, "options"],
+    [{ ...validInput, autoSettle: true }, "autoSettle"],
+    [{ ...validInput, minimumApprovalBps: 10_001 }, "minimumApprovalBps"],
   ])("rejects an invalid %s input", (input, field) => {
     expect(() => validatePollInput(input)).toThrowError(
       expect.objectContaining({ field }),

@@ -29,7 +29,12 @@ export default async function PollsPage({
   if (!email) return null;
   const role = getUserRole(session) as UserRole;
   const polls = (
-    await listPolls(prismaPollDatabase, { email, role })
+    await listPolls(prismaPollDatabase, {
+      email,
+      role,
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
+    })
   ).sort((left, right) => rank(left) - rank(right));
   const isAdmin = can(session, "polls.manage");
   const formatDate = new Intl.DateTimeFormat(locale, {

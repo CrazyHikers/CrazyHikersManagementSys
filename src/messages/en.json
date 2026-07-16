@@ -667,7 +667,8 @@
       },
       "scope": {
         "member_plus": "All members+",
-        "manager_plus": "Managers+",
+        "intern_manager_plus": "Intern managers+",
+        "qualified_manager_plus": "Qualified managers+",
         "admin": "Admins"
       },
       "voted": "Vote recorded",
@@ -705,7 +706,8 @@
       "viewPoll": "View public poll page",
       "scope": {
         "member_plus": "All members and above",
-        "manager_plus": "Managers and above",
+        "intern_manager_plus": "Intern managers and above",
+        "qualified_manager_plus": "Qualified managers and above",
         "admin": "Administrators only"
       },
       "editor": {

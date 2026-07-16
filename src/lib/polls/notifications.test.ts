@@ -8,7 +8,8 @@ import { notifyPollAudience } from "./notifications";
 describe("notifyPollAudience", () => {
   it.each([
     ["member_plus", ["member", "manager", "admin", "dev"]],
-    ["manager_plus", ["manager", "admin", "dev"]],
+    ["intern_manager_plus", ["manager", "admin", "dev"]],
+    ["qualified_manager_plus", ["manager", "admin", "dev"]],
     ["admin", ["admin", "dev"]],
   ] as const)("selects %s recipients by current role", async (scope, roles) => {
     const findUsers = vi.fn(async () => [

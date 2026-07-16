@@ -154,7 +154,12 @@ export function PollEditor({
                 className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
               >
                 <option value="member_plus">{copy.scopes.member_plus}</option>
-                <option value="manager_plus">{copy.scopes.manager_plus}</option>
+                <option value="intern_manager_plus">
+                  {copy.scopes.intern_manager_plus}
+                </option>
+                <option value="qualified_manager_plus">
+                  {copy.scopes.qualified_manager_plus}
+                </option>
                 <option value="admin">{copy.scopes.admin}</option>
               </select>
             </div>

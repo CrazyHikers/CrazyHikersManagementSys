@@ -10,9 +10,21 @@ import {
 } from "./service";
 
 const NOW = new Date("2026-07-16T12:00:00.000Z");
-const member = { email: "member@example.com", role: "member" as const };
-const manager = { email: "manager@example.com", role: "manager" as const };
-const admin = { email: "admin@example.com", role: "admin" as const };
+const member = {
+  email: "member@example.com",
+  role: "member" as const,
+  isIntern: false,
+};
+const manager = {
+  email: "manager@example.com",
+  role: "manager" as const,
+  isIntern: true,
+};
+const admin = {
+  email: "admin@example.com",
+  role: "admin" as const,
+  isIntern: false,
+};
 
 function poll(overrides: Record<string, unknown> = {}) {
   return {
@@ -183,7 +195,7 @@ describe("submitBallot", () => {
   });
 
   it("checks the actor's current role against scope", async () => {
-    const fake = makeVotingDatabase([poll({ scope: "manager_plus" })]);
+    const fake = makeVotingDatabase([poll({ scope: "intern_manager_plus" })]);
     await expect(
       submitBallot(fake.database, member, "p1", { optionId: "o1" }, NOW),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -228,7 +240,7 @@ describe("poll reads", () => {
   it("filters non-admin lists by dynamic scope and hides drafts", async () => {
     const fake = makeVotingDatabase([
       poll({ id: "member-open" }),
-      poll({ id: "manager-open", scope: "manager_plus" }),
+      poll({ id: "manager-open", scope: "intern_manager_plus" }),
       poll({ id: "draft", status: "draft" }),
     ]);
     expect((await listPolls(fake.database, member, NOW)).map((item) => item.id)).toEqual([

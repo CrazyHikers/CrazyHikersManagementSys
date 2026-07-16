@@ -23,7 +23,11 @@ type FakePoll = {
   id: string;
   title: string;
   description: string;
-  scope: "member_plus" | "manager_plus" | "admin";
+  scope:
+    | "member_plus"
+    | "intern_manager_plus"
+    | "qualified_manager_plus"
+    | "admin";
   status: "draft" | "open" | "closed";
   allowOther: boolean;
   deadline: Date;

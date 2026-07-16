@@ -30,6 +30,8 @@ export default async function PollDetailPage({
     poll = await getPollDetail(prismaPollDatabase, {
       email,
       role: getUserRole(session) as UserRole,
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
     }, id);
   } catch {
     notFound();

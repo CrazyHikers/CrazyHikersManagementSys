@@ -31,6 +31,8 @@ export default async function ManagePollPage({
   const actor = {
     email: session.user.email,
     role: getUserRole(session) as UserRole,
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
   };
 
   let poll;
@@ -58,7 +60,8 @@ export default async function ManagePollPage({
     scope: t("editor.scope"),
     scopes: {
       member_plus: t("scope.member_plus"),
-      manager_plus: t("scope.manager_plus"),
+      intern_manager_plus: t("scope.intern_manager_plus"),
+      qualified_manager_plus: t("scope.qualified_manager_plus"),
       admin: t("scope.admin"),
     },
     deadline: t("editor.deadline"),
