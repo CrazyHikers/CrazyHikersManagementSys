@@ -21,6 +21,7 @@ import type {
   PollScope,
   PollStatus,
 } from "./types";
+import { pollScopeUserWhere, settlePoll } from "./settlement";
 
 export type PollServiceErrorCode =
   | "POLL_NOT_FOUND"
@@ -135,6 +136,7 @@ type PollTransaction = {
     create(args: {
       data: { pollId: string; voterEmail: string; votedAt: Date };
     }): Promise<unknown>;
+    count(args: Record<string, unknown>): Promise<number>;
   };
   pollBallot: {
     create(args: {
@@ -149,6 +151,10 @@ type PollTransaction = {
   };
   pollElectorate: {
     findUnique(args: Record<string, unknown>): Promise<unknown | null>;
+    count(args: Record<string, unknown>): Promise<number>;
+  };
+  user: {
+    count(args: Record<string, unknown>): Promise<number>;
   };
   auditLog: {
     create(args: { data: AuditData }): Promise<unknown>;
@@ -368,6 +374,12 @@ export async function updatePoll(
     if (!existing) {
       throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
     }
+    if (existing.creatorType === "system") {
+      throw new PollServiceError(
+        "FORBIDDEN",
+        "System polls cannot be edited",
+      );
+    }
 
     const status = effectivePollStatus(existing.status, existing.deadline, now);
     if (status === "closed") {
@@ -457,7 +469,7 @@ export async function closePoll(
   pollId: string,
   now = new Date(),
 ): Promise<StoredPoll> {
-  return asDatabase(database).$transaction(async (transaction) => {
+  const result = await asDatabase(database).$transaction(async (transaction) => {
     const existing = await transaction.poll.findUnique({
       where: { id: pollId },
       include: optionOrder,
@@ -465,8 +477,17 @@ export async function closePoll(
     if (!existing) {
       throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
     }
+    if (existing.creatorType === "system") {
+      throw new PollServiceError(
+        "FORBIDDEN",
+        "System polls are controlled by automatic settlement",
+      );
+    }
     if (effectivePollStatus(existing.status, existing.deadline, now) !== "open") {
       throw new PollServiceError("POLL_CLOSED", "Poll is not open");
+    }
+    if (existing.kind === "approval" && existing.autoSettle) {
+      return { poll: existing, settle: true };
     }
     const poll = await transaction.poll.update({
       where: { id: pollId },
@@ -481,6 +502,30 @@ export async function closePoll(
       oldValues: { status: "open" },
       newValues: { status: "closed" },
     });
+    return { poll, settle: false };
+  });
+  if (!result.settle) return result.poll;
+
+  const settlement = await settlePoll(database, pollId, now);
+  if (!settlement.changed) {
+    throw new PollServiceError("POLL_CLOSED", "Poll could not be settled");
+  }
+  return asDatabase(database).$transaction(async (transaction) => {
+    const poll = await transaction.poll.findUnique({
+      where: { id: pollId },
+      include: optionOrder,
+    });
+    if (!poll) {
+      throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
+    }
+    await audit(transaction, {
+      entityType: "poll",
+      entityId: pollId,
+      action: "status_change",
+      performedBy: actorEmail,
+      oldValues: { status: "open" },
+      newValues: { status: "closed", outcome: settlement.outcome },
+    });
     return poll;
   });
 }
@@ -492,8 +537,9 @@ export async function submitBallot(
   input: unknown,
   now = new Date(),
 ): Promise<{ ok: true }> {
+  let shouldSettle = false;
   try {
-    await asDatabase(database).$transaction(async (transaction) => {
+    shouldSettle = await asDatabase(database).$transaction(async (transaction) => {
       const poll = await transaction.poll.findUnique({
         where: { id: pollId },
         include: optionOrder,
@@ -526,12 +572,29 @@ export async function submitBallot(
           ...(poll.anonymous ? {} : { voterEmail: actor.email }),
         },
       });
+      if (!poll.autoSettle || poll.kind !== "approval") return false;
+      const eligible =
+        poll.audienceMode === "explicit_list"
+          ? await transaction.pollElectorate.count({ where: { pollId } })
+          : poll.scope
+            ? await transaction.user.count({
+                where: pollScopeUserWhere(poll.scope),
+              })
+            : 0;
+      const cast = await transaction.pollParticipation.count({
+        where: { pollId },
+      });
+      return eligible > 0 && cast >= eligible;
     });
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       throw new PollServiceError("ALREADY_VOTED", "User already voted");
     }
     throw error;
+  }
+
+  if (shouldSettle) {
+    await settlePoll(database, pollId, now);
   }
 
   return { ok: true };
