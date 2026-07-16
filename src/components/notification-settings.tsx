@@ -29,6 +29,7 @@ type DiscordStatus =
 type Prefs = {
   activity_created: boolean;
   registration_confirmed: boolean;
+  poll_published: boolean;
   comanager_invited: boolean;
   comanager_response: boolean;
   confirm_registrations_reminder: boolean;
@@ -38,6 +39,7 @@ type Prefs = {
 const MEMBER_PREF_KEYS: (keyof Prefs)[] = [
   "activity_created",
   "registration_confirmed",
+  "poll_published",
 ];
 
 const MANAGER_PREF_KEYS: (keyof Prefs)[] = [

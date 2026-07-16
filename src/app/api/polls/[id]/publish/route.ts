@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { pollErrorCode, pollErrorStatus } from "@/lib/polls/http";
+import { notifyPublishedPoll } from "@/lib/polls/notifications";
 import { prismaPollDatabase, publishPoll } from "@/lib/polls/service";
 
 export async function POST(
@@ -23,6 +24,13 @@ export async function POST(
       session.user.email,
       id,
     );
+    after(async () => {
+      try {
+        await notifyPublishedPoll(poll);
+      } catch (error) {
+        console.error("[polls] notification audience lookup failed", error);
+      }
+    });
     return NextResponse.json({ poll });
   } catch (error) {
     const status = pollErrorStatus(error);
