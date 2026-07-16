@@ -29,6 +29,10 @@ export type Permission =
   | "promotions.request"
   | "promotions.vote"
   | "promotions.review"
+  // Polls
+  | "polls.read"
+  | "polls.vote"
+  | "polls.manage"
   // Settings
   | "settings.view"
   | "settings.edit"
@@ -88,6 +92,11 @@ const permissionMatrix: Record<Permission, UserRole[]> = {
   "promotions.request": ["member", "manager", "admin", "dev"],
   "promotions.vote": ["manager", "admin", "dev"],
   "promotions.review": ["admin", "dev"],
+
+  // Polls. Scope is checked separately against each poll.
+  "polls.read": ["member", "manager", "admin", "dev"],
+  "polls.vote": ["member", "manager", "admin", "dev"],
+  "polls.manage": ["admin", "dev"],
 
   // Settings
   "settings.view": ["admin", "dev"],

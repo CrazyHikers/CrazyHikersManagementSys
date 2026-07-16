@@ -126,11 +126,11 @@ export async function PATCH(
         const qrCodeUrl = meta.qrCodeUrl;
         const { qrCodeUrl: _, ...cleanedMetadata } = meta;
 
-        // Mark unconfirmed registrations as absent, remove pending
+        // Default still-confirmed registrations to attended, remove pending
         await db.$transaction([
           db.registration.updateMany({
             where: { activityId: id, status: "registration_confirmed" },
-            data: { status: "absent" },
+            data: { status: "attended" },
           }),
           db.registration.deleteMany({
             where: { activityId: id, status: "registered" },

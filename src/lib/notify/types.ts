@@ -16,6 +16,7 @@ export type ChannelId = "web-push" | "telegram" | "discord";
 export type NotificationKind =
   | "activity_created"
   | "registration_confirmed"
+  | "poll_published"
   | "comanager_invited"
   | "comanager_response"
   | "confirm_registrations_reminder"
@@ -25,6 +26,7 @@ export type NotificationKind =
 export const MEMBER_KINDS = [
   "activity_created",
   "registration_confirmed",
+  "poll_published",
 ] as const;
 
 // Toggleable kinds visible only to manager/admin/dev. Non-managers won't see
@@ -53,6 +55,7 @@ export type NotificationPreferences = Partial<
 export const DEFAULT_PREFS: Required<NotificationPreferences> = {
   activity_created: true,
   registration_confirmed: true,
+  poll_published: true,
   comanager_invited: true,
   comanager_response: true,
   confirm_registrations_reminder: true,

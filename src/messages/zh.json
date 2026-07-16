@@ -48,6 +48,7 @@
     "myActivities": "我的活动",
     "myWaivers": "我的免责声明",
     "myProfile": "个人资料",
+    "polls": "投票",
     "activities": "活动管理",
     "members": "成员管理",
     "managers": "领队管理",
@@ -56,6 +57,7 @@
     "allActivities": "所有活动",
     "myFiles": "我的文件",
     "internResources": "实习领队文件",
+    "createPoll": "创建投票",
     "settings": "系统设置",
     "signIn": "登录",
     "signUp": "注册"
@@ -377,7 +379,7 @@
       "imageActionClear": "清除（改用封面图）",
       "finishActivity": "结束活动",
       "finishConfirmTitle": "确认结束活动？",
-      "finishConfirmDescription": "这将把所有未出席的报名标记为缺席，并移除待确认的报名。此操作无法撤销。",
+      "finishConfirmDescription": "这会把所有仍为已确认的报名默认标记为出席，并移除待确认的报名。你仍可在结束活动前将个别成员标记为缺席。此操作无法撤销。",
       "confirmFinish": "确认结束",
       "activityFinished": "活动已结束",
       "cancelActivity": "取消活动",
@@ -652,6 +654,94 @@
       "expired": "已过期",
       "reason": "原因"
     },
+    "polls": {
+      "eyebrow": "共同决议",
+      "title": "投票",
+      "subtitle": "参与俱乐部决策，或通过结构化方式提供反馈。你的选票保持匿名。",
+      "empty": "目前没有适用于你当前角色的投票。",
+      "status": {
+        "draft": "草稿",
+        "open": "进行中",
+        "closed": "已结束"
+      },
+      "scope": {
+        "member_plus": "所有会员+",
+        "manager_plus": "领队+",
+        "admin": "管理员"
+      },
+      "voted": "已投票",
+      "participantCount": "{count} 人参与",
+      "voteNow": "立即投票",
+      "view": "查看投票",
+      "manage": "管理",
+      "back": "返回投票列表",
+      "closes": "截止时间：{date}",
+      "ballotTitle": "你的选票",
+      "resultsTitle": "最终结果",
+      "draftHint": "该投票仍是草稿，仅管理员可见。",
+      "voteRecorded": "你的选票已记录",
+      "voteRecordedHint": "谢谢参与。选票为匿名，确认后无法修改。",
+      "privacy": "参与记录与选票分开保存。管理员可以看到谁参与了，但无法把成员与具体选项关联；投票结束前，结果对所有人隐藏。",
+      "votes": "{count} 票",
+      "vote": {
+        "choose": "请选择一个选项",
+        "other": "其它",
+        "otherPlaceholder": "填写你的答案（最多 500 字）",
+        "review": "核对选票",
+        "confirmTitle": "确认匿名投票",
+        "confirmBody": "确认后无法修改你的选择。",
+        "cancel": "返回修改",
+        "confirm": "确认匿名投票",
+        "submitting": "正在提交…",
+        "success": "选票已记录",
+        "error": "选票提交失败"
+      }
+    },
+    "pollAdmin": {
+      "eyebrow": "管理员",
+      "createTitle": "创建投票",
+      "createSubtitle": "先以草稿准备问题和参与范围。发布后内容将锁定，并通过每个已配置渠道各尝试通知一次。",
+      "viewPoll": "查看投票页面",
+      "scope": {
+        "member_plus": "所有会员及以上",
+        "manager_plus": "领队及以上",
+        "admin": "仅管理员"
+      },
+      "editor": {
+        "title": "标题",
+        "description": "背景说明与问题",
+        "scope": "谁可以投票",
+        "deadline": "截止时间",
+        "options": "选票选项",
+        "option": "选项 {number}",
+        "addOption": "添加选项",
+        "removeOption": "移除选项 {number}",
+        "approveReject": "使用赞成 / 反对",
+        "approve": "赞成",
+        "reject": "反对",
+        "allowOther": "允许填写“其它”自由文本",
+        "otherHint": "参与者可填写一条不超过 500 字的答案。",
+        "save": "保存草稿",
+        "saving": "正在保存…",
+        "saved": "草稿已保存",
+        "error": "投票保存失败"
+      },
+      "actions": {
+        "publish": "发布投票",
+        "publishConfirm": "确定发布？问题、参与范围与选项发布后将被锁定。",
+        "published": "投票已发布",
+        "close": "立即结束",
+        "closeConfirm": "确定立即结束该投票？结束后无法重新开启。",
+        "closed": "投票已结束",
+        "extend": "延长截止时间",
+        "extended": "截止时间已延长",
+        "working": "正在处理…",
+        "error": "投票更新失败"
+      },
+      "participantsTitle": "参与者（{count}）",
+      "participantsPrivacy": "该列表只确认参与情况。选票独立保存，绝不会与成员身份并列展示。",
+      "noParticipants": "目前还没有人投票。"
+    },
     "notifications": {
       "title": "推送通知",
       "description": "在此设备上接收报名确认和其他重要更新的推送通知。",
@@ -707,6 +797,7 @@
       "prefs": {
         "activity_created": "新活动发布",
         "registration_confirmed": "报名被确认",
+        "poll_published": "适用于我角色的新投票",
         "comanager_invited": "我收到副领邀请",
         "comanager_response": "副领接受或拒绝我的邀请",
         "confirm_registrations_reminder": "报名截止后提醒确认报名",

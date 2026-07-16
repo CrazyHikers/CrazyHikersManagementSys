@@ -29,15 +29,19 @@ type DiscordStatus =
 type Prefs = {
   activity_created: boolean;
   registration_confirmed: boolean;
+  poll_published: boolean;
   comanager_invited: boolean;
   comanager_response: boolean;
   confirm_registrations_reminder: boolean;
   finalize_activity_reminder: boolean;
 };
 
+type NotificationTranslator = ReturnType<typeof useTranslations>;
+
 const MEMBER_PREF_KEYS: (keyof Prefs)[] = [
   "activity_created",
   "registration_confirmed",
+  "poll_published",
 ];
 
 const MANAGER_PREF_KEYS: (keyof Prefs)[] = [
@@ -497,11 +501,10 @@ export function NotificationSettings({ userRole }: { userRole?: string }) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PushChannelBody(props: {
   status: PushStatus;
   busy: boolean;
-  t: any;
+  t: NotificationTranslator;
   onEnable: () => void;
   onDisable: () => void;
 }) {
@@ -587,8 +590,13 @@ function PushChannelBody(props: {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DisabledEnableButton({ t, className }: { t: any; className?: string }) {
+function DisabledEnableButton({
+  t,
+  className,
+}: {
+  t: NotificationTranslator;
+  className?: string;
+}) {
   return (
     <Button disabled className={`gap-2 ${className ?? ""}`}>
       <Bell className="h-4 w-4" />
@@ -597,11 +605,10 @@ function DisabledEnableButton({ t, className }: { t: any; className?: string }) 
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function TelegramChannelBody(props: {
   status: TelegramStatus;
   busy: boolean;
-  t: any;
+  t: NotificationTranslator;
   onLink: () => void;
   onUnlink: () => void;
 }) {
@@ -657,11 +664,10 @@ function TelegramChannelBody(props: {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function DiscordChannelBody(props: {
   status: DiscordStatus;
   busy: boolean;
-  t: any;
+  t: NotificationTranslator;
   onLink: () => void;
   onUnlink: () => void;
 }) {

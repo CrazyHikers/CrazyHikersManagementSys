@@ -46,6 +46,22 @@ export function registrationConfirmedDispatch(opts: {
   };
 }
 
+export function pollPublishedDispatch(opts: {
+  pollId: string;
+  pollTitle: string;
+  url: string;
+}): NotificationDispatch {
+  return {
+    kind: "poll_published",
+    meta: {
+      title: APP_TITLE,
+      body: `新投票发布 / New poll: ${opts.pollTitle}`,
+      link: opts.url,
+      tag: `poll-published-${opts.pollId}`,
+    },
+  };
+}
+
 export function comanagerInvitedDispatch(opts: {
   activityId: string;
   activityTitle: string;

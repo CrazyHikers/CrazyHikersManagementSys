@@ -36,6 +36,7 @@ export {
 export {
   activityCreatedDispatch,
   registrationConfirmedDispatch,
+  pollPublishedDispatch,
   comanagerInvitedDispatch,
   comanagerResponseDispatch,
   confirmRegistrationsReminderDispatch,
