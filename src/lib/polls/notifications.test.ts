@@ -4,7 +4,6 @@ vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/lib/notify", () => ({ notify: vi.fn() }));
 
 import { notifyPollAudience } from "./notifications";
-import type { PollScope } from "./types";
 
 describe("notifyPollAudience", () => {
   it.each([
@@ -13,7 +12,7 @@ describe("notifyPollAudience", () => {
     "qualified_manager_plus",
     "admin",
   ] as const)("resolves the %s role scope once", async (scope) => {
-    const findRoleScopeUsers = vi.fn(async (_scope: PollScope) => [
+    const findRoleScopeUsers = vi.fn(async () => [
       { email: "one@example.com" },
       { email: "two@example.com" },
     ]);
