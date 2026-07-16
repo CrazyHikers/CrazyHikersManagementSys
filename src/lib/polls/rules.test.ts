@@ -154,6 +154,7 @@ describe("validateBallotInput", () => {
     expect(validateBallotInput({ optionId: "a" }, poll)).toEqual({
       optionId: "a",
       otherText: null,
+      feedback: null,
     });
   });
 
@@ -161,7 +162,49 @@ describe("validateBallotInput", () => {
     expect(validateBallotInput({ otherText: " New idea " }, poll)).toEqual({
       optionId: null,
       otherText: "New idea",
+      feedback: null,
     });
+  });
+
+  it("applies every approval feedback policy", () => {
+    expect(
+      validateBallotInput(
+        { optionId: "a", feedback: " Ready " },
+        { ...poll, feedbackPolicy: "optional" },
+      ),
+    ).toEqual({ optionId: "a", otherText: null, feedback: "Ready" });
+    expect(() =>
+      validateBallotInput(
+        { optionId: "a" },
+        { ...poll, feedbackPolicy: "required" },
+      ),
+    ).toThrowError(expect.objectContaining({ field: "feedback" }));
+    expect(
+      validateBallotInput(
+        { optionId: "a" },
+        {
+          ...poll,
+          feedbackPolicy: "required_on_reject",
+          rejectOptionId: "b",
+        },
+      ),
+    ).toMatchObject({ feedback: null });
+    expect(() =>
+      validateBallotInput(
+        { optionId: "b" },
+        {
+          ...poll,
+          feedbackPolicy: "required_on_reject",
+          rejectOptionId: "b",
+        },
+      ),
+    ).toThrowError(expect.objectContaining({ field: "feedback" }));
+    expect(() =>
+      validateBallotInput(
+        { optionId: "a", feedback: "not allowed" },
+        { ...poll, feedbackPolicy: "disabled" },
+      ),
+    ).toThrowError(expect.objectContaining({ field: "feedback" }));
   });
 
   it.each([

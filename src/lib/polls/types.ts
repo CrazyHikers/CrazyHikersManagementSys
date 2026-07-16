@@ -83,6 +83,14 @@ export type PollParticipantDTO = {
   votedAt: string;
 };
 
+export type PollNamedBallotDTO = {
+  email: string;
+  name: string;
+  optionLabel: string;
+  semanticKey: "approve" | "reject" | null;
+  feedback: string | null;
+};
+
 export type NormalizedPollInput = {
   title: string;
   description: string;
@@ -102,4 +110,5 @@ export type NormalizedPollInput = {
 export type NormalizedBallotInput = {
   optionId: string | null;
   otherText: string | null;
+  feedback: string | null;
 };

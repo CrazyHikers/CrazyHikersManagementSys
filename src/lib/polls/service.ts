@@ -15,6 +15,7 @@ import type {
   PollFeedbackPolicy,
   PollKind,
   PollListItemDTO,
+  PollNamedBallotDTO,
   PollOutcome,
   PollParticipantDTO,
   PollScope,
@@ -29,6 +30,8 @@ export type PollServiceErrorCode =
   | "DEADLINE_PASSED"
   | "INVALID_DEADLINE_EXTENSION"
   | "FORBIDDEN"
+  | "POLL_NOT_CLOSED"
+  | "ANONYMOUS_POLL"
   | "ALREADY_VOTED";
 
 export class PollServiceError extends Error {
@@ -139,8 +142,13 @@ type PollTransaction = {
         pollId: string;
         optionId: string | null;
         otherText: string | null;
+        feedback: string | null;
+        voterEmail?: string;
       };
     }): Promise<unknown>;
+  };
+  pollElectorate: {
+    findUnique(args: Record<string, unknown>): Promise<unknown | null>;
   };
   auditLog: {
     create(args: { data: AuditData }): Promise<unknown>;
@@ -169,8 +177,22 @@ type PollReadDatabase = {
   };
   pollBallot: {
     findMany(args: Record<string, unknown>): Promise<
-      Array<{ optionId: string | null; otherText: string | null }>
+      Array<{
+        optionId: string | null;
+        otherText: string | null;
+        feedback?: string | null;
+        voterEmail?: string | null;
+        voter?: { email: string; name: string } | null;
+        option?: {
+          label: string;
+          semanticKey: "approve" | "reject" | null;
+        } | null;
+      }>
     >;
+  };
+  pollElectorate: {
+    findUnique(args: Record<string, unknown>): Promise<unknown | null>;
+    findMany(args: Record<string, unknown>): Promise<Array<{ pollId: string }>>;
   };
 };
 
@@ -203,6 +225,26 @@ function canActorAccessRoleAudience(
     poll.scope !== null &&
     canActorAccessScope(actor, poll.scope)
   );
+}
+
+async function canActorAccessAudience(
+  database: {
+    pollElectorate: {
+      findUnique(args: Record<string, unknown>): Promise<unknown | null>;
+    };
+  },
+  actor: PollActor,
+  poll: Pick<StoredPoll, "id" | "audienceMode" | "scope">,
+): Promise<boolean> {
+  if (poll.audienceMode !== "explicit_list") {
+    return canActorAccessRoleAudience(actor, poll);
+  }
+  return !!(await database.pollElectorate.findUnique({
+    where: {
+      pollId_voterEmail: { pollId: poll.id, voterEmail: actor.email },
+    },
+    select: { pollId: true },
+  }));
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
@@ -459,7 +501,7 @@ export async function submitBallot(
       if (!poll) {
         throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
       }
-      if (!canActorAccessRoleAudience(actor, poll)) {
+      if (!await canActorAccessAudience(transaction, actor, poll)) {
         throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
       }
       if (effectivePollStatus(poll.status, poll.deadline, now) !== "open") {
@@ -469,12 +511,20 @@ export async function submitBallot(
       const ballot = validateBallotInput(input, {
         allowOther: poll.allowOther,
         optionIds: poll.options.map((option) => option.id),
+        feedbackPolicy: poll.feedbackPolicy,
+        rejectOptionId:
+          poll.options.find((option) => option.semanticKey === "reject")?.id ??
+          null,
       });
       await transaction.pollParticipation.create({
         data: { pollId, voterEmail: actor.email, votedAt: now },
       });
       await transaction.pollBallot.create({
-        data: { pollId, ...ballot },
+        data: {
+          pollId,
+          ...ballot,
+          ...(poll.anonymous ? {} : { voterEmail: actor.email }),
+        },
       });
     });
   } catch (error) {
@@ -541,11 +591,23 @@ export async function listPolls(
     }),
     votedPollIds(reader, actor.email),
   ]);
+  const electoratePollIds = new Set(
+    (
+      await reader.pollElectorate.findMany({
+        where: { voterEmail: actor.email },
+        select: { pollId: true },
+      })
+    ).map((row) => row.pollId),
+  );
 
   return polls.flatMap((poll) => {
     const status = effectivePollStatus(poll.status, poll.deadline, now);
     if (!isPollManager(actor)) {
-      if (status === "draft" || !canActorAccessRoleAudience(actor, poll)) {
+      const canAccess =
+        poll.audienceMode === "explicit_list"
+          ? electoratePollIds.has(poll.id)
+          : canActorAccessRoleAudience(actor, poll);
+      if (status === "draft" || !canAccess) {
         return [];
       }
     }
@@ -574,7 +636,7 @@ export async function getPollDetail(
   const status = effectivePollStatus(poll.status, poll.deadline, now);
   if (
     !isPollManager(actor) &&
-    (status === "draft" || !canActorAccessRoleAudience(actor, poll))
+    (status === "draft" || !(await canActorAccessAudience(reader, actor, poll)))
   ) {
     throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
   }
@@ -633,6 +695,58 @@ export async function listParticipants(
     email: row.voter?.email ?? row.voterEmail,
     name: row.voter?.name ?? row.voterEmail,
     votedAt: row.votedAt.toISOString(),
+  }));
+}
+
+export async function listNamedBallots(
+  database: unknown,
+  actor: PollActor,
+  pollId: string,
+  now = new Date(),
+): Promise<PollNamedBallotDTO[]> {
+  if (!isPollManager(actor)) {
+    throw new PollServiceError(
+      "FORBIDDEN",
+      "Only admins can view named ballots",
+    );
+  }
+  const reader = asReadDatabase(database);
+  const poll = await reader.poll.findUnique({
+    where: { id: pollId },
+    include: {
+      options: { orderBy: { sortOrder: "asc" } },
+      _count: { select: { participations: true } },
+    },
+  });
+  if (!poll) {
+    throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
+  }
+  if (effectivePollStatus(poll.status, poll.deadline, now) !== "closed") {
+    throw new PollServiceError(
+      "POLL_NOT_CLOSED",
+      "Named ballots are hidden until the poll closes",
+    );
+  }
+  if (poll.anonymous) {
+    throw new PollServiceError(
+      "ANONYMOUS_POLL",
+      "Anonymous polls have no named ballot details",
+    );
+  }
+
+  const ballots = await reader.pollBallot.findMany({
+    where: { pollId },
+    include: {
+      voter: { select: { email: true, name: true } },
+      option: { select: { label: true, semanticKey: true } },
+    },
+  });
+  return ballots.map((ballot) => ({
+    email: ballot.voter?.email ?? ballot.voterEmail ?? "",
+    name: ballot.voter?.name ?? ballot.voterEmail ?? "",
+    optionLabel: ballot.option?.label ?? ballot.otherText ?? "",
+    semanticKey: ballot.option?.semanticKey ?? null,
+    feedback: ballot.feedback ?? null,
   }));
 }
 

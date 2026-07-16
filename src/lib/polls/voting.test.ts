@@ -8,6 +8,8 @@ import {
   listPolls,
   submitBallot,
 } from "./service";
+import * as pollService from "./service";
+import type { PollActor } from "./types";
 
 const NOW = new Date("2026-07-16T12:00:00.000Z");
 const member = {
@@ -20,6 +22,11 @@ const manager = {
   role: "manager" as const,
   isIntern: true,
 };
+const qualified = {
+  email: "qualified@example.com",
+  role: "manager" as const,
+  isIntern: false,
+};
 const admin = {
   email: "admin@example.com",
   role: "admin" as const,
@@ -31,18 +38,28 @@ function poll(overrides: Record<string, unknown> = {}) {
     id: "p1",
     title: "Policy",
     description: "Details",
+    kind: "choice",
+    audienceMode: "role_scope",
     scope: "member_plus",
     status: "open",
+    anonymous: true,
+    feedbackPolicy: "disabled",
+    creatorType: "admin",
     allowOther: true,
+    autoSettle: false,
+    minimumParticipationBps: 0,
+    minimumApprovalBps: 0,
+    outcome: null,
     deadline: new Date("2026-07-20T12:00:00.000Z"),
     createdByEmail: admin.email,
     publishedAt: NOW,
     closedAt: null,
+    settledAt: null,
     createdAt: NOW,
     updatedAt: NOW,
     options: [
-      { id: "o1", pollId: "p1", label: "Yes", sortOrder: 0 },
-      { id: "o2", pollId: "p1", label: "No", sortOrder: 1 },
+      { id: "o1", pollId: "p1", label: "Yes", semanticKey: null, sortOrder: 0 },
+      { id: "o2", pollId: "p1", label: "No", semanticKey: null, sortOrder: 1 },
     ],
     _count: { participations: 0 },
     participations: [],
@@ -50,7 +67,10 @@ function poll(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function makeVotingDatabase(initialPolls = [poll()]) {
+function makeVotingDatabase(
+  initialPolls = [poll()],
+  electorates: Array<{ pollId: string; voterEmail: string }> = [],
+) {
   const polls = initialPolls;
   const participations: Array<{
     pollId: string;
@@ -61,6 +81,8 @@ function makeVotingDatabase(initialPolls = [poll()]) {
     pollId: string;
     optionId: string | null;
     otherText: string | null;
+    feedback?: string | null;
+    voterEmail?: string;
   }> = [];
 
   const withViewerState = (stored: ReturnType<typeof poll>, email?: string) => ({
@@ -131,6 +153,20 @@ function makeVotingDatabase(initialPolls = [poll()]) {
           ) ?? null,
       ),
     },
+    pollElectorate: {
+      findUnique: vi.fn(
+        async ({ where }: { where: { pollId_voterEmail: { pollId: string; voterEmail: string } } }) =>
+          electorates.find(
+            (item) =>
+              item.pollId === where.pollId_voterEmail.pollId &&
+              item.voterEmail === where.pollId_voterEmail.voterEmail,
+          ) ?? null,
+      ),
+      findMany: vi.fn(
+        async ({ where }: { where: { voterEmail: string } }) =>
+          electorates.filter((item) => item.voterEmail === where.voterEmail),
+      ),
+    },
     pollBallot: {
       create: vi.fn(
         async ({ data }: { data: (typeof ballots)[number] }) => {
@@ -139,7 +175,17 @@ function makeVotingDatabase(initialPolls = [poll()]) {
         },
       ),
       findMany: vi.fn(async ({ where }: { where: { pollId: string } }) =>
-        ballots.filter((item) => item.pollId === where.pollId),
+        ballots
+          .filter((item) => item.pollId === where.pollId)
+          .map((item) => ({
+            ...item,
+            voter: item.voterEmail
+              ? { email: item.voterEmail, name: item.voterEmail.split("@")[0] }
+              : null,
+            option: polls
+              .find((stored) => stored.id === item.pollId)
+              ?.options.find((option) => option.id === item.optionId) ?? null,
+          })),
       ),
     },
   };
@@ -162,6 +208,7 @@ function makeVotingDatabase(initialPolls = [poll()]) {
     },
     pollBallot: tx.pollBallot,
     pollParticipation: tx.pollParticipation,
+    pollElectorate: tx.pollElectorate,
   };
 
   return { database, participations, ballots };
@@ -177,7 +224,7 @@ describe("submitBallot", () => {
       { pollId: "p1", voterEmail: member.email, votedAt: NOW },
     ]);
     expect(fake.ballots).toEqual([
-      { pollId: "p1", optionId: "o1", otherText: null },
+      { pollId: "p1", optionId: "o1", otherText: null, feedback: null },
     ]);
     expect(fake.ballots[0]).not.toHaveProperty("voterEmail");
     expect(fake.ballots[0]).not.toHaveProperty("votedAt");
@@ -202,6 +249,82 @@ describe("submitBallot", () => {
     await expect(
       submitBallot(fake.database, manager, "p1", { optionId: "o1" }, NOW),
     ).resolves.toEqual({ ok: true });
+  });
+
+  it("never stores identity on an anonymous ballot with feedback", async () => {
+    const fake = makeVotingDatabase([
+      poll({
+        kind: "approval",
+        feedbackPolicy: "optional",
+        allowOther: false,
+        options: [
+          { id: "approve", pollId: "p1", label: "Approve", semanticKey: "approve", sortOrder: 0 },
+          { id: "reject", pollId: "p1", label: "Reject", semanticKey: "reject", sortOrder: 1 },
+        ],
+      }),
+    ]);
+
+    await submitBallot(
+      fake.database,
+      member,
+      "p1",
+      { optionId: "reject", feedback: " Needs revision " },
+      NOW,
+    );
+
+    expect(fake.ballots[0]).toMatchObject({ feedback: "Needs revision" });
+    expect(fake.ballots[0]).not.toHaveProperty("voterEmail");
+  });
+
+  it("stores the voter only for a named ballot", async () => {
+    const fake = makeVotingDatabase([
+      poll({
+        kind: "approval",
+        anonymous: false,
+        feedbackPolicy: "optional",
+        allowOther: false,
+        options: [
+          { id: "approve", pollId: "p1", label: "Approve", semanticKey: "approve", sortOrder: 0 },
+          { id: "reject", pollId: "p1", label: "Reject", semanticKey: "reject", sortOrder: 1 },
+        ],
+      }),
+    ]);
+
+    await submitBallot(
+      fake.database,
+      qualified,
+      "p1",
+      { optionId: "approve", feedback: "Ready" },
+      NOW,
+    );
+
+    expect(fake.ballots[0]).toMatchObject({
+      voterEmail: qualified.email,
+      feedback: "Ready",
+    });
+  });
+
+  it("allows only explicit electorate members to vote", async () => {
+    const explicit = poll({
+      audienceMode: "explicit_list",
+      scope: null,
+    });
+    const allowed = makeVotingDatabase(
+      [explicit],
+      [{ pollId: "p1", voterEmail: qualified.email }],
+    );
+
+    await expect(
+      submitBallot(allowed.database, qualified, "p1", { optionId: "o1" }, NOW),
+    ).resolves.toEqual({ ok: true });
+
+    const denied = makeVotingDatabase(
+      [explicit],
+      [{ pollId: "p1", voterEmail: qualified.email }],
+    );
+    await expect(
+      submitBallot(denied.database, manager, "p1", { optionId: "o1" }, NOW),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it.each([
@@ -262,5 +385,51 @@ describe("poll reads", () => {
     ]);
     expect(participants[0]).not.toHaveProperty("optionId");
     expect(participants[0]).not.toHaveProperty("otherText");
+  });
+
+  it("exposes named ballot details only to admins after close", async () => {
+    const named = poll({
+      status: "closed",
+      anonymous: false,
+      kind: "approval",
+      feedbackPolicy: "optional",
+      allowOther: false,
+      options: [
+        { id: "approve", pollId: "p1", label: "Approve", semanticKey: "approve", sortOrder: 0 },
+        { id: "reject", pollId: "p1", label: "Reject", semanticKey: "reject", sortOrder: 1 },
+      ],
+    });
+    const fake = makeVotingDatabase([named]);
+    fake.ballots.push({
+      pollId: "p1",
+      optionId: "reject",
+      otherText: null,
+      feedback: "Needs more experience",
+      voterEmail: qualified.email,
+    });
+    const listNamedBallots = (
+      pollService as unknown as {
+        listNamedBallots: (
+          database: unknown,
+          actor: PollActor,
+          pollId: string,
+          now?: Date,
+        ) => Promise<unknown>;
+      }
+    ).listNamedBallots;
+
+    expect(typeof listNamedBallots).toBe("function");
+    await expect(listNamedBallots(fake.database, member, "p1", NOW)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(listNamedBallots(fake.database, admin, "p1", NOW)).resolves.toEqual([
+      {
+        email: qualified.email,
+        name: "qualified",
+        optionLabel: "Reject",
+        semanticKey: "reject",
+        feedback: "Needs more experience",
+      },
+    ]);
   });
 });

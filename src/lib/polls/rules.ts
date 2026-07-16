@@ -42,6 +42,7 @@ export const POLL_LIMITS = {
   description: 4_000,
   option: 200,
   other: 500,
+  feedback: 1_000,
   minOptions: 2,
   maxOptions: 10,
 } as const;
@@ -281,7 +282,12 @@ export function validatePollInput(input: unknown): NormalizedPollInput {
 
 export function validateBallotInput(
   input: unknown,
-  poll: { allowOther: boolean; optionIds: string[] },
+  poll: {
+    allowOther: boolean;
+    optionIds: string[];
+    feedbackPolicy?: PollFeedbackPolicy;
+    rejectOptionId?: string | null;
+  },
 ): NormalizedBallotInput {
   const value = asRecord(input);
   const optionId =
@@ -289,6 +295,11 @@ export function validateBallotInput(
       ? value.optionId
       : null;
   const hasOtherText = typeof value.otherText === "string";
+  const feedbackPolicy = poll.feedbackPolicy ?? "disabled";
+  const feedback =
+    typeof value.feedback === "string" && value.feedback.trim().length > 0
+      ? normalizedText(value.feedback, "feedback", POLL_LIMITS.feedback)
+      : null;
 
   if ((optionId ? 1 : 0) + (hasOtherText ? 1 : 0) !== 1) {
     throw new PollValidationError(
@@ -297,11 +308,28 @@ export function validateBallotInput(
     );
   }
 
+  if (feedbackPolicy === "disabled" && feedback) {
+    throw new PollValidationError("feedback", "feedback is disabled");
+  }
+  if (feedbackPolicy === "required" && !feedback) {
+    throw new PollValidationError("feedback", "feedback is required");
+  }
+  if (
+    feedbackPolicy === "required_on_reject" &&
+    optionId === poll.rejectOptionId &&
+    !feedback
+  ) {
+    throw new PollValidationError(
+      "feedback",
+      "feedback is required when rejecting",
+    );
+  }
+
   if (optionId) {
     if (!poll.optionIds.includes(optionId)) {
       throw new PollValidationError("optionId", "option does not belong to poll");
     }
-    return { optionId, otherText: null };
+    return { optionId, otherText: null, feedback };
   }
 
   if (!poll.allowOther) {
@@ -314,6 +342,7 @@ export function validateBallotInput(
       "otherText",
       POLL_LIMITS.other,
     ),
+    feedback,
   };
 }
 
