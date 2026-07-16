@@ -8,7 +8,7 @@ import type { PollScope, UserRole } from "./types";
 type PublishedPoll = {
   id: string;
   title: string;
-  scope: PollScope;
+  scope: PollScope | null;
 };
 
 type PollNotificationDependencies = {
@@ -21,6 +21,7 @@ export async function notifyPollAudience(
   dependencies: PollNotificationDependencies,
   poll: PublishedPoll,
 ): Promise<{ attempted: number; failed: number }> {
+  if (!poll.scope) return { attempted: 0, failed: 0 };
   const users = await dependencies.findUsers(rolesForPollScope(poll.scope));
   const dispatch = pollPublishedDispatch({
     pollId: poll.id,

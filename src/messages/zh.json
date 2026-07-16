@@ -668,6 +668,7 @@
         "member_plus": "所有会员+",
         "intern_manager_plus": "见习领队+",
         "qualified_manager_plus": "正式领队+",
+        "explicit_list": "指定投票人",
         "admin": "管理员"
       },
       "voted": "已投票",
@@ -707,6 +708,7 @@
         "member_plus": "所有会员及以上",
         "intern_manager_plus": "见习领队及以上",
         "qualified_manager_plus": "正式领队及以上",
+        "explicit_list": "指定投票人",
         "admin": "仅管理员"
       },
       "editor": {

@@ -58,6 +58,8 @@ model User {
   internResources       InternResource[]
   createdPolls          Poll[]                 @relation("PollCreator")
   pollParticipations    PollParticipation[]    @relation("PollVoter")
+  pollElectorates       PollElectorate[]
+  namedPollBallots      PollBallot[]           @relation("PollNamedVoter")
 
   @@index([role])
   @@map("users")
@@ -300,9 +302,11 @@ model PromotionRequest {
   requestedAt     DateTime        @default(now()) @map("requested_at")
   expiresAt       DateTime        @map("expires_at")
   resolvedAt      DateTime?       @map("resolved_at")
+  pollId          String?         @unique @map("poll_id")
 
   user  User            @relation(fields: [userEmail], references: [email], onDelete: Cascade)
   votes PromotionVote[]
+  poll  Poll?           @relation(fields: [pollId], references: [id], onDelete: Restrict)
 
   @@index([userEmail])
   @@index([status])
@@ -333,8 +337,42 @@ model PromotionVote {
 
 enum PollScope {
   member_plus
-  manager_plus
+  intern_manager_plus
+  qualified_manager_plus
   admin
+}
+
+enum PollKind {
+  choice
+  approval
+}
+
+enum PollAudienceMode {
+  role_scope
+  explicit_list
+}
+
+enum PollFeedbackPolicy {
+  disabled
+  optional
+  required_on_reject
+  required
+}
+
+enum PollCreatorType {
+  admin
+  system
+}
+
+enum PollOutcome {
+  passed
+  rejected
+  no_quorum
+}
+
+enum PollOptionSemanticKey {
+  approve
+  reject
 }
 
 enum PollStatus {
@@ -344,23 +382,35 @@ enum PollStatus {
 }
 
 model Poll {
-  id             String     @id @default(uuid())
-  title          String
-  description    String     @default("")
-  scope          PollScope
-  status         PollStatus @default(draft)
-  allowOther     Boolean    @default(false) @map("allow_other")
-  deadline       DateTime
-  createdByEmail String     @map("created_by_email")
-  publishedAt    DateTime?  @map("published_at")
-  closedAt       DateTime?  @map("closed_at")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at")
+  id                       String             @id @default(uuid())
+  title                    String
+  description              String             @default("")
+  kind                     PollKind           @default(choice)
+  audienceMode             PollAudienceMode   @default(role_scope) @map("audience_mode")
+  scope                    PollScope?
+  status                   PollStatus         @default(draft)
+  anonymous                Boolean            @default(true)
+  feedbackPolicy           PollFeedbackPolicy @default(disabled) @map("feedback_policy")
+  creatorType              PollCreatorType    @default(admin) @map("creator_type")
+  allowOther               Boolean            @default(false) @map("allow_other")
+  autoSettle               Boolean            @default(false) @map("auto_settle")
+  minimumParticipationBps  Int                @default(0) @map("minimum_participation_bps")
+  minimumApprovalBps       Int                @default(0) @map("minimum_approval_bps")
+  outcome                  PollOutcome?
+  deadline                 DateTime
+  createdByEmail           String?            @map("created_by_email")
+  publishedAt              DateTime?          @map("published_at")
+  closedAt                 DateTime?          @map("closed_at")
+  settledAt                DateTime?          @map("settled_at")
+  createdAt                DateTime           @default(now()) @map("created_at")
+  updatedAt                DateTime           @default(now()) @updatedAt @map("updated_at")
 
-  creator        User                @relation("PollCreator", fields: [createdByEmail], references: [email], onDelete: Restrict)
+  creator        User?               @relation("PollCreator", fields: [createdByEmail], references: [email], onDelete: Restrict)
   options        PollOption[]
+  electorate     PollElectorate[]
   participations PollParticipation[]
   ballots        PollBallot[]
+  promotion      PromotionRequest?
 
   @@index([scope])
   @@index([status])
@@ -370,10 +420,11 @@ model Poll {
 }
 
 model PollOption {
-  id        String @id @default(uuid())
-  pollId    String @map("poll_id")
-  label     String
-  sortOrder Int    @map("sort_order")
+  id          String                 @id @default(uuid())
+  pollId      String                 @map("poll_id")
+  label       String
+  semanticKey PollOptionSemanticKey? @map("semantic_key")
+  sortOrder   Int                    @map("sort_order")
 
   poll    Poll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
   ballots PollBallot[]
@@ -381,6 +432,19 @@ model PollOption {
   @@unique([pollId, sortOrder])
   @@index([pollId])
   @@map("poll_options")
+}
+
+model PollElectorate {
+  pollId     String   @map("poll_id")
+  voterEmail String   @map("voter_email")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  poll  Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  voter User @relation(fields: [voterEmail], references: [email], onDelete: Cascade)
+
+  @@id([pollId, voterEmail])
+  @@index([voterEmail])
+  @@map("poll_electorate")
 }
 
 model PollParticipation {
@@ -398,16 +462,21 @@ model PollParticipation {
 }
 
 model PollBallot {
-  id        String  @id @default(uuid())
-  pollId    String  @map("poll_id")
-  optionId  String? @map("option_id")
-  otherText String? @map("other_text")
+  id         String  @id @default(uuid())
+  pollId     String  @map("poll_id")
+  optionId   String? @map("option_id")
+  otherText  String? @map("other_text")
+  feedback   String?
+  voterEmail String? @map("voter_email")
 
   poll   Poll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption? @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  voter  User?       @relation("PollNamedVoter", fields: [voterEmail], references: [email], onDelete: Cascade)
 
+  @@unique([pollId, voterEmail])
   @@index([pollId])
   @@index([optionId])
+  @@index([voterEmail])
   @@map("poll_ballots")
 }
 

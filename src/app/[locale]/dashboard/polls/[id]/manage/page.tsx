@@ -95,7 +95,9 @@ export default async function ManagePollPage({
             <div className="mb-2 flex items-center gap-2">
               <PollStatusBadge status={poll.status} labels={statuses} />
               <span className="text-xs font-medium text-slate-500">
-                {t(`scope.${poll.scope}`)}
+                {poll.scope
+                  ? t(`scope.${poll.scope}`)
+                  : t("scope.explicit_list")}
               </span>
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950">

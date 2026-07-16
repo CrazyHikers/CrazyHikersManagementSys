@@ -70,7 +70,9 @@ export default async function PollDetailPage({
           <div className="mb-4 flex flex-wrap gap-2">
             <PollStatusBadge status={poll.status} labels={statuses} />
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-emerald-50 ring-1 ring-white/15">
-              {t(`scope.${poll.scope}`)}
+              {poll.scope
+                ? t(`scope.${poll.scope}`)
+                : t("scope.explicit_list")}
             </span>
           </div>
           <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">

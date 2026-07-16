@@ -55,8 +55,17 @@ export type PollListItemDTO = {
   id: string;
   title: string;
   description: string;
-  scope: PollScope;
+  kind: PollKind;
+  audienceMode: PollAudienceMode;
+  scope: PollScope | null;
   status: PollStatus;
+  anonymous: boolean;
+  feedbackPolicy: PollFeedbackPolicy;
+  creatorType: PollCreatorType;
+  autoSettle: boolean;
+  minimumParticipationBps: number;
+  minimumApprovalBps: number;
+  outcome: PollOutcome | null;
   deadline: string;
   participantCount: number;
   hasVoted: boolean;

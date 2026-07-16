@@ -36,7 +36,7 @@ type EditablePoll = {
   id: string;
   title: string;
   description: string;
-  scope: PollScope;
+  scope: PollScope | null;
   deadline: string;
   allowOther: boolean;
   options: Array<{ label: string }>;

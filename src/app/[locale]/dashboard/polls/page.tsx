@@ -83,7 +83,9 @@ export default async function PollsPage({
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <PollStatusBadge status={poll.status} labels={statuses} />
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    {t(`scope.${poll.scope}`)}
+                    {poll.scope
+                      ? t(`scope.${poll.scope}`)
+                      : t("scope.explicit_list")}
                   </span>
                   {poll.status === "open" && poll.hasVoted && (
                     <span className="rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white">

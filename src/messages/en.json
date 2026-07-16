@@ -669,6 +669,7 @@
         "member_plus": "All members+",
         "intern_manager_plus": "Intern managers+",
         "qualified_manager_plus": "Qualified managers+",
+        "explicit_list": "Selected voters",
         "admin": "Admins"
       },
       "voted": "Vote recorded",
@@ -708,6 +709,7 @@
         "member_plus": "All members and above",
         "intern_manager_plus": "Intern managers and above",
         "qualified_manager_plus": "Qualified managers and above",
+        "explicit_list": "Selected voters",
         "admin": "Administrators only"
       },
       "editor": {

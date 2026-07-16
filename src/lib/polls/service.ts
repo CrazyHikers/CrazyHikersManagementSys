@@ -9,8 +9,13 @@ import {
 import type {
   NormalizedPollInput,
   PollActor,
+  PollAudienceMode,
+  PollCreatorType,
   PollDetailDTO,
+  PollFeedbackPolicy,
+  PollKind,
   PollListItemDTO,
+  PollOutcome,
   PollParticipantDTO,
   PollScope,
   PollStatus,
@@ -40,6 +45,7 @@ type StoredOption = {
   id: string;
   pollId: string;
   label: string;
+  semanticKey: "approve" | "reject" | null;
   sortOrder: number;
 };
 
@@ -47,13 +53,23 @@ export type StoredPoll = {
   id: string;
   title: string;
   description: string;
-  scope: PollScope;
+  kind: PollKind;
+  audienceMode: PollAudienceMode;
+  scope: PollScope | null;
   status: PollStatus;
+  anonymous: boolean;
+  feedbackPolicy: PollFeedbackPolicy;
+  creatorType: PollCreatorType;
   allowOther: boolean;
+  autoSettle: boolean;
+  minimumParticipationBps: number;
+  minimumApprovalBps: number;
+  outcome: PollOutcome | null;
   deadline: Date;
-  createdByEmail: string;
+  createdByEmail: string | null;
   publishedAt: Date | null;
   closedAt: Date | null;
+  settledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   options: StoredOption[];
@@ -74,8 +90,16 @@ type PollTransaction = {
       data: {
         title: string;
         description: string;
+        kind: PollKind;
+        audienceMode: PollAudienceMode;
         scope: PollScope;
+        anonymous: boolean;
+        feedbackPolicy: PollFeedbackPolicy;
+        creatorType: PollCreatorType;
         allowOther: boolean;
+        autoSettle: boolean;
+        minimumParticipationBps: number;
+        minimumApprovalBps: number;
         deadline: Date;
         createdByEmail: string;
         options: {
@@ -170,6 +194,17 @@ function isPollManager(actor: PollActor): boolean {
   return actor.role === "admin" || actor.role === "dev";
 }
 
+function canActorAccessRoleAudience(
+  actor: PollActor,
+  poll: Pick<StoredPoll, "audienceMode" | "scope">,
+): boolean {
+  return (
+    poll.audienceMode !== "explicit_list" &&
+    poll.scope !== null &&
+    canActorAccessScope(actor, poll.scope)
+  );
+}
+
 function isUniqueConstraintError(error: unknown): boolean {
   return (
     !!error &&
@@ -204,8 +239,16 @@ export async function createPoll(
       data: {
         title: normalized.title,
         description: normalized.description,
+        kind: normalized.kind,
+        audienceMode: normalized.audienceMode,
         scope: normalized.scope,
+        anonymous: normalized.anonymous,
+        feedbackPolicy: normalized.feedbackPolicy,
+        creatorType: "admin",
         allowOther: normalized.allowOther,
+        autoSettle: normalized.autoSettle,
+        minimumParticipationBps: normalized.minimumParticipationBps,
+        minimumApprovalBps: normalized.minimumApprovalBps,
         deadline: normalized.deadline,
         createdByEmail: actorEmail,
         options: { create: optionRows(normalized) },
@@ -330,8 +373,15 @@ export async function updatePoll(
       data: {
         title: normalized.title,
         description: normalized.description,
+        kind: normalized.kind,
+        audienceMode: normalized.audienceMode,
         scope: normalized.scope,
+        anonymous: normalized.anonymous,
+        feedbackPolicy: normalized.feedbackPolicy,
         allowOther: normalized.allowOther,
+        autoSettle: normalized.autoSettle,
+        minimumParticipationBps: normalized.minimumParticipationBps,
+        minimumApprovalBps: normalized.minimumApprovalBps,
         deadline: normalized.deadline,
       },
       include: optionOrder,
@@ -409,7 +459,7 @@ export async function submitBallot(
       if (!poll) {
         throw new PollServiceError("POLL_NOT_FOUND", "Poll not found");
       }
-      if (!canActorAccessScope(actor, poll.scope)) {
+      if (!canActorAccessRoleAudience(actor, poll)) {
         throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
       }
       if (effectivePollStatus(poll.status, poll.deadline, now) !== "open") {
@@ -446,8 +496,17 @@ function toListItem(
     id: poll.id,
     title: poll.title,
     description: poll.description,
+    kind: poll.kind,
+    audienceMode: poll.audienceMode,
     scope: poll.scope,
     status,
+    anonymous: poll.anonymous,
+    feedbackPolicy: poll.feedbackPolicy,
+    creatorType: poll.creatorType,
+    autoSettle: poll.autoSettle,
+    minimumParticipationBps: poll.minimumParticipationBps,
+    minimumApprovalBps: poll.minimumApprovalBps,
+    outcome: poll.outcome,
     deadline: poll.deadline.toISOString(),
     participantCount: poll._count.participations,
     hasVoted,
@@ -486,7 +545,7 @@ export async function listPolls(
   return polls.flatMap((poll) => {
     const status = effectivePollStatus(poll.status, poll.deadline, now);
     if (!isPollManager(actor)) {
-      if (status === "draft" || !canActorAccessScope(actor, poll.scope)) {
+      if (status === "draft" || !canActorAccessRoleAudience(actor, poll)) {
         return [];
       }
     }
@@ -515,7 +574,7 @@ export async function getPollDetail(
   const status = effectivePollStatus(poll.status, poll.deadline, now);
   if (
     !isPollManager(actor) &&
-    (status === "draft" || !canActorAccessScope(actor, poll.scope))
+    (status === "draft" || !canActorAccessRoleAudience(actor, poll))
   ) {
     throw new PollServiceError("FORBIDDEN", "Poll is outside current scope");
   }
