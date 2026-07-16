@@ -9,14 +9,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { PollScope } from "@/lib/polls/types";
+import type {
+  PollFeedbackPolicy,
+  PollKind,
+  PollScope,
+} from "@/lib/polls/types";
 
 type EditorCopy = {
   title: string;
   description: string;
+  kind: string;
+  kinds: Record<PollKind, string>;
   scope: string;
   scopes: Record<PollScope, string>;
   deadline: string;
+  anonymous: string;
+  anonymousHint: string;
+  feedbackPolicy: string;
+  feedbackPolicies: Record<PollFeedbackPolicy, string>;
+  autoSettle: string;
+  minimumParticipation: string;
+  minimumApproval: string;
   options: string;
   option: string;
   addOption: string;
@@ -36,9 +49,15 @@ type EditablePoll = {
   id: string;
   title: string;
   description: string;
+  kind?: PollKind;
   scope: PollScope | null;
   deadline: string;
   allowOther: boolean;
+  anonymous?: boolean;
+  feedbackPolicy?: PollFeedbackPolicy;
+  autoSettle?: boolean;
+  minimumParticipationBps?: number;
+  minimumApprovalBps?: number;
   options: Array<{ label: string }>;
 };
 
@@ -62,11 +81,23 @@ export function PollEditor({
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [kind, setKind] = useState<PollKind>(initial?.kind ?? "choice");
   const [scope, setScope] = useState<PollScope>(initial?.scope ?? "member_plus");
   const [deadline, setDeadline] = useState(
     initial ? toLocalDateTime(initial.deadline) : defaultDeadline(),
   );
   const [allowOther, setAllowOther] = useState(initial?.allowOther ?? false);
+  const [anonymous, setAnonymous] = useState(initial?.anonymous ?? true);
+  const [feedbackPolicy, setFeedbackPolicy] = useState<PollFeedbackPolicy>(
+    initial?.feedbackPolicy ?? "disabled",
+  );
+  const [autoSettle, setAutoSettle] = useState(initial?.autoSettle ?? false);
+  const [minimumParticipation, setMinimumParticipation] = useState(
+    String((initial?.minimumParticipationBps ?? 0) / 100),
+  );
+  const [minimumApproval, setMinimumApproval] = useState(
+    String((initial?.minimumApprovalBps ?? 0) / 100),
+  );
   const [options, setOptions] = useState<string[]>(
     initial?.options.map((option) => option.label) ?? ["", ""],
   );
@@ -92,9 +123,22 @@ export function PollEditor({
           body: JSON.stringify({
             title,
             description,
+            kind,
+            audienceMode: "role_scope",
             scope,
+            anonymous,
+            feedbackPolicy: kind === "approval" ? feedbackPolicy : "disabled",
+            autoSettle: kind === "approval" ? autoSettle : false,
+            minimumParticipationBps:
+              kind === "approval" && autoSettle
+                ? Math.round(Number(minimumParticipation) * 100)
+                : 0,
+            minimumApprovalBps:
+              kind === "approval" && autoSettle
+                ? Math.round(Number(minimumApproval) * 100)
+                : 0,
             deadline: new Date(deadline).toISOString(),
-            allowOther,
+            allowOther: kind === "choice" ? allowOther : false,
             options,
           }),
         },
@@ -144,7 +188,31 @@ export function PollEditor({
             />
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="poll-kind">{copy.kind}</Label>
+              <select
+                id="poll-kind"
+                value={kind}
+                onChange={(event) => {
+                  const nextKind = event.target.value as PollKind;
+                  setKind(nextKind);
+                  if (nextKind === "choice") {
+                    setFeedbackPolicy("disabled");
+                    setAutoSettle(false);
+                  } else {
+                    setAllowOther(false);
+                    if (options.length !== 2) {
+                      setOptions([copy.approve, copy.reject]);
+                    }
+                  }
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+              >
+                <option value="choice">{copy.kinds.choice}</option>
+                <option value="approval">{copy.kinds.approval}</option>
+              </select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="poll-scope">{copy.scope}</Label>
               <select
@@ -176,6 +244,24 @@ export function PollEditor({
             </div>
           </div>
 
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+            <input
+              type="checkbox"
+              aria-label={copy.anonymous}
+              checked={anonymous}
+              onChange={(event) => setAnonymous(event.target.checked)}
+              className="mt-0.5 size-4 accent-emerald-700"
+            />
+            <span>
+              <span className="block text-sm font-medium text-emerald-950">
+                {copy.anonymous}
+              </span>
+              <span className="text-xs text-emerald-900/65">
+                {copy.anonymousHint}
+              </span>
+            </span>
+          </label>
+
           <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <Label>{copy.options}</Label>
@@ -183,7 +269,11 @@ export function PollEditor({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setOptions([copy.approve, copy.reject])}
+                onClick={() => {
+                  setKind("approval");
+                  setAllowOther(false);
+                  setOptions([copy.approve, copy.reject]);
+                }}
                 className="bg-white"
               >
                 <Sparkles className="size-4 text-amber-600" />
@@ -209,7 +299,7 @@ export function PollEditor({
                       variant="ghost"
                       size="icon"
                       aria-label={copy.removeOption.replace("{number}", number)}
-                      disabled={options.length <= 2}
+                      disabled={kind === "approval" || options.length <= 2}
                       onClick={() =>
                         setOptions((current) =>
                           current.filter((_, optionIndex) => optionIndex !== index),
@@ -226,7 +316,7 @@ export function PollEditor({
               type="button"
               variant="ghost"
               size="sm"
-              disabled={options.length >= 10}
+              disabled={kind === "approval" || options.length >= 10}
               onClick={() => setOptions((current) => [...current, ""])}
               className="mt-3"
             >
@@ -235,6 +325,88 @@ export function PollEditor({
             </Button>
           </div>
 
+          {kind === "approval" && (
+            <section className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="poll-feedback-policy">
+                    {copy.feedbackPolicy}
+                  </Label>
+                  <select
+                    id="poll-feedback-policy"
+                    aria-label={copy.feedbackPolicy}
+                    value={feedbackPolicy}
+                    onChange={(event) =>
+                      setFeedbackPolicy(
+                        event.target.value as PollFeedbackPolicy,
+                      )
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+                  >
+                    {Object.entries(copy.feedbackPolicies).map(
+                      ([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-200 bg-white px-4 py-3 sm:mt-6">
+                  <input
+                    type="checkbox"
+                    aria-label={copy.autoSettle}
+                    checked={autoSettle}
+                    onChange={(event) => setAutoSettle(event.target.checked)}
+                    className="size-4 accent-amber-700"
+                  />
+                  <span className="text-sm font-medium text-amber-950">
+                    {copy.autoSettle}
+                  </span>
+                </label>
+              </div>
+              {autoSettle && (
+                <div className="grid gap-4 border-t border-amber-200 pt-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="poll-minimum-participation">
+                      {copy.minimumParticipation}
+                    </Label>
+                    <Input
+                      id="poll-minimum-participation"
+                      aria-label={copy.minimumParticipation}
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={minimumParticipation}
+                      onChange={(event) =>
+                        setMinimumParticipation(event.target.value)
+                      }
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="poll-minimum-approval">
+                      {copy.minimumApproval}
+                    </Label>
+                    <Input
+                      id="poll-minimum-approval"
+                      aria-label={copy.minimumApproval}
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={minimumApproval}
+                      onChange={(event) => setMinimumApproval(event.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {kind === "choice" && (
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/40 p-4">
             <input
               type="checkbox"
@@ -250,6 +422,7 @@ export function PollEditor({
               <span className="text-xs text-emerald-900/65">{copy.otherHint}</span>
             </span>
           </label>
+          )}
 
           <Button
             type="submit"

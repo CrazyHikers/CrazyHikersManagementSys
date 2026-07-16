@@ -657,7 +657,7 @@
     "polls": {
       "eyebrow": "共同决议",
       "title": "投票",
-      "subtitle": "参与俱乐部决策，或通过结构化方式提供反馈。你的选票保持匿名。",
+      "subtitle": "参与俱乐部决策，或通过结构化方式提供反馈。每项投票都会明确标注匿名或记名。",
       "empty": "目前没有适用于你当前角色的投票。",
       "status": {
         "draft": "草稿",
@@ -684,16 +684,44 @@
       "voteRecorded": "你的选票已记录",
       "voteRecordedHint": "谢谢参与。选票为匿名，确认后无法修改。",
       "privacy": "参与记录与选票分开保存。管理员可以看到谁参与了，但无法把成员与具体选项关联；投票结束前，结果对所有人隐藏。",
+      "privacyNamed": "这是一项记名投票。投票关闭后，只有管理员可以查看投票人、选项和反馈明细；其他成员只能看到汇总结果。",
+      "identityAnonymous": "匿名投票",
+      "identityNamed": "记名投票",
+      "creatorSystem": "由系统发起",
+      "outcome": {
+        "passed": "已通过",
+        "rejected": "未通过",
+        "no_quorum": "参与人数不足"
+      },
+      "promotion": {
+        "title": "晋升评议",
+        "type": {
+          "member_to_intern": "会员 → 见习领队",
+          "intern_to_qualified": "见习领队 → 正式领队"
+        },
+        "stats": {
+          "attended": "参加活动",
+          "managed": "主领队",
+          "comanaged": "协作领队"
+        },
+        "application": "申请说明"
+      },
       "votes": "{count} 票",
       "vote": {
         "choose": "请选择一个选项",
+        "identityAnonymous": "匿名投票",
+        "identityNamed": "记名投票——关闭后管理员可查看你的选择",
+        "feedback": "反馈",
+        "feedbackPlaceholder": "说明你的决定（最多 1,000 字）",
         "other": "其它",
         "otherPlaceholder": "填写你的答案（最多 500 字）",
         "review": "核对选票",
-        "confirmTitle": "确认匿名投票",
+        "confirmTitleAnonymous": "确认匿名投票",
+        "confirmTitleNamed": "确认记名投票",
         "confirmBody": "确认后无法修改你的选择。",
         "cancel": "返回修改",
-        "confirm": "确认匿名投票",
+        "confirmAnonymous": "确认匿名投票",
+        "confirmNamed": "确认记名投票",
         "submitting": "正在提交…",
         "success": "选票已记录",
         "error": "选票提交失败"
@@ -714,8 +742,21 @@
       "editor": {
         "title": "标题",
         "description": "背景说明与问题",
+        "kind": "投票类型",
+        "kindChoice": "选项 / 反馈收集",
+        "kindApproval": "赞成 / 反对",
         "scope": "谁可以投票",
         "deadline": "截止时间",
+        "anonymous": "匿名投票",
+        "anonymousHint": "默认匿名。仅在管理员需要于关闭后查看记名明细时关闭此项。",
+        "feedbackPolicy": "选票反馈",
+        "feedbackDisabled": "不收集",
+        "feedbackOptional": "可选填写",
+        "feedbackRequiredOnReject": "反对时必填",
+        "feedbackRequired": "每票必填",
+        "autoSettle": "自动结算",
+        "minimumParticipation": "最低参与比例（%）",
+        "minimumApproval": "最低通过比例（%）",
         "options": "选票选项",
         "option": "选项 {number}",
         "addOption": "添加选项",
@@ -744,7 +785,10 @@
       },
       "participantsTitle": "参与者（{count}）",
       "participantsPrivacy": "该列表只确认参与情况。选票独立保存，绝不会与成员身份并列展示。",
-      "noParticipants": "目前还没有人投票。"
+      "noParticipants": "目前还没有人投票。",
+      "namedBallotsTitle": "记名选票明细",
+      "noNamedBallots": "没有记名选票。",
+      "feedbackLabel": "反馈"
     },
     "notifications": {
       "title": "推送通知",

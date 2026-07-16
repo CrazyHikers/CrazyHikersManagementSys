@@ -16,6 +16,7 @@ type FakeOption = {
   id: string;
   pollId: string;
   label: string;
+  semanticKey?: "approve" | "reject" | null;
   sortOrder: number;
 };
 
@@ -167,6 +168,26 @@ describe("poll lifecycle service", () => {
         performedBy: "admin@example.com",
       }),
     );
+  });
+
+  it("assigns stable approve and reject semantics", async () => {
+    const fake = makeDatabase();
+    const poll = await createPoll(fake.database, "admin@example.com", {
+      ...validInput,
+      kind: "approval",
+      anonymous: false,
+      feedbackPolicy: "required_on_reject",
+      autoSettle: true,
+      minimumParticipationBps: 5000,
+      minimumApprovalBps: 6700,
+      allowOther: false,
+      options: ["Approve", "Reject"],
+    });
+
+    expect(poll.options.map((option) => option.semanticKey)).toEqual([
+      "approve",
+      "reject",
+    ]);
   });
 
   it("publishes a valid draft and records the transition", async () => {

@@ -87,6 +87,22 @@ export default async function PollsPage({
                       ? t(`scope.${poll.scope}`)
                       : t("scope.explicit_list")}
                   </span>
+                  <span
+                    className={
+                      poll.anonymous
+                        ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+                        : "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
+                    }
+                  >
+                    {poll.anonymous
+                      ? t("identityAnonymous")
+                      : t("identityNamed")}
+                  </span>
+                  {poll.outcome && (
+                    <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+                      {t(`outcome.${poll.outcome}`)}
+                    </span>
+                  )}
                   {poll.status === "open" && poll.hasVoted && (
                     <span className="rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white">
                       {t("voted")}

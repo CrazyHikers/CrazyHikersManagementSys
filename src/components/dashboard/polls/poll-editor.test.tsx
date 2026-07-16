@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -12,6 +12,8 @@ import { PollEditor } from "./poll-editor";
 const copy = {
   title: "Title",
   description: "Description",
+  kind: "Poll type",
+  kinds: { choice: "Choice", approval: "Approve / Reject" },
   scope: "Who can vote",
   scopes: {
     member_plus: "All members and above",
@@ -20,6 +22,18 @@ const copy = {
     admin: "Admins only",
   },
   deadline: "Deadline",
+  anonymous: "Anonymous ballot",
+  anonymousHint: "Hide voter choices",
+  feedbackPolicy: "Feedback",
+  feedbackPolicies: {
+    disabled: "Disabled",
+    optional: "Optional",
+    required_on_reject: "Required on reject",
+    required: "Required",
+  },
+  autoSettle: "Settle automatically",
+  minimumParticipation: "Minimum participation (%)",
+  minimumApproval: "Minimum approval (%)",
   options: "Options",
   option: "Option {number}",
   addOption: "Add option",
@@ -36,6 +50,7 @@ const copy = {
 };
 
 describe("PollEditor", () => {
+  afterEach(cleanup);
   beforeEach(() => {
     push.mockReset();
     vi.stubGlobal(
@@ -47,7 +62,7 @@ describe("PollEditor", () => {
     );
   });
 
-  it("creates a scoped draft using the approve/reject shortcut", async () => {
+  it("creates a named approval draft with settlement rules", async () => {
     render(<PollEditor copy={copy} />);
 
     fireEvent.click(
@@ -65,7 +80,17 @@ describe("PollEditor", () => {
     fireEvent.change(screen.getByLabelText("Deadline"), {
       target: { value: "2099-07-30T12:00" },
     });
-    fireEvent.click(screen.getByLabelText("Allow Other free text"));
+    fireEvent.click(screen.getByLabelText("Anonymous ballot"));
+    fireEvent.change(screen.getByLabelText("Feedback"), {
+      target: { value: "required_on_reject" },
+    });
+    fireEvent.click(screen.getByLabelText("Settle automatically"));
+    fireEvent.change(screen.getByLabelText("Minimum participation (%)"), {
+      target: { value: "50" },
+    });
+    fireEvent.change(screen.getByLabelText("Minimum approval (%)"), {
+      target: { value: "67" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledOnce());
@@ -75,9 +100,25 @@ describe("PollEditor", () => {
       title: "Adopt the policy",
       description: "Policy details",
       scope: "intern_manager_plus",
-      allowOther: true,
+      kind: "approval",
+      anonymous: false,
+      feedbackPolicy: "required_on_reject",
+      autoSettle: true,
+      minimumParticipationBps: 5000,
+      minimumApprovalBps: 6700,
+      allowOther: false,
       options: ["Approve", "Reject"],
     });
     expect(push).toHaveBeenCalledWith("/dashboard/polls/poll-9/manage");
+  });
+
+  it("defaults to anonymous choice and hides settlement controls", () => {
+    render(<PollEditor copy={copy} />);
+
+    expect(
+      (screen.getByLabelText("Anonymous ballot") as HTMLInputElement).checked,
+    ).toBe(true);
+    expect(screen.queryByLabelText("Settle automatically")).toBeNull();
+    expect(screen.queryByLabelText("Feedback")).toBeNull();
   });
 });

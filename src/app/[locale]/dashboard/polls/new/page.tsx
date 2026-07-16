@@ -27,6 +27,11 @@ export default async function NewPollPage() {
       <PollEditor copy={{
         title: t("editor.title"),
         description: t("editor.description"),
+        kind: t("editor.kind"),
+        kinds: {
+          choice: t("editor.kindChoice"),
+          approval: t("editor.kindApproval"),
+        },
         scope: t("editor.scope"),
         scopes: {
           member_plus: t("scope.member_plus"),
@@ -35,6 +40,18 @@ export default async function NewPollPage() {
           admin: t("scope.admin"),
         },
         deadline: t("editor.deadline"),
+        anonymous: t("editor.anonymous"),
+        anonymousHint: t("editor.anonymousHint"),
+        feedbackPolicy: t("editor.feedbackPolicy"),
+        feedbackPolicies: {
+          disabled: t("editor.feedbackDisabled"),
+          optional: t("editor.feedbackOptional"),
+          required_on_reject: t("editor.feedbackRequiredOnReject"),
+          required: t("editor.feedbackRequired"),
+        },
+        autoSettle: t("editor.autoSettle"),
+        minimumParticipation: t("editor.minimumParticipation"),
+        minimumApproval: t("editor.minimumApproval"),
         options: t("editor.options"),
         option: t("editor.option", { number: "{number}" }),
         addOption: t("editor.addOption"),

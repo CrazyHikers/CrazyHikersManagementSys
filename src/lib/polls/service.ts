@@ -107,7 +107,11 @@ type PollTransaction = {
         deadline: Date;
         createdByEmail: string;
         options: {
-          create: Array<{ label: string; sortOrder: number }>;
+          create: Array<{
+            label: string;
+            semanticKey: "approve" | "reject" | null;
+            sortOrder: number;
+          }>;
         };
       };
       include: { options: { orderBy: { sortOrder: "asc" } } };
@@ -128,6 +132,7 @@ type PollTransaction = {
       data: Array<{
         pollId: string;
         label: string;
+        semanticKey?: "approve" | "reject" | null;
         sortOrder: number;
       }>;
     }): Promise<unknown>;
@@ -163,6 +168,13 @@ type PollTransaction = {
 
 type PollReadRow = StoredPoll & {
   _count: { participations: number };
+  promotion?: {
+    id: string;
+    type: "member_to_intern" | "intern_to_qualified";
+    userEmail: string;
+    applicationText: string | null;
+    user: { email: string; name: string };
+  } | null;
 };
 
 type PollReadDatabase = {
@@ -199,6 +211,12 @@ type PollReadDatabase = {
   pollElectorate: {
     findUnique(args: Record<string, unknown>): Promise<unknown | null>;
     findMany(args: Record<string, unknown>): Promise<Array<{ pollId: string }>>;
+  };
+  registration: {
+    count(args: Record<string, unknown>): Promise<number>;
+  };
+  activityManager: {
+    count(args: Record<string, unknown>): Promise<number>;
   };
 };
 
@@ -268,7 +286,16 @@ function asObject(input: unknown): Record<string, unknown> {
 }
 
 function optionRows(input: NormalizedPollInput) {
-  return input.options.map((label, sortOrder) => ({ label, sortOrder }));
+  return input.options.map((label, sortOrder) => ({
+    label,
+    sortOrder,
+    semanticKey:
+      input.kind === "approval"
+        ? sortOrder === 0
+          ? ("approve" as const)
+          : ("reject" as const)
+        : null,
+  }));
 }
 
 async function audit(transaction: PollTransaction, data: AuditData) {
@@ -696,6 +723,7 @@ export async function getPollDetail(
     where: { id: pollId },
     include: {
       options: { orderBy: { sortOrder: "asc" } },
+      promotion: { include: { user: true } },
       _count: { select: { participations: true } },
     },
   });
@@ -722,9 +750,42 @@ export async function getPollDetail(
     options: poll.options.map((option) => ({
       id: option.id,
       label: option.label,
+      semanticKey: option.semanticKey,
       sortOrder: option.sortOrder,
     })),
   };
+
+  if (poll.promotion) {
+    const [attendedCount, managedCount, comanagedCount] = await Promise.all([
+      reader.registration.count({
+        where: { userEmail: poll.promotion.userEmail, status: "attended" },
+      }),
+      reader.activityManager.count({
+        where: {
+          userEmail: poll.promotion.userEmail,
+          role: "manager",
+          status: "confirmed",
+          activity: { status: "completed" },
+        },
+      }),
+      reader.activityManager.count({
+        where: {
+          userEmail: poll.promotion.userEmail,
+          role: "comanager",
+          status: "confirmed",
+          activity: { status: "completed" },
+        },
+      }),
+    ]);
+    detail.promotion = {
+      id: poll.promotion.id,
+      type: poll.promotion.type,
+      candidateEmail: poll.promotion.user.email,
+      candidateName: poll.promotion.user.name,
+      applicationText: poll.promotion.applicationText,
+      stats: { attendedCount, managedCount, comanagedCount },
+    };
+  }
 
   if (status === "closed") {
     const ballots = await reader.pollBallot.findMany({

@@ -658,7 +658,7 @@
     "polls": {
       "eyebrow": "Collective decisions",
       "title": "Polls",
-      "subtitle": "Take part in club decisions and share structured feedback. Your ballot remains anonymous.",
+      "subtitle": "Take part in club decisions and share structured feedback. Each poll clearly states whether ballots are anonymous or named.",
       "empty": "There are no polls available for your current role.",
       "status": {
         "draft": "Draft",
@@ -685,16 +685,44 @@
       "voteRecorded": "Your vote has been recorded",
       "voteRecordedHint": "Thank you. Ballots are anonymous and cannot be changed after confirmation.",
       "privacy": "Participation is recorded separately from ballots. Administrators can see who participated, but cannot connect a person to a choice. Results stay hidden until the poll closes.",
+      "privacyNamed": "This is a named ballot. Administrators can review voter, choice and feedback details after the poll closes; other members only see aggregate results.",
+      "identityAnonymous": "Anonymous ballot",
+      "identityNamed": "Named ballot",
+      "creatorSystem": "Created by system",
+      "outcome": {
+        "passed": "Passed",
+        "rejected": "Rejected",
+        "no_quorum": "No quorum"
+      },
+      "promotion": {
+        "title": "Promotion review",
+        "type": {
+          "member_to_intern": "Member → Intern manager",
+          "intern_to_qualified": "Intern → Qualified manager"
+        },
+        "stats": {
+          "attended": "Attended",
+          "managed": "Managed",
+          "comanaged": "Co-managed"
+        },
+        "application": "Application"
+      },
       "votes": "{count, plural, one {# vote} other {# votes}}",
       "vote": {
         "choose": "Choose one option",
+        "identityAnonymous": "Anonymous vote",
+        "identityNamed": "Named vote — administrators can see your choice after close",
+        "feedback": "Feedback",
+        "feedbackPlaceholder": "Explain your decision (up to 1,000 characters)",
         "other": "Other",
         "otherPlaceholder": "Write your answer (up to 500 characters)",
         "review": "Review vote",
-        "confirmTitle": "Confirm your anonymous vote",
+        "confirmTitleAnonymous": "Confirm your anonymous vote",
+        "confirmTitleNamed": "Confirm your named vote",
         "confirmBody": "Your choice cannot be changed after confirmation.",
         "cancel": "Go back",
-        "confirm": "Confirm anonymous vote",
+        "confirmAnonymous": "Confirm anonymous vote",
+        "confirmNamed": "Confirm named vote",
         "submitting": "Submitting...",
         "success": "Vote recorded",
         "error": "Could not record vote"
@@ -715,8 +743,21 @@
       "editor": {
         "title": "Title",
         "description": "Context and question",
+        "kind": "Poll type",
+        "kindChoice": "Choice / feedback",
+        "kindApproval": "Approve / reject",
         "scope": "Who can vote",
         "deadline": "Deadline",
+        "anonymous": "Anonymous ballot",
+        "anonymousHint": "Enabled by default. Turn this off only when administrators need named details after close.",
+        "feedbackPolicy": "Ballot feedback",
+        "feedbackDisabled": "Disabled",
+        "feedbackOptional": "Optional",
+        "feedbackRequiredOnReject": "Required when rejecting",
+        "feedbackRequired": "Required for every vote",
+        "autoSettle": "Settle automatically",
+        "minimumParticipation": "Minimum participation (%)",
+        "minimumApproval": "Minimum approval (%)",
         "options": "Ballot options",
         "option": "Option {number}",
         "addOption": "Add option",
@@ -745,7 +786,10 @@
       },
       "participantsTitle": "Participants ({count})",
       "participantsPrivacy": "This list confirms participation only. Ballots are stored separately and are never shown next to member identities.",
-      "noParticipants": "No one has voted yet."
+      "noParticipants": "No one has voted yet.",
+      "namedBallotsTitle": "Named ballot details",
+      "noNamedBallots": "No named ballots were cast.",
+      "feedbackLabel": "Feedback"
     },
     "notifications": {
       "title": "Push Notifications",

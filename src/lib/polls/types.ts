@@ -31,6 +31,7 @@ export type PollStatus = "draft" | "open" | "closed";
 export type PollOptionDTO = {
   id: string;
   label: string;
+  semanticKey?: "approve" | "reject" | null;
   sortOrder: number;
 };
 
@@ -75,6 +76,18 @@ export type PollListItemDTO = {
 export type PollDetailDTO = PollListItemDTO & {
   options: PollOptionDTO[];
   results?: PollResultsDTO;
+  promotion?: {
+    id: string;
+    type: "member_to_intern" | "intern_to_qualified";
+    candidateEmail: string;
+    candidateName: string;
+    applicationText: string | null;
+    stats: {
+      attendedCount: number;
+      managedCount: number;
+      comanagedCount: number;
+    };
+  };
 };
 
 export type PollParticipantDTO = {

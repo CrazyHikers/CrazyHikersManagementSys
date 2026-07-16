@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -11,19 +11,26 @@ import { PollVoteForm } from "./poll-vote-form";
 
 const copy = {
   choose: "Choose one",
+  identityAnonymous: "Anonymous vote",
+  identityNamed: "Named vote — admins can see your choice after close",
+  feedback: "Feedback",
+  feedbackPlaceholder: "Explain your decision",
   other: "Other",
   otherPlaceholder: "Write your answer",
   review: "Review vote",
-  confirmTitle: "Confirm your anonymous vote",
+  confirmTitleAnonymous: "Confirm your anonymous vote",
+  confirmTitleNamed: "Confirm your named vote",
   confirmBody: "Your choice cannot be changed after confirmation.",
   cancel: "Go back",
-  confirm: "Confirm anonymous vote",
+  confirmAnonymous: "Confirm anonymous vote",
+  confirmNamed: "Confirm named vote",
   submitting: "Submitting...",
   success: "Vote recorded",
   error: "Could not record vote",
 };
 
 describe("PollVoteForm", () => {
+  afterEach(cleanup);
   beforeEach(() => {
     refresh.mockReset();
     vi.stubGlobal(
@@ -41,6 +48,8 @@ describe("PollVoteForm", () => {
           { id: "no", label: "Reject", sortOrder: 1 },
         ]}
         allowOther
+        anonymous
+        feedbackPolicy="disabled"
         copy={copy}
       />,
     );
@@ -71,6 +80,8 @@ describe("PollVoteForm", () => {
         pollId="poll-1"
         options={[{ id: "yes", label: "Approve", sortOrder: 0 }]}
         allowOther={false}
+        anonymous
+        feedbackPolicy="disabled"
         copy={copy}
       />,
     );
@@ -81,9 +92,50 @@ describe("PollVoteForm", () => {
         pollId="poll-1"
         options={[{ id: "yes", label: "Approve", sortOrder: 0 }]}
         allowOther
+        anonymous
+        feedbackPolicy="disabled"
         copy={copy}
       />,
     );
     expect(screen.getByLabelText("Other")).toBeTruthy();
+  });
+
+  it("requires reject feedback and submits a named ballot payload", async () => {
+    render(
+      <PollVoteForm
+        pollId="promotion-poll"
+        options={[
+          { id: "approve", label: "Approve", sortOrder: 0, semanticKey: "approve" },
+          { id: "reject", label: "Reject", sortOrder: 1, semanticKey: "reject" },
+        ]}
+        allowOther={false}
+        anonymous={false}
+        feedbackPolicy="required_on_reject"
+        copy={copy}
+      />,
+    );
+
+    expect(screen.getByText("Named vote — admins can see your choice after close")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Reject"));
+    expect(
+      (screen.getByRole("button", { name: "Review vote" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    fireEvent.change(screen.getByLabelText("Feedback"), {
+      target: { value: "Needs more experience" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Review vote" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm named vote" }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith("/api/polls/promotion-poll/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          optionId: "reject",
+          feedback: "Needs more experience",
+        }),
+      }),
+    );
   });
 });
