@@ -379,7 +379,7 @@
       "imageActionClear": "Clear (use cover image)",
       "finishActivity": "Finish Activity",
       "finishConfirmTitle": "Finish Activity?",
-      "finishConfirmDescription": "This will mark all unattended registrations as absent and remove pending registrations. This action cannot be undone.",
+      "finishConfirmDescription": "This will mark all confirmed registrations as attended and remove pending registrations. You can still mark individual members as absent beforehand. This action cannot be undone.",
       "confirmFinish": "Finish Activity",
       "activityFinished": "Activity finished",
       "cancelActivity": "Cancel Activity",

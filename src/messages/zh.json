@@ -379,7 +379,7 @@
       "imageActionClear": "清除（改用封面图）",
       "finishActivity": "结束活动",
       "finishConfirmTitle": "确认结束活动？",
-      "finishConfirmDescription": "这将把所有未出席的报名标记为缺席，并移除待确认的报名。此操作无法撤销。",
+      "finishConfirmDescription": "这会把所有仍为已确认的报名默认标记为出席，并移除待确认的报名。你仍可在结束活动前将个别成员标记为缺席。此操作无法撤销。",
       "confirmFinish": "确认结束",
       "activityFinished": "活动已结束",
       "cancelActivity": "取消活动",
