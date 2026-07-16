@@ -1,315 +1,370 @@
-# 会员投票与反馈收集 — 设计文档
+# 会员投票、自动结算与 Promotion 接入 — 设计文档
 
-**日期**：2026-07-16
+**初版日期**：2026-07-16
+
+**扩展日期**：2026-07-17
 
 ## 1. 背景与目标
 
-Crazy Hikers 需要一个通用的内部投票页面，方便在政策调整和社团决议前收集不同角色群体的意见。管理员可以指定投票范围、配置选项和截止时间；符合范围的用户匿名投出一张不可修改的单选票。投票关闭后，系统公开匿名汇总，由管理员在线下确认最终决议。
+Crazy Hikers 需要一套统一的内部投票能力，用于政策决议、结构化 feedback 和领队晋升投票。管理员可以设置参与身份、截止时间、匿名或记名、选项与反馈策略；系统也可以代表 promotion 流程自动发起指定投票人名单的投票。
 
-同一套能力也要覆盖轻量 feedback 收集：管理员可为某次投票启用“其它”，让用户提交一条自由文本建议。
+普通单选投票关闭后只提供结果，不替管理员自动作出政策决议。赞成/反对型投票可以选择启用自动结算，并通过最低参与比例与最低赞同比例判定 `passed`、`rejected` 或 `no_quorum`。Promotion 使用同一结算引擎，但通过后仍须管理员最终复核，系统不会仅凭投票直接修改身份。
 
 ## 2. 成功标准
 
-- admin/dev 可以创建草稿、预览并发布投票。
-- 投票支持 2–10 个自定义单选项，以及可选的“其它”自由文本项。
-- scope 支持 `会员+`、`领队+`、`Admin`，并在每次读取和提交时按用户当前角色鉴权。
-- 一名用户对一次投票最多提交一张不可修改的票。
-- 网站管理员可以查看参与名单，但无法通过应用查询任何参与者的具体选择。
-- 开放期间只显示参与人数；关闭后才向 scope 内用户公开匿名汇总。
-- 发布时通过用户已配置且未关闭偏好的 Web Push、Telegram 和 Discord 渠道各尝试通知一次，不发送邮件、不重试。
-- 中英文界面均有完整文案，桌面端和移动端均可使用。
+- admin/dev 可以创建、编辑和发布普通单选或赞成/反对投票。
+- scope 支持 `会员+`、`见习领队+`、`正式领队+` 和 `管理员`。
+- 投票支持动态 role scope 或固定投票人名单。
+- 投票默认匿名；管理员可以改为记名，页面必须明确展示身份模式。
+- 匿名 ballot 不保存身份关联；记名 ballot 的成员、选择和 feedback 只在关闭后向 admin/dev 展示。
+- 赞成/反对投票可以配置 feedback 策略和自动结算门槛。
+- Promotion 新申请由 system 创建统一投票，不再创建 `PromotionVote` 或发送投票邀请邮件。
+- 开放期间只显示参与人数，不向任何角色提前返回选择分布或 feedback。
+- 所有选票不可修改；deadline 后停止收票。
+- 发布通知只通过已配置的 Web Push、Telegram 和 Discord 各尝试一次，不重试。
 
 ## 3. 非目标
 
-- 不设置“弃权”；未提交选票即视为未参与。
-- 不自动判定胜出方案、是否通过、法定人数或参与率门槛。
-- 不提供改票、撤票、重新打开已关闭投票或定时开始功能。
-- 不对“其它”文本做自动合并、分类、情感分析或内容审核。
-- 不发送新投票邮件，也不建立通知任务队列或失败重试机制。
-- 不提供密码学匿名保证；本设计提供应用层匿名，数据库超级管理员仍可能通过事务日志等基础设施信息进行取证。
-- 不改造或复用现有 `PromotionRequest` / `PromotionVote`；晋升投票继续保持独立。
+- 不提供弃权、改票、撤票、重新打开或预约开始。
+- 不实现密码学匿名；数据库超级管理员仍可能通过基础设施日志进行取证。
+- 不自动分析、合并、分类或审核自由文本。
+- 不允许普通单选投票自动判定胜出方案。
+- 不把投票引擎扩展成任意业务可注册回调的通用工作流框架；本期只接入 promotion。
+- 不为旧 `PromotionVote` 数据提供迁移或兼容路径；当前没有进行中的 promotion 投票。
+- 不为 promotion 的“零符合条件投票人”增加专门分支；现有业务约束保证名单非空。
 
-## 4. 角色与 scope
+## 4. 身份层级与投票资格
 
-项目现有角色顺序为 `dev > admin > manager > member`，但投票 scope 使用明确白名单，不依赖隐式数值比较：
+用户主角色仍为 `member | manager | admin | dev`。见习与正式领队通过 `ManagerProfile.intern` 区分，因此投票鉴权上下文必须包含 `role + isIntern`，不能只看 `role`。
 
-| scope | 可查看和投票的当前角色 |
+| scope | 可查看和投票的当前身份 |
 |---|---|
-| `member_plus`（会员+） | member、manager、admin、dev |
-| `manager_plus`（领队+） | manager、admin、dev |
-| `admin`（Admin） | admin、dev |
+| `member_plus`（会员+） | member、见习领队、正式领队、admin、dev |
+| `intern_manager_plus`（见习领队+） | 见习领队、正式领队、admin、dev |
+| `qualified_manager_plus`（正式领队+） | 正式领队、admin、dev |
+| `admin`（管理员） | admin、dev |
 
-资格不做发布时快照。用户打开列表、读取详情和提交选票时，服务端都根据其当前角色判断。角色变化不会删除已经写入的匿名选票；若用户之后不再符合 scope，则不能继续查看该投票或结果。admin/dev 始终可以管理和查看所有投票。
+role scope 不做发布时快照。列表、详情、投票和结算人数均按当时身份判断；身份变化不会删除已经写入的选票。对于 promotion 等固定名单投票，资格来自发起时写入的 electorate，不随之后的身份变化而改变。
 
-新增集中式权限：
+admin/dev 可以管理和查看所有投票，但固定名单投票中只有 electorate 成员可以投票。客户端隐藏按钮只改善体验，所有资格检查在服务端重复执行。
 
-- `polls.read`：所有已登录角色；具体可见性仍由 scope 过滤。
-- `polls.vote`：所有已登录角色；提交时再校验 scope、状态和 deadline。
-- `polls.manage`：admin、dev。
+## 5. 投票类型、身份模式与 feedback
 
-客户端隐藏按钮只用于改善体验，所有关键检查必须在服务端执行。
+### 5.1 投票类型
 
-## 5. 数据模型与匿名边界
+- `choice`：2–10 个自定义单选项，可启用“其它”自由文本答案，不支持自动结算。
+- `approval`：固定的赞成与反对语义，可自定义显示文案，允许配置 feedback 和自动结算。
 
-### 5.1 Poll
+赞成与反对必须使用稳定的内部 key，而不能通过显示文字猜测语义。这样中英文文案变化不会影响统计。
 
-保存投票本身：
+### 5.2 身份模式
 
-- `id`
-- `title`
-- `description`
-- `scope`: `member_plus | manager_plus | admin`
+- `anonymous = true`：默认。ballot 不保存 voter、投票时间或可与 participation 关联的标识。
+- `anonymous = false`：记名。ballot 保存 voterEmail，供管理员在关闭后查看明细。
+
+列表、详情、确认区和管理页都必须明确标注“匿名投票”或“记名投票”。开放期间 admin/dev 也不能查看选择与 voter 的对应关系。
+
+### 5.3 Feedback 策略
+
+赞成/反对投票支持：
+
+- `disabled`
+- `optional`
+- `required_on_reject`
+- `required`
+
+feedback 是对赞成或反对选择的补充，不复用“其它”选项。长度上限 1,000 字，作为纯文本渲染。
+
+关闭后普通参与者只看汇总，不看其他人的 feedback。管理员可以查看 feedback；记名投票中可同时看到 voter 与选择，匿名投票中只能看到无法归属到成员的 feedback。Promotion 被拒绝时，反对理由会去除投票人身份后反馈给申请人。
+
+## 6. 数据模型
+
+### 6.1 Poll
+
+核心字段：
+
+- `id`, `title`, `description`
+- `kind`: `choice | approval`
 - `status`: `draft | open | closed`
-- `allowOther`
-- `deadline`
-- `createdByEmail`
-- `publishedAt`
-- `closedAt`
-- `createdAt`
-- `updatedAt`
+- `audienceMode`: `role_scope | explicit_list`
+- `scope`: role scope 时必填，固定名单时为空
+- `anonymous`: 默认 true
+- `allowOther`: 仅 choice 使用
+- `feedbackPolicy`: approval 使用
+- `creatorType`: `admin | system`
+- `createdByEmail`: admin 时必填，system 时为空
+- `deadline`, `publishedAt`, `closedAt`
+- `autoSettle`
+- `minimumParticipationBps`, `minimumApprovalBps`
+- `outcome`: `passed | rejected | no_quorum | null`
+- `settledAt`
+- `createdAt`, `updatedAt`
 
-`closedAt` 在管理员提前关闭时写入；自然到期无需后台任务。有效状态函数将 `status === open && now >= deadline` 视为关闭，所有读取与写入都使用同一判断。可在读取时将到期记录惰性更新为 `closed`，但正确性不依赖该更新。
+门槛使用 basis points（0–10,000）保存，UI 以 0–100% 展示并允许一位小数。数据库约束保证 creator、audience 和自动结算字段组合合法。system poll 创建后直接开放并锁定。
 
-### 5.2 PollOption
+### 6.2 PollOption
 
-保存管理员定义的普通选项：
+- `id`, `pollId`, `label`, `sortOrder`
+- `semanticKey`: approval 使用 `approve | reject`，choice 为空
 
-- `id`
+choice 有 2–10 项；approval 恰好两项且 semanticKey 唯一。
+
+### 6.3 PollElectorate
+
 - `pollId`
-- `label`
-- `sortOrder`
+- `voterEmail`
+- `createdAt`
 
-同一投票内至少 2 项、最多 10 项。标准的“赞成 / 反对”只是创建页快捷模板，存储结构与其他自定义选项相同。
+`(pollId, voterEmail)` 唯一。只用于 `explicit_list`；role scope 不写资格快照。
 
-### 5.3 PollParticipation
-
-只保存参与事实：
+### 6.4 PollParticipation
 
 - `pollId`
 - `voterEmail`
 - `votedAt`
 
-`(pollId, voterEmail)` 为复合主键或唯一约束，负责一人一票。管理员参与名单只从此表读取。
+`(pollId, voterEmail)` 唯一，负责一人一票和参与人数。管理员开放期间的参与名单只从此表读取。
 
-### 5.4 PollBallot
+### 6.5 PollBallot
 
-只保存匿名选择：
+- `id`, `pollId`
+- `optionId` 或 `otherText`，二者恰好一个
+- `feedback`
+- `voterEmail`，只允许记名投票填写
 
-- `id`
-- `pollId`
-- `optionId`，普通选项票时填写
-- `otherText`，选择“其它”时填写
+匿名投票不保存 voterEmail 或 votedAt，也不与 participation 建立外键或共享标识。记名投票有意保存 voterEmail，并以数据库唯一约束保证一人一张 ballot。服务端和数据库约束共同保证匿名/记名与选项字段组合正确。
 
-ballot 不保存用户、邮箱、投票时间，也不与 participation 建立外键或共享标识。数据库约束和服务端校验保证 `optionId` 与 `otherText` 恰好填写一个。
+### 6.6 PromotionRequest
 
-提交时在同一个数据库事务中：
+保留现有申请、资格和管理员复核字段，新增唯一 `pollId` 关联。删除 `PromotionVote` 模型和 token 投票页面/API。当前没有进行中的 promotion 投票，因此不迁移旧记录。
 
-1. 再次读取投票并校验 scope、有效状态和 deadline。
+### 6.7 AuditLog
+
+记录投票创建、编辑、发布、deadline 延长、提前关闭和结算，但不记录匿名 ballot 内容。system 操作用明确的 actor 类型表示，不创建虚假用户。
+
+## 7. 写入事务与匿名边界
+
+提交选票在同一事务中：
+
+1. 读取投票并校验 audience、状态、deadline、选项和 feedback。
 2. 创建 `PollParticipation`。
-3. 创建不含身份信息的 `PollBallot`。
+3. 创建 ballot；匿名模式省略 voterEmail，记名模式填写 voterEmail。
+4. 如果固定名单已全员投票且开启自动结算，尝试幂等结算。
 
-participation 唯一约束处理双击和并发提交；任一步失败则整个事务回滚，避免出现“已参与但没有票”或“有票但没有参与记录”。两表分离保证应用层查询无法把身份与选择对应起来。
+任一步失败则回滚。匿名模式下应用代码不得构造同时含 participation 身份和 ballot 内容的对象。记名明细使用独立的 admin-only 查询，并且只在关闭后开放。
 
-### 5.5 AuditLog
+Promotion 申请创建时，在同一事务写入 `PromotionRequest + Poll + options + electorate`，避免出现申请没有投票或投票没有业务来源。
 
-扩展现有 `AuditEntityType` 以支持 `poll`。沿用已有 `create`、`update` 和 `status_change` action，记录创建、发布、deadline 延长和提前关闭。审计日志不记录 ballot 内容。
-
-## 6. 生命周期与可修改性
+## 8. 生命周期与修改规则
 
 ### Draft
 
 - 仅 admin/dev 可见。
-- 标题、说明、scope、deadline、选项和“其它”开关均可修改。
-- 可以预览最终投票页面。
+- 管理员 poll 可编辑全部配置。
+- system poll 不经过可编辑草稿状态。
 
 ### Open
 
-- 发布立即开放，不支持预约开始。
-- 发布前要求 deadline 晚于当前服务器时间。
-- 发布后锁定标题、说明、scope、选项和“其它”开关。
-- 管理员只能延长尚未关闭投票的 deadline，或提前关闭。
-- 所有用户（包括管理员）只能看到总参与人数，不能看到实时票数。
-- admin/dev 可以查看 participation 名单，但不能读取个人选择。
+- 发布后内容、身份模式、受众、选项、feedback 和结算条件全部锁定。
+- 管理员创建的 poll 可延长 deadline 或提前关闭。
+- system promotion poll 只允许管理员查看，不允许编辑、延长或提前关闭。
+- 所有人只看到参与人数；管理员可看 participation 名单，但不能看选择、票数或 feedback。
 
 ### Closed
 
-- 当 `now >= deadline` 或管理员提前关闭时生效。
-- 拒绝所有新选票。
-- 不能重新打开，也不能再延长 deadline。
-- scope 内用户可以查看匿名结果；admin/dev 可以查看所有结果和参与名单。
+- deadline、允许的管理员提前关闭或自动结算使投票关闭。
+- 拒绝新 ballot，不能重新打开。
+- scope 或 electorate 内用户看汇总结果。
+- admin/dev 可查看参与名单；记名投票可额外查看成员、选择和 feedback 明细。
 
-发布后的管理动作写入审计日志。已发布投票不可删除；需要纠正内容时应提前关闭并创建新的投票，避免历史结果失去上下文。
+## 9. 自动结算
 
-## 7. 页面与交互
+自动结算仅适用于 approval。至少一张有效票是所有自动结算的隐含条件。
 
-### 7.1 普通会员 panel：投票列表
+- `participationRatio = participationCount / eligibleCount`
+- `approvalRatio = approveCount / castBallotCount`
+- 两项均达到配置门槛：`passed`
+- 至少一票且参与门槛达到、赞成门槛未达到：`rejected`
+- 零票或参与门槛未达到：`no_quorum`
 
-路径：`/<locale>/dashboard/polls`
+比较使用 `>=`。role scope 的 eligibleCount 按结算时当前身份查询；explicit list 使用固定 electorate 数量。
 
-“投票”入口放在 dashboard 所有角色共有的普通会员导航区。列表由服务端按当前角色过滤，开放且尚未参与的投票优先，其后为已参与的开放投票和已关闭投票。
+结算触发：
 
-每张列表卡显示：
+- 固定名单或 role scope 的所有当前合格用户都已投票时提前结算。
+- deadline 到达后由 cron 结算。
+- 管理员提前关闭自己创建的 poll 时立即结算。
 
-- 标题和简短说明
-- scope
-- deadline 或关闭状态
-- 当前参与人数
-- 当前用户状态：待投票、已投票、已关闭
+结算服务使用事务和 outcome 为空的条件更新保证幂等；并发的最后几张 ballot、cron 和关闭请求只能产生一次业务回写。非自动结算 approval 关闭后 outcome 保持 null，由管理员线下决定。
 
-scope 外投票不返回给客户端，直接访问详情 URL 同样返回无权限或不存在状态，避免泄露标题和内容。
+## 10. Promotion 接入
 
-### 7.2 投票详情
+### 会员 → 见习领队
 
-路径：`/<locale>/dashboard/polls/<id>`
+- system 创建、记名、approval、explicit list。
+- electorate 是申请人指定的正式领队推荐人。
+- feedback 为 `required_on_reject`。
+- 最低参与率 100%，最低赞成率 100%。
 
-开放且未投票时显示题目、普通选项、可选“其它”输入和 deadline。选择“其它”后必须填写文本。点击提交后先出现确认提示，明确说明“匿名提交后不可修改”。成功后页面只显示已记录状态和当前参与人数，不显示选项分布。
+### 见习领队 → 正式领队
 
-开放但已投票时不再渲染表单。关闭后显示：
+- system 创建、记名、approval、explicit list。
+- electorate 是发起时所有正式领队，排除申请人。
+- feedback 为 `required_on_reject`。
+- 引擎至少需要一票；最低赞成比例沿用 `promotion_vote_approval_ratio` 设置。
 
-- 每个普通选项的票数和占全部 ballot 的百分比
-- “其它”总票数
-- 每条“其它”文本分别展示，不自动合并
-- 总参与人数
-- 提示“结果仅供参考，最终决议由管理员线下确认”
+### 结果映射
 
-百分比的分母是 ballot 总数；系统没有弃权票。
+- `passed` → `pending_admin_review`
+- `rejected` → `rejected`
+- `no_quorum` → `expired`
 
-### 7.3 管理员 panel：创建投票
+通过不会直接更改用户角色。管理员沿用现有复核接口最终批准或拒绝；批准后才创建/更新 ManagerProfile。拒绝时向申请人提供去身份化的反对 feedback。
 
-创建入口单独放在管理员导航区，不出现在普通会员 panel。路径：`/<locale>/dashboard/polls/new`。
+新流程不发送 promotion 投票邀请邮件。指定投票人通过统一非邮件通知和 dashboard 获知投票。现有申请最终结果通知保留，属于 promotion 结果通知而不是 poll 发布通知。
 
-创建页包含：
+## 11. 页面与交互
 
-- 标题、说明
-- scope 选择
-- deadline
-- 2–10 个可排序的单选项
-- “赞成 / 反对”快捷模板
-- “允许其它”开关
-- 保存草稿、预览、发布
+### 列表和详情
 
-### 7.4 管理员管理视图
+共同会员导航保留“投票”。role scope 按当前身份过滤，固定名单只返回给 electorate；admin/dev 可查看全部。卡片显示投票类型、受众、deadline、参与人数、身份模式和结算状态。
 
-admin/dev 在投票列表可查看全部草稿、开放和关闭投票，并进入管理视图：
+详情页在提交前明确提示：
 
-- 草稿：编辑、预览、发布
-- 开放：查看参与人数与参与名单、延长 deadline、提前关闭
-- 关闭：查看匿名结果、参与人数、参与名单和审计信息
+- 是否记名。
+- 选票不可修改。
+- feedback 是否必填以及可见范围。
 
-管理视图不会提供 ballot 与 participation 的联合查询，也不会在开放期间返回分组选票统计。
+approval 显示赞成/反对与 feedback；choice 保持自定义选项和可选“其它”。关闭后普通用户看汇总和 outcome，不看记名明细或其他人的 feedback。
 
-## 8. API 与服务边界
+Promotion 投票详情还显示申请人、晋升类型、申请文字以及出席、主领和副领活动统计。
 
-路由保持薄层，核心规则集中在 `src/lib/polls/`：
+### 管理员创建与管理
 
-- scope 判断：给定当前角色和 poll scope，返回是否可见/可投。
-- 有效状态：统一处理显式关闭与 deadline 到期。
-- 输入校验：创建草稿、发布、deadline 延长和 ballot payload。
-- 投票事务：唯一约束、身份记录与匿名 ballot 分离。
-- 结果聚合：只接受已关闭投票，返回普通选项统计与其它文本。
-- 通知受众：根据 scope 选择发布时符合角色的用户。
+创建页增加：
 
-预期 API：
+- 新的四级 scope。
+- choice / approval 类型。
+- 匿名 / 记名，默认匿名。
+- approval feedback 策略。
+- approval 自动结算开关与两个比例输入。
+
+表单根据类型条件显示字段，非法组合不能提交。管理页开放期间仍只显示参与名单；关闭后显示汇总、outcome、门槛，以及记名投票的 admin-only 明细。
+
+system poll 显示“System 发起”并禁用编辑、延长和提前关闭操作。
+
+## 12. API 与服务边界
+
+核心规则继续集中在 `src/lib/polls/`：
+
+- actor 身份与 scope 判断。
+- role scope 与 electorate 资格解析。
+- 投票输入、feedback 和配置校验。
+- 匿名/记名 ballot 事务。
+- 结果聚合和 admin-only 记名明细。
+- 幂等自动结算。
+- promotion 创建适配器和结果回写。
+- 按 role scope 或 electorate 选择通知受众。
+
+现有 poll API 保留，并增加或扩展：
 
 | 方法与路径 | 作用 |
 |---|---|
-| `GET /api/polls` | 返回当前用户可见的列表；管理员可查看全部状态 |
-| `POST /api/polls` | admin/dev 创建草稿 |
-| `GET /api/polls/<id>` | 返回按权限与状态裁剪的详情 |
-| `PATCH /api/polls/<id>` | 编辑草稿，或对开放投票仅延长 deadline |
-| `POST /api/polls/<id>/publish` | 发布并触发一次性通知 |
-| `POST /api/polls/<id>/vote` | 匿名提交一张不可修改的选票 |
-| `POST /api/polls/<id>/close` | admin/dev 提前关闭 |
+| `POST /api/polls` | 创建含身份、feedback 与结算配置的草稿 |
+| `POST /api/polls/<id>/vote` | 提交 choice 或 approval ballot |
+| `POST /api/polls/<id>/close` | 关闭管理员 poll，并在需要时结算 |
 | `GET /api/polls/<id>/participants` | admin/dev 查看参与名单 |
+| `GET /api/polls/<id>/named-ballots` | admin/dev 在关闭后查看记名明细 |
+| `POST /api/cron/polls` | 结算所有到期且尚未结算的自动投票 |
 
-API 使用稳定的错误类别和合适的 HTTP 状态：未登录 `401`、越权或 scope 不匹配 `403`、不存在 `404`、重复投票或状态冲突 `409`、输入错误 `400`。用户界面用中英文友好文案映射错误类别，不直接显示数据库错误。
+Promotion 申请 API 改为创建 system poll；删除 `/api/promotions/vote/<token>` 与对应页面。错误类别保持稳定：401 未登录、403 越权、404 不存在、409 重复/状态冲突、400 配置或输入错误。
 
-## 9. 输入校验
+## 13. 校验规则
 
-- 标题：去除首尾空格后 1–120 字。
-- 说明：去除首尾空格后最多 4,000 字；允许为空。
-- 普通选项：2–10 个，每项去除首尾空格后 1–200 字。
-- 同一投票内普通选项按去除空格后的大小写不敏感值判重。
-- deadline：发布时必须晚于服务器当前时间；延长时必须晚于原 deadline 和当前时间。
-- 普通 ballot：`optionId` 必须属于当前 poll。
-- “其它” ballot：仅在 `allowOther` 为 true 时接受，文本去除首尾空格后 1–500 字。
-- ballot 必须且只能选择普通选项或“其它”之一。
-- “其它”文本作为纯文本渲染，不解释 HTML。
+- title：1–120 字；description 最多 4,000 字。
+- choice：2–10 个唯一选项，每项 1–200 字。
+- approval：恰好 approve/reject 两项。
+- “其它”：仅 choice 且 allowOther 为 true，1–500 字。
+- feedback：按策略校验，最多 1,000 字。
+- deadline：发布时晚于当前时间；仅管理员 poll 可延长且必须严格变晚。
+- 自动结算：只允许 approval；两个门槛均为 0–10,000 basis points。
+- role scope 必须有 scope 且无 electorate；explicit list 必须无 scope。
+- system creator 无 createdByEmail；admin creator 必须有邮箱。
+- ballot option 必须属于当前 poll，且一张 ballot 只能表达一个选择。
 
-所有客户端校验都必须在服务端独立重复执行。
+所有客户端校验在服务端重复执行。
 
-## 10. 通知
+## 14. 通知
 
-在现有通知类型中新增普通会员级别的 `poll_published`，默认偏好为开启，并在通知设置的普通会员分组中提供开关。该偏好同时控制 Web Push、Telegram 和 Discord。
+普通管理员投票发布后，根据 role scope 或 electorate 查询受众。Promotion system poll 创建并开放后通知固定 electorate。
 
-发布事务成功后，根据 poll scope 查询当时角色匹配的用户。对每名用户已配置的非邮件渠道各尝试发送一次，通知包含双语标题、投票名称和详情链接：
+- Web Push、Telegram、Discord 各尝试一次。
+- 尊重 `poll_published` 偏好。
+- 不发送投票邀请邮件。
+- 不重试，不建立队列。
+- 失败写日志，不撤销发布或申请创建。
 
-- 不发送邮件。
-- 不重试。
-- 不建立队列。
-- 单一渠道失败仅写服务端日志，不撤销投票发布，也不阻止其他已配置渠道的一次发送。
-- 非生产环境沿用项目现有的 push mute 行为，避免预览部署通知真实用户。
+Promotion 的既有最终结果通知保留；其不属于投票邀请通知。
 
-角色资格本身仍是动态的；发布时收到通知不构成投票资格快照。
+## 15. 国际化与可访问性
 
-## 11. 国际化与可访问性
+- 中英文提供 scope、投票类型、匿名/记名、feedback 策略、门槛和 outcome 文案。
+- 日期以 UTC 存储，按 locale 与用户时区显示。
+- 使用原生 radio、label 和可访问的错误描述。
+- 身份模式、状态和 outcome 不只依靠颜色。
+- 记名确认和必填 feedback 对屏幕阅读器可感知。
+- 移动端保持单列和可操作的比例输入。
 
-- 新增 `dashboard.polls.*`、`dashboard.pollAdmin.*` 和 `dashboard.notifications.prefs.poll_published` 的中英文翻译。
-- 日期以 UTC 存储，按当前 locale 和用户浏览器时区显示。
-- 选项使用原生 radio 控件和可见 label；键盘可完整操作。
-- deadline、状态和错误不只依靠颜色表达。
-- 提交确认与成功状态对屏幕阅读器可感知。
-- 移动端采用单列布局，不依赖横向滚动。
+## 16. 测试策略
 
-## 12. 测试策略
+### 领域与数据
 
-### 单元测试
+- 四级 scope 对 member、见习领队、正式领队、admin、dev 的完整矩阵。
+- role scope 动态身份和 explicit electorate 固定资格。
+- anonymous ballot 无身份字段；named ballot 保存身份且只允许管理员关闭后读取。
+- feedback 四种策略、长度和纯文本边界。
+- choice/approval 配置组合与 semanticKey。
+- 门槛边界、零票、`passed/rejected/no_quorum`。
+- 并发最后一票、cron 和提前关闭的幂等性。
 
-- 每种 scope 对四种角色的访问矩阵。
-- draft/open/自然到期/提前关闭的有效状态。
-- 创建与 ballot 校验，包括重复选项、非法 option、未启用的“其它”和长度边界。
-- 关闭后普通选项计数、百分比和逐条“其它”文本聚合。
-- 通知受众的角色过滤和偏好处理。
+### 服务与接口
 
-### 服务与接口测试
+- 开放期间任何响应都不含票数、选择或 feedback。
+- system poll 禁止管理员编辑、延长或提前关闭。
+- role scope 与固定名单投票、重复投票和 deadline 检查。
+- 记名明细端点只对 admin/dev 且只在关闭后开放。
+- 两种 promotion 创建正确的 system poll、electorate 和门槛。
+- poll outcome 正确映射到 promotion 状态，最终角色修改仍需管理员复核。
+- 发布通知一次、无邮件、失败不重试。
 
-- admin/dev 创建、编辑和发布；member/manager 越权失败。
-- scope 外用户无法从列表或详情读取投票。
-- 合格用户成功投票；重复、并发、到期后和提前关闭后提交均失败。
-- participation 与 ballot 在同一事务中写入，但 ballot 不包含用户标识或投票时间。
-- 开放期间任何详情响应都不包含选项票数；关闭后才返回结果。
-- 管理员参与者接口只返回 participation，不返回 ballot 内容。
-- 发布触发一次性非邮件通知；失败不重试。
+### 页面
 
-### 页面测试
+- 新 scope、类型、身份模式、feedback 和自动结算条件表单。
+- 匿名/记名提示和确认文案。
+- promotion 上下文、feedback 提交和结果展示。
+- 管理员关闭后的记名明细，普通参与者不可见。
+- system poll 管理动作禁用。
 
-- 普通导航中的投票入口和管理员导航中的创建入口。
-- 按角色过滤的列表状态。
-- 普通选项与“其它”提交、不可改票确认和成功状态。
-- deadline 后结果视图，以及移动端布局。
-- 管理员草稿、预览、发布、延长 deadline 和提前关闭流程。
+完成前运行相关测试、ESLint、TypeScript、Prisma validate/generate 和生产构建。
 
-完成前运行相关测试、ESLint、TypeScript 检查和生产构建，并检查 Prisma migration 与生成 client 一致。
+## 17. 风险与权衡
 
-## 13. 风险与权衡
+- **应用层匿名**：匿名 ballot 与 participation 分离，足以阻止应用查询关联，但不是加密投票。
+- **同表支持两种身份模式**：记名 voterEmail 可空增加约束复杂度，但避免维护两套 ballot 和统计实现。
+- **动态 role scope**：资格符合当前身份语义，但结算分母会随身份变化；promotion 使用固定 electorate 避免该问题。
+- **自动结算并发**：集中幂等服务和条件更新增加实现成本，但避免重复业务回写。
+- **直接移除旧 PromotionVote**：实现更干净；基于当前没有进行中投票的已确认前提，不提供兼容路径。
+- **无邀请邮件**：降低触达冗余和邮件依赖，接受用户依赖 dashboard 与其它线下通知的运营选择。
 
-- **应用层匿名而非密码学匿名**：两表分离足以阻止网站管理员从应用查询个人选项，同时保持一人一票；不承担更高成本的加密投票协议。
-- **动态 scope**：实现简单并符合当前角色语义，但角色变化后用户可能失去已参与投票的结果访问权；已投 ballot 仍保留。
-- **自然到期无需 cron**：服务端在读取和写入时计算有效状态，避免定时任务故障导致 deadline 后仍可投票。
-- **其它文本不合并**：最大限度保留原始反馈，代价是相似答案会分散展示。
-- **一次性通知**：实现和运维成本低，接受部分用户因渠道故障错过通知的可能性；dashboard 始终是投票事实来源。
+## 18. 预期文件边界
 
-## 14. 预期文件边界
-
-实现计划应沿用现有 App Router、Prisma、权限矩阵、next-intl 和通知模块约定。预计新增或修改以下边界：
-
-- `prisma/schema.prisma` 与新的 migration：poll 枚举和四个模型。
-- `src/lib/polls/`：类型、scope、状态、校验、事务和结果聚合。
-- `src/lib/permissions.ts`：投票权限。
-- `src/app/api/polls/`：薄 API 路由。
-- `src/app/[locale]/dashboard/polls/`：列表、详情、创建和管理页面。
-- `src/components/dashboard/`：投票表单、结果和管理员表单等聚焦组件。
-- `src/components/dashboard/nav.tsx`：普通投票入口与管理员创建入口。
-- `src/lib/notify/`、通知设置组件和 API：`poll_published` 类型、文案、偏好与按 scope 分发。
-- `src/messages/zh.json`、`src/messages/en.json`：完整国际化文案。
-- 对应单元、接口和页面测试。
+- `prisma/schema.prisma` 与 poll migration：新枚举、字段、electorate、promotion 关联并移除 PromotionVote。
+- `src/lib/polls/`：身份、资格、feedback、匿名/记名、聚合和结算。
+- `src/lib/promotions/` 或聚焦服务：申请创建、poll 配置和结果映射。
+- `src/app/api/polls/`、`src/app/api/cron/polls/`：薄路由。
+- `src/app/api/promotions/`：改用 system poll，删除 token vote 路由。
+- `src/app/[locale]/dashboard/polls/`：统一列表、详情和管理体验。
+- 删除 `src/app/[locale]/promotions/vote/[token]/`。
+- `src/lib/notify/` 与通知设置：按 role scope 或 electorate 分发。
+- `src/messages/en.json`、`src/messages/zh.json`：完整双语文案。
+- 对应领域、服务、API 和组件测试。
