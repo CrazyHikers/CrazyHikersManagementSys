@@ -13,20 +13,16 @@ type Referral = {
   name: string;
 };
 
-type PendingVote = {
-  id: string;
-  voterEmail: string;
-  approved: boolean | null;
-  votedAt: string | null;
-};
-
 type PendingRequest = {
   id: string;
   type: string;
   status: string;
   requestedAt: string;
   expiresAt: string;
-  votes: PendingVote[];
+  poll: {
+    id: string;
+    _count: { electorate: number; participations: number };
+  };
 };
 
 type PromotionEligibility = {
@@ -74,11 +70,6 @@ export function PromotionRequest({
 
   // Show pending request status
   if (pendingRequest) {
-    const castVotes = pendingRequest.votes.filter(
-      (v) => v.approved !== null
-    );
-    const approvedVotes = castVotes.filter((v) => v.approved);
-
     return (
       <Card>
         <CardHeader>
@@ -115,13 +106,8 @@ export function PromotionRequest({
           </div>
           <div>
             <span className="font-medium">Vote progress:</span>{" "}
-            {castVotes.length} / {pendingRequest.votes.length} voted
-            {castVotes.length > 0 && (
-              <span className="text-muted-foreground">
-                {" "}
-                ({approvedVotes.length} approved)
-              </span>
-            )}
+            {pendingRequest.poll._count.participations} /{" "}
+            {pendingRequest.poll._count.electorate} voted
           </div>
         </CardContent>
       </Card>

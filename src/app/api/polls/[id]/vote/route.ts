@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { can, getUserRole } from "@/lib/permissions";
 import { pollErrorCode, pollErrorStatus } from "@/lib/polls/http";
 import { prismaPollDatabase, submitBallot } from "@/lib/polls/service";
+import { notifyPromotionSettlement } from "@/lib/promotions/settlement-notification";
 
 export async function POST(
   request: NextRequest,
@@ -25,12 +26,27 @@ export async function POST(
 
   const { id } = await params;
   try {
-    await submitBallot(
+    const result = await submitBallot(
       prismaPollDatabase,
-      { email: session.user.email, role: getUserRole(session) },
+      {
+        email: session.user.email,
+        role: getUserRole(session),
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
+      },
       id,
       body,
     );
+    if (result.settlement?.changed) {
+      try {
+        await notifyPromotionSettlement(
+          prismaPollDatabase,
+          result.settlement,
+        );
+      } catch (error) {
+        console.error("[polls] promotion result notification failed", error);
+      }
+    }
     return NextResponse.json({ ok: true });
   } catch (error) {
     const status = pollErrorStatus(error);

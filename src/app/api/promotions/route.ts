@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { after, NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import {
-  sendPromotionReferralEmail,
-  sendPromotionVoteEmail,
-} from "@/lib/email";
-import type { CandidateActivities } from "@/lib/email";
 import { getSetting } from "@/lib/settings";
 import { getFlagSettings, banActiveCutoff, isBanActive, isFlagExpired } from "@/lib/flags";
-import { getBaseUrl } from "@/lib/url";
+import { createPromotionWithPoll } from "@/lib/promotions/poll-adapter";
+import {
+  notifyPublishedPoll,
+  type PublishedPoll,
+} from "@/lib/polls/notifications";
 import type { PromotionStatus } from "@/generated/prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -27,7 +25,15 @@ export async function GET(request: NextRequest) {
 
   const requests = await db.promotionRequest.findMany({
     where: status ? { status: status as PromotionStatus } : undefined,
-    include: { votes: true, user: true },
+    include: {
+      user: true,
+      poll: {
+        include: {
+          options: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { electorate: true, participations: true } },
+        },
+      },
+    },
     orderBy: { requestedAt: "desc" },
   });
 
@@ -212,81 +218,35 @@ export async function POST(request: NextRequest) {
   }
 
   const voteDurationHours = await getSetting("promotion_vote_duration_hours");
+  const approvalRatioPercent = await getSetting(
+    "promotion_vote_approval_ratio",
+  );
   const expiresAt = new Date(Date.now() + voteDurationHours * 3600000);
 
   try {
-    const promotionRequest = await db.promotionRequest.create({
-      data: {
-        userEmail: email,
-        type,
-        expiresAt,
-        applicationText: applicationText || null,
-        votes: {
-          create: voterEmails.map((voterEmail) => ({
-            voterEmail,
-            token: randomUUID(),
-          })),
-        },
-      },
-      include: { votes: true },
+    const { promotionRequest, poll } = await createPromotionWithPoll(db, {
+      type,
+      candidateEmail: email,
+      voterEmails,
+      deadline: expiresAt,
+      approvalRatioPercent,
+      applicationText,
     });
-
-    // Fetch candidate activity history for emails
-    const baseUrl = getBaseUrl();
-
-    const [managedActivities, attendedRegistrations] = await Promise.all([
-      db.activityManager.findMany({
-        where: { userEmail: email, status: "confirmed" },
-        include: { activity: { select: { id: true, title: true } } },
-      }),
-      db.registration.findMany({
-        where: { userEmail: email, status: "attended" },
-        include: { activity: { select: { id: true, title: true } } },
-      }),
-    ]);
-
-    const managedIds = new Set(managedActivities.map((am) => am.activityId));
-    const candidateActivities: CandidateActivities = {
-      managed: managedActivities
-        .filter((am) => am.role === "manager")
-        .map((am) => ({ title: am.activity.title, url: `${baseUrl}/dashboard/activity-view/${am.activityId}` })),
-      comanaged: managedActivities
-        .filter((am) => am.role === "comanager")
-        .map((am) => ({ title: am.activity.title, url: `${baseUrl}/dashboard/activity-view/${am.activityId}` })),
-      attended: attendedRegistrations
-        .filter((r) => !managedIds.has(r.activityId))
-        .map((r) => ({ title: r.activity.title, url: `${baseUrl}/dashboard/activity-view/${r.activityId}` })),
-    };
-
-    // Send emails
-    for (const vote of promotionRequest.votes) {
-      const voteUrl = `${baseUrl}/promotions/vote/${vote.token}`;
-      const voter = await db.user.findUnique({
-        where: { email: vote.voterEmail },
-      });
-      const voterName = voter?.name || vote.voterEmail;
-      const requesterName = user.name || email;
-
-      if (type === "member_to_intern") {
-        await sendPromotionReferralEmail(
-          vote.voterEmail,
-          voterName,
-          requesterName,
-          voteUrl,
-          candidateActivities
-        );
-      } else {
-        await sendPromotionVoteEmail(
-          vote.voterEmail,
-          voterName,
-          requesterName,
-          voteUrl,
-          candidateActivities
+    const publishedPoll = poll as PublishedPoll;
+    after(async () => {
+      try {
+        await notifyPublishedPoll(publishedPoll);
+      } catch (error) {
+        console.error(
+          "[promotions] poll notification audience lookup failed",
+          error,
         );
       }
-    }
-
-    return NextResponse.json({ id: promotionRequest.id });
+    });
+    return NextResponse.json({
+      id: (promotionRequest as { id: string }).id,
+      pollId: publishedPoll.id,
+    });
   } catch (error) {
     console.error("Create promotion request error:", error);
     return NextResponse.json(

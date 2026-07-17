@@ -21,6 +21,8 @@ export async function GET() {
     const polls = await listPolls(prismaPollDatabase, {
       email: session.user.email,
       role: getUserRole(session),
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
     });
     return NextResponse.json({ polls });
   } catch (error) {
