@@ -45,19 +45,12 @@ describe("poll database migrations", () => {
     expect(sql).toContain("promotion_requests_poll_id_key");
   });
 
-  it("guards the one-time poll schema push against existing data", () => {
+  it("does not retain the one-time data-loss acceptance in normal builds", () => {
     const packageJson = JSON.parse(
       readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
     ) as { scripts: { build: string } };
 
-    expect(packageJson.scripts.build).toBe(
-      "prisma db execute --file prisma/preflight-empty-poll-data.sql && prisma db push --accept-data-loss && next build",
-    );
-    expect(
-      readFileSync(
-        resolve(process.cwd(), "prisma/preflight-empty-poll-data.sql"),
-        "utf8",
-      ),
-    ).toContain("Poll schema push aborted");
+    expect(packageJson.scripts.build).toBe("prisma db push && next build");
+    expect(packageJson.scripts.build).not.toContain("--accept-data-loss");
   });
 });
