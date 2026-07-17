@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma migrate deploy && next build",
+    "build": "prisma db execute --file prisma/preflight-empty-poll-data.sql && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
