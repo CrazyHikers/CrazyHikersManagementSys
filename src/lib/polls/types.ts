@@ -1,12 +1,37 @@
 export type UserRole = "dev" | "admin" | "manager" | "member";
 
-export type PollScope = "member_plus" | "manager_plus" | "admin";
+export type PollActor = {
+  email: string;
+  role: UserRole;
+  isIntern: boolean;
+};
+
+export type PollScope =
+  | "member_plus"
+  | "intern_manager_plus"
+  | "qualified_manager_plus"
+  | "admin";
+
+export type PollKind = "choice" | "approval";
+
+export type PollAudienceMode = "role_scope" | "explicit_list";
+
+export type PollCreatorType = "admin" | "system";
+
+export type PollFeedbackPolicy =
+  | "disabled"
+  | "optional"
+  | "required_on_reject"
+  | "required";
+
+export type PollOutcome = "passed" | "rejected" | "no_quorum";
 
 export type PollStatus = "draft" | "open" | "closed";
 
 export type PollOptionDTO = {
   id: string;
   label: string;
+  semanticKey?: "approve" | "reject" | null;
   sortOrder: number;
 };
 
@@ -31,8 +56,17 @@ export type PollListItemDTO = {
   id: string;
   title: string;
   description: string;
-  scope: PollScope;
+  kind: PollKind;
+  audienceMode: PollAudienceMode;
+  scope: PollScope | null;
   status: PollStatus;
+  anonymous: boolean;
+  feedbackPolicy: PollFeedbackPolicy;
+  creatorType: PollCreatorType;
+  autoSettle: boolean;
+  minimumParticipationBps: number;
+  minimumApprovalBps: number;
+  outcome: PollOutcome | null;
   deadline: string;
   participantCount: number;
   hasVoted: boolean;
@@ -42,6 +76,18 @@ export type PollListItemDTO = {
 export type PollDetailDTO = PollListItemDTO & {
   options: PollOptionDTO[];
   results?: PollResultsDTO;
+  promotion?: {
+    id: string;
+    type: "member_to_intern" | "intern_to_qualified";
+    candidateEmail: string;
+    candidateName: string;
+    applicationText: string | null;
+    stats: {
+      attendedCount: number;
+      managedCount: number;
+      comanagedCount: number;
+    };
+  };
 };
 
 export type PollParticipantDTO = {
@@ -50,10 +96,25 @@ export type PollParticipantDTO = {
   votedAt: string;
 };
 
+export type PollNamedBallotDTO = {
+  email: string;
+  name: string;
+  optionLabel: string;
+  semanticKey: "approve" | "reject" | null;
+  feedback: string | null;
+};
+
 export type NormalizedPollInput = {
   title: string;
   description: string;
+  kind: PollKind;
+  audienceMode: PollAudienceMode;
   scope: PollScope;
+  anonymous: boolean;
+  feedbackPolicy: PollFeedbackPolicy;
+  autoSettle: boolean;
+  minimumParticipationBps: number;
+  minimumApprovalBps: number;
   deadline: Date;
   allowOther: boolean;
   options: string[];
@@ -62,4 +123,5 @@ export type NormalizedPollInput = {
 export type NormalizedBallotInput = {
   optionId: string | null;
   otherText: string | null;
+  feedback: string | null;
 };

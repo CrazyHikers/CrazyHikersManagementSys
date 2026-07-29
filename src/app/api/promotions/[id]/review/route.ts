@@ -21,7 +21,7 @@ export async function POST(
 
   const promotionRequest = await db.promotionRequest.findUnique({
     where: { id },
-    include: { user: true, votes: true },
+    include: { user: true, poll: true },
   });
 
   if (!promotionRequest) {

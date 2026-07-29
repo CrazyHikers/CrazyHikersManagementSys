@@ -5,16 +5,18 @@ import { auth } from "@/lib/auth";
 import { can, getUserRole } from "@/lib/permissions";
 import {
   getPollDetail,
+  listNamedBallots,
   listParticipants,
   prismaPollDatabase,
 } from "@/lib/polls/service";
-import type { UserRole } from "@/lib/polls/types";
+import type { PollNamedBallotDTO, UserRole } from "@/lib/polls/types";
 import { Link } from "@/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PollAdminActions } from "@/components/dashboard/polls/poll-admin-actions";
 import { PollEditor } from "@/components/dashboard/polls/poll-editor";
 import { PollResults } from "@/components/dashboard/polls/poll-results";
 import { PollStatusBadge } from "@/components/dashboard/polls/poll-status-badge";
+import { NamedBallots } from "@/components/dashboard/polls/named-ballots";
 
 export default async function ManagePollPage({
   params,
@@ -31,15 +33,25 @@ export default async function ManagePollPage({
   const actor = {
     email: session.user.email,
     role: getUserRole(session) as UserRole,
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
   };
 
   let poll;
   let participants;
+  let namedBallots: PollNamedBallotDTO[] = [];
   try {
     [poll, participants] = await Promise.all([
       getPollDetail(prismaPollDatabase, actor, id),
       listParticipants(prismaPollDatabase, actor, id),
     ]);
+    if (poll.status === "closed" && !poll.anonymous) {
+      namedBallots = await listNamedBallots(
+        prismaPollDatabase,
+        actor,
+        id,
+      );
+    }
   } catch {
     notFound();
   }
@@ -55,13 +67,31 @@ export default async function ManagePollPage({
   const editorCopy = {
     title: t("editor.title"),
     description: t("editor.description"),
+    kind: t("editor.kind"),
+    kinds: {
+      choice: t("editor.kindChoice"),
+      approval: t("editor.kindApproval"),
+    },
     scope: t("editor.scope"),
     scopes: {
       member_plus: t("scope.member_plus"),
-      manager_plus: t("scope.manager_plus"),
+      intern_manager_plus: t("scope.intern_manager_plus"),
+      qualified_manager_plus: t("scope.qualified_manager_plus"),
       admin: t("scope.admin"),
     },
     deadline: t("editor.deadline"),
+    anonymous: t("editor.anonymous"),
+    anonymousHint: t("editor.anonymousHint"),
+    feedbackPolicy: t("editor.feedbackPolicy"),
+    feedbackPolicies: {
+      disabled: t("editor.feedbackDisabled"),
+      optional: t("editor.feedbackOptional"),
+      required_on_reject: t("editor.feedbackRequiredOnReject"),
+      required: t("editor.feedbackRequired"),
+    },
+    autoSettle: t("editor.autoSettle"),
+    minimumParticipation: t("editor.minimumParticipation"),
+    minimumApproval: t("editor.minimumApproval"),
     options: t("editor.options"),
     option: t("editor.option", { number: "{number}" }),
     addOption: t("editor.addOption"),
@@ -92,8 +122,15 @@ export default async function ManagePollPage({
             <div className="mb-2 flex items-center gap-2">
               <PollStatusBadge status={poll.status} labels={statuses} />
               <span className="text-xs font-medium text-slate-500">
-                {t(`scope.${poll.scope}`)}
+                {poll.scope
+                  ? t(`scope.${poll.scope}`)
+                  : t("scope.explicit_list")}
               </span>
+              {poll.creatorType === "system" && (
+                <span className="rounded-full bg-lime-100 px-2.5 py-1 text-xs font-semibold text-lime-800">
+                  {publicT("creatorSystem")}
+                </span>
+              )}
             </div>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
               {poll.title}
@@ -104,7 +141,7 @@ export default async function ManagePollPage({
               })}
             </p>
           </div>
-          <PollAdminActions
+          {poll.creatorType !== "system" && <PollAdminActions
             pollId={poll.id}
             status={poll.status}
             deadline={poll.deadline}
@@ -120,7 +157,7 @@ export default async function ManagePollPage({
               working: t("actions.working"),
               error: t("actions.error"),
             }}
-          />
+          />}
         </div>
       </div>
 
@@ -141,6 +178,15 @@ export default async function ManagePollPage({
             />
           </CardContent>
         </Card>
+      )}
+
+      {poll.status === "closed" && !poll.anonymous && (
+        <NamedBallots
+          ballots={namedBallots}
+          title={t("namedBallotsTitle")}
+          empty={t("noNamedBallots")}
+          feedbackLabel={t("feedbackLabel")}
+        />
       )}
 
       <Card>

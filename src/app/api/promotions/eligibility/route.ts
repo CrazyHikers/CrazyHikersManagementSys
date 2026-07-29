@@ -56,7 +56,13 @@ export async function GET() {
 
   const pendingRequest = await db.promotionRequest.findFirst({
     where: { userEmail: email, status: { in: ["pending", "pending_admin_review"] } },
-    include: { votes: true },
+    include: {
+      poll: {
+        include: {
+          _count: { select: { electorate: true, participations: true } },
+        },
+      },
+    },
   });
 
   const managerProfile = await db.managerProfile.findUnique({

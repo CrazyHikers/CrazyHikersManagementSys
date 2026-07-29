@@ -29,7 +29,12 @@ export default async function PollsPage({
   if (!email) return null;
   const role = getUserRole(session) as UserRole;
   const polls = (
-    await listPolls(prismaPollDatabase, { email, role })
+    await listPolls(prismaPollDatabase, {
+      email,
+      role,
+      isIntern:
+        (session.user as { isIntern?: boolean }).isIntern === true,
+    })
   ).sort((left, right) => rank(left) - rank(right));
   const isAdmin = can(session, "polls.manage");
   const formatDate = new Intl.DateTimeFormat(locale, {
@@ -78,8 +83,26 @@ export default async function PollsPage({
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <PollStatusBadge status={poll.status} labels={statuses} />
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    {t(`scope.${poll.scope}`)}
+                    {poll.scope
+                      ? t(`scope.${poll.scope}`)
+                      : t("scope.explicit_list")}
                   </span>
+                  <span
+                    className={
+                      poll.anonymous
+                        ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+                        : "rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
+                    }
+                  >
+                    {poll.anonymous
+                      ? t("identityAnonymous")
+                      : t("identityNamed")}
+                  </span>
+                  {poll.outcome && (
+                    <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+                      {t(`outcome.${poll.outcome}`)}
+                    </span>
+                  )}
                   {poll.status === "open" && poll.hasVoted && (
                     <span className="rounded-full bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white">
                       {t("voted")}
