@@ -1,11 +1,14 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
-import { rateLimit } from "./rate-limit";
-import { verifyTurnstile } from "./turnstile";
+import { verifyTurnstileStatus } from "./turnstile";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
 import type { NextAuthConfig } from "next-auth";
+
+class TurnstileSigninError extends CredentialsSignin {
+  code = "turnstile_verification_failed";
+}
 
 // On Vercel preview deploys the project-level AUTH_URL env var is shared
 // with production, so Auth.js builds sign-in/sign-out redirects pointing
@@ -128,23 +131,20 @@ export const authConfig: NextAuthConfig = {
 
         if (!email || !password) return null;
 
-        // Rate limit password attempts
-        const { allowed } = await rateLimit(`password:${email}`, {
-          maxAttempts: 5,
-          windowMs: 15 * 60 * 1000,
-        });
-        if (!allowed) {
-          console.warn(`[AUTH] Rate limited password attempt for ${email}`);
-          return null;
+        // Turnstile is the login endpoint's bot protection and must not be
+        // bypassable by calling the Auth.js callback directly.
+        if (!turnstileToken) {
+          console.warn(`[AUTH] Missing Turnstile token for ${email}`);
+          throw new TurnstileSigninError();
         }
 
-        // Verify Turnstile
-        if (turnstileToken) {
-          const valid = await verifyTurnstile(turnstileToken);
-          if (!valid) {
-            console.warn(`[AUTH] Turnstile verification failed for ${email}`);
-            return null;
-          }
+        const status = await verifyTurnstileStatus(turnstileToken);
+        if (status === "unavailable") {
+          throw new Error("Turnstile verification service unavailable");
+        }
+        if (status === "invalid") {
+          console.warn(`[AUTH] Turnstile verification failed for ${email}`);
+          throw new TurnstileSigninError();
         }
 
         // Look up user

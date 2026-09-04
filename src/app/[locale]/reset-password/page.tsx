@@ -1,128 +1,73 @@
-"use client";
-
-import { useState, Suspense } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import { CircleX } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Link } from "@/i18n/navigation";
+import { db } from "@/lib/db";
+import { ResetPasswordForm } from "./reset-password-form";
 
-function ResetPasswordForm() {
-  const t = useTranslations("auth");
-  const router = useRouter();
-  const params = useSearchParams();
-  const token = params.get("token") ?? "";
-  const email = params.get("email") ?? "";
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+const PWRESET_PREFIX = "pwreset:";
 
-  const linkInvalid = !token || !email;
+type SearchParams = Promise<{
+  token?: string | string[];
+  email?: string | string[];
+}>;
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const t = await getTranslations("auth");
+  const query = await searchParams;
+  const token = typeof query.token === "string" ? query.token : "";
+  const email = typeof query.email === "string" ? query.email : "";
 
-    const formData = new FormData(e.currentTarget);
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirmPassword") as string;
-
-    if (password.length < 8) {
-      setError(t("passwordMinLength"));
-      setLoading(false);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t("passwordsMustMatch"));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || t("resetFailed"));
-        setLoading(false);
-        return;
-      }
-      setDone(true);
-      setLoading(false);
-      // Brief delay so the user reads the success message before redirect.
-      setTimeout(() => router.push("/signin"), 1500);
-    } catch {
-      setError(t("resetFailed"));
-      setLoading(false);
-    }
-  }
+  const record = token && email
+    ? await db.verificationToken.findUnique({
+        where: {
+          identifier_token: {
+            identifier: `${PWRESET_PREFIX}${email}`,
+            token,
+          },
+        },
+        select: { expires: true },
+      })
+    : null;
+  const linkInvalid = !record || record.expires <= new Date();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src="/logo.jpg" alt="Crazy Hikers" className="h-20 mx-auto mb-2" />
-          <CardTitle>{t("resetPasswordTitle")}</CardTitle>
-          <CardDescription>{t("resetPasswordDescription")}</CardDescription>
+          <img src="/logo.jpg" alt="Crazy Hikers" className="mx-auto mb-2 h-20" />
+          {linkInvalid ? (
+            <>
+              <CircleX className="mx-auto mb-2 size-12 text-red-600" aria-hidden="true" />
+              <CardTitle role="heading" aria-level={1}>
+                {t("resetLinkInvalidTitle")}
+              </CardTitle>
+              <CardDescription>{t("resetLinkInvalid")}</CardDescription>
+            </>
+          ) : (
+            <>
+              <CardTitle>{t("resetPasswordTitle")}</CardTitle>
+              <CardDescription>{t("resetPasswordDescription")}</CardDescription>
+            </>
+          )}
         </CardHeader>
         <CardContent>
           {linkInvalid ? (
-            <div className="text-center text-red-600 py-4">{t("resetLinkInvalid")}</div>
-          ) : done ? (
-            <div className="text-center py-4">
-              <div className="text-green-600 font-medium">{t("resetSuccess")}</div>
-            </div>
+            <Link
+              href="/signin"
+              className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-green-600 px-4 text-sm font-medium text-white transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+            >
+              {t("backToSignIn")}
+            </Link>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">{t("password")}</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder={t("passwordPlaceholder")}
-                  required
-                  minLength={8}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder={t("confirmPasswordPlaceholder")}
-                  required
-                  minLength={8}
-                />
-              </div>
-              {error && (
-                <div className="text-red-600 text-sm text-center">{error}</div>
-              )}
-              <Button
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={loading}
-              >
-                {loading ? "..." : t("setPassword")}
-              </Button>
-            </form>
+            <ResetPasswordForm token={token} email={email} />
           )}
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={null}>
-      <ResetPasswordForm />
-    </Suspense>
   );
 }

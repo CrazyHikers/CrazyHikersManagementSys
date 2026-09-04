@@ -960,6 +960,7 @@
     "sendResetLink": "发送重置链接",
     "backToSignIn": "返回登录",
     "invalidCredentials": "邮箱或密码错误。",
+    "signInUnavailable": "登录服务暂时不可用，请稍后再试。",
     "setPasswordTitle": "设置密码",
     "setPasswordDescription": "为你的账号创建密码以便直接登录。",
     "setPassword": "设置密码",
@@ -968,9 +969,10 @@
     "passwordMinLength": "密码至少需要8个字符。",
     "passwordsMustMatch": "两次输入的密码不一致。",
     "resetFailed": "重置密码失败，请重试。",
-    "resetLinkInvalid": "此重置链接无效或已过期，请重新申请。",
+    "resetLinkInvalidTitle": "链接已失效",
+    "resetLinkInvalid": "此重置链接已过期或已经被使用。请返回登录页重新申请。",
     "resetSuccess": "密码已重置，正在跳转到登录页…",
-    "turnstileError": "人机验证失败，请重试。"
+    "turnstileError": "人机验证已失效或失败，请重新完成验证。"
   },
   "cookieBanner": {
     "message": "本网站仅使用必要的身份验证和会话管理Cookie，不使用任何追踪或分析Cookie。",

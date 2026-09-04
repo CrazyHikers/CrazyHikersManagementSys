@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
+import { Link } from "@/i18n/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Turnstile } from "@/components/turnstile";
+import { Turnstile, type TurnstileHandle } from "@/components/turnstile";
 
 export default function SignInPage() {
   const t = useTranslations("auth");
@@ -19,6 +20,7 @@ export default function SignInPage() {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   const handleTurnstileVerify = useCallback((token: string) => {
     setTurnstileToken(token);
@@ -37,20 +39,35 @@ export default function SignInPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      turnstileToken,
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        turnstileToken,
+        redirect: false,
+      });
 
-    if (result?.error) {
-      setError(t("invalidCredentials"));
+      if (!result || result.error) {
+        if (result?.error === "CredentialsSignin") {
+          setError(
+            result.code === "turnstile_verification_failed"
+              ? t("turnstileError")
+              : t("invalidCredentials")
+          );
+        } else {
+          setError(t("signInUnavailable"));
+        }
+        turnstileRef.current?.reset();
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch {
+      setError(t("signInUnavailable"));
+      turnstileRef.current?.reset();
       setLoading(false);
-      return;
     }
-
-    router.push("/dashboard");
   }
 
   async function handleForgotPassword(e: React.FormEvent<HTMLFormElement>) {
@@ -113,6 +130,7 @@ export default function SignInPage() {
                 />
               </div>
               <Turnstile
+                ref={turnstileRef}
                 onVerify={handleTurnstileVerify}
                 onExpire={handleTurnstileExpire}
               />
@@ -162,6 +180,7 @@ export default function SignInPage() {
                 />
               </div>
               <Turnstile
+                ref={turnstileRef}
                 onVerify={handleTurnstileVerify}
                 onExpire={handleTurnstileExpire}
               />
@@ -186,9 +205,9 @@ export default function SignInPage() {
                 >
                   {t("forgotPassword")}
                 </button>
-                <a href="/signup" className="text-green-600 hover:underline">
+                <Link href="/signup" className="text-green-600 hover:underline">
                   {t("noAccount")} {t("signUp")}
-                </a>
+                </Link>
               </div>
             </form>
           )}

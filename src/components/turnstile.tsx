@@ -1,11 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import Script from "next/script";
 
 interface TurnstileProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
+}
+
+export interface TurnstileHandle {
+  reset: () => void;
 }
 
 declare global {
@@ -27,65 +37,80 @@ declare global {
   }
 }
 
-export function Turnstile({ onVerify, onExpire }: TurnstileProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-  const renderedRef = useRef(false);
+export const Turnstile = forwardRef<TurnstileHandle, TurnstileProps>(
+  function Turnstile({ onVerify, onExpire }, ref) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const renderedRef = useRef(false);
 
-  const renderWidget = useCallback(() => {
-    if (
-      renderedRef.current ||
-      !containerRef.current ||
-      !window.turnstile
-    )
-      return;
+    useImperativeHandle(
+      ref,
+      () => ({
+        reset() {
+          onExpire?.();
+          if (widgetIdRef.current && window.turnstile) {
+            window.turnstile.reset(widgetIdRef.current);
+          }
+        },
+      }),
+      [onExpire]
+    );
 
-    // Cloudflare's official "always passes" testing site key — used on any
-    // non-production deploy so Vercel preview URLs work without adding each
-    // random *.vercel.app hostname to the Turnstile allowlist.
-    // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
-    const TEST_SITE_KEY_ALWAYS_PASS = "1x00000000000000000000AA";
-    const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
-    const sitekey = isProduction
-      ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-      : TEST_SITE_KEY_ALWAYS_PASS;
-    if (!sitekey) {
-      console.error("[TURNSTILE] NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set");
-      return;
-    }
+    const renderWidget = useCallback(() => {
+      if (
+        renderedRef.current ||
+        !containerRef.current ||
+        !window.turnstile
+      )
+        return;
 
-    renderedRef.current = true;
-    widgetIdRef.current = window.turnstile.render(containerRef.current, {
-      sitekey,
-      callback: onVerify,
-      "expired-callback": onExpire,
-      theme: "auto",
-      size: "normal",
-    });
-  }, [onVerify, onExpire]);
-
-  useEffect(() => {
-    // If script already loaded, render immediately
-    if (window.turnstile) {
-      renderWidget();
-    }
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-        renderedRef.current = false;
+      // Cloudflare's official "always passes" testing site key — used on any
+      // non-production deploy so Vercel preview URLs work without adding each
+      // random *.vercel.app hostname to the Turnstile allowlist.
+      // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+      const TEST_SITE_KEY_ALWAYS_PASS = "1x00000000000000000000AA";
+      const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === "production";
+      const sitekey = isProduction
+        ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        : TEST_SITE_KEY_ALWAYS_PASS;
+      if (!sitekey) {
+        console.error("[TURNSTILE] NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set");
+        return;
       }
-    };
-  }, [renderWidget]);
 
-  return (
-    <>
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        strategy="afterInteractive"
-        onLoad={renderWidget}
-      />
-      <div ref={containerRef} />
-    </>
-  );
-}
+      renderedRef.current = true;
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey,
+        callback: onVerify,
+        "expired-callback": onExpire,
+        theme: "auto",
+        size: "normal",
+      });
+    }, [onVerify, onExpire]);
+
+    useEffect(() => {
+      // If script already loaded, render immediately
+      if (window.turnstile) {
+        renderWidget();
+      }
+      return () => {
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.remove(widgetIdRef.current);
+          widgetIdRef.current = null;
+          renderedRef.current = false;
+        }
+      };
+    }, [renderWidget]);
+
+    return (
+      <>
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+          onLoad={renderWidget}
+        />
+        <div ref={containerRef} />
+      </>
+    );
+  }
+);

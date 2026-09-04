@@ -5,14 +5,18 @@
 // https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 const TEST_SECRET_ALWAYS_PASS = "1x0000000000000000000000000000000AA";
 
-export async function verifyTurnstile(token: string): Promise<boolean> {
+export type TurnstileVerificationStatus = "valid" | "invalid" | "unavailable";
+
+export async function verifyTurnstileStatus(
+  token: string
+): Promise<TurnstileVerificationStatus> {
   const isProduction = process.env.VERCEL_ENV === "production";
   const secret = isProduction
     ? process.env.TURNSTILE_SECRET_KEY
     : TEST_SECRET_ALWAYS_PASS;
   if (!secret) {
     console.error("[TURNSTILE] TURNSTILE_SECRET_KEY is not set");
-    return false;
+    return "unavailable";
   }
 
   try {
@@ -22,12 +26,39 @@ export async function verifyTurnstile(token: string): Promise<boolean> {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ secret, response: token }),
+        signal: AbortSignal.timeout(10_000),
       }
     );
-    const data = await res.json();
-    return data.success === true;
+    const data = (await res.json()) as {
+      success?: boolean;
+      "error-codes"?: string[];
+    };
+    const serviceFailure =
+      !res.ok ||
+      data["error-codes"]?.some((code) =>
+        [
+          "internal-error",
+          "missing-input-secret",
+          "invalid-input-secret",
+          "bad-request",
+        ].includes(code)
+      );
+
+    if (serviceFailure) {
+      console.error("[TURNSTILE] Siteverify service error", {
+        status: res.status,
+        errorCodes: data["error-codes"],
+      });
+      return "unavailable";
+    }
+
+    return data.success === true ? "valid" : "invalid";
   } catch (err) {
     console.error("[TURNSTILE] Verification failed:", err);
-    return false;
+    return "unavailable";
   }
+}
+
+export async function verifyTurnstile(token: string): Promise<boolean> {
+  return (await verifyTurnstileStatus(token)) === "valid";
 }
