@@ -18,7 +18,6 @@ export default function SignUpPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
-  const [eventCode, setEventCode] = useState("");
   const [inboundAttempt, setInboundAttempt] = useState<{
     address: string;
     requestCode: string;
@@ -110,9 +109,11 @@ export default function SignUpPage() {
     setLoading(false);
   }
 
-  const normalizedEventCode = eventCode.trim().toUpperCase();
   const emailSubject = inboundAttempt
-    ? `JOIN ${normalizedEventCode || t("inboundCodePlaceholder")} ${inboundAttempt.requestCode}`
+    ? `JOIN ${inboundAttempt.requestCode}`
+    : "";
+  const mailtoHref = inboundAttempt
+    ? `mailto:${inboundAttempt.address}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(t("inboundMailBody"))}`
     : "";
 
   return (
@@ -132,16 +133,6 @@ export default function SignUpPage() {
                   {t("inboundInstructions")}
                 </p>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="event-code">{t("inboundEventCode")}</Label>
-                <Input
-                  id="event-code"
-                  value={eventCode}
-                  onChange={(event) => setEventCode(event.target.value.toUpperCase())}
-                  placeholder={t("inboundCodePlaceholder")}
-                  autoComplete="off"
-                />
-              </div>
               <div className="rounded-md bg-muted p-3 text-sm">
                 <div className="text-muted-foreground">{t("inboundSendTo")}</div>
                 <div className="break-all font-mono font-medium">{inboundAttempt.address}</div>
@@ -151,9 +142,8 @@ export default function SignUpPage() {
               <Button
                 type="button"
                 className="w-full bg-green-600 hover:bg-green-700"
-                disabled={!/^[A-Z0-9-]{4,32}$/.test(normalizedEventCode)}
                 onClick={() => {
-                  window.location.href = `mailto:${inboundAttempt.address}?subject=${encodeURIComponent(emailSubject)}`;
+                  window.location.href = mailtoHref;
                 }}
               >
                 {t("inboundOpenMail")}

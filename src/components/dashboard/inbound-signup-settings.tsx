@@ -26,7 +26,6 @@ export function InboundSignupSettings() {
   const t = useTranslations("dashboard.settings");
   const [config, setConfig] = useState<InboundConfig | null>(null);
   const [enabled, setEnabled] = useState(false);
-  const [eventCode, setEventCode] = useState("");
   const [expiresAt, setExpiresAt] = useState(toLocalDateTime(null));
   const [saving, setSaving] = useState(false);
 
@@ -52,14 +51,13 @@ export function InboundSignupSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           enabled
-            ? { enabled, eventCode, expiresAt: new Date(expiresAt).toISOString() }
+            ? { enabled, expiresAt: new Date(expiresAt).toISOString() }
             : { enabled },
         ),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || t("inboundSignupSaveFailed"));
       toast.success(t("saved"));
-      setEventCode("");
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("inboundSignupSaveFailed"));
@@ -100,29 +98,16 @@ export function InboundSignupSettings() {
           </div>
 
           {enabled && (
-            <>
-              <div className="space-y-1">
-                <Label htmlFor="inbound-event-code">{t("inboundSignupEventCode")}</Label>
-                <Input
-                  id="inbound-event-code"
-                  value={eventCode}
-                  onChange={(event) => setEventCode(event.target.value.toUpperCase())}
-                  pattern="[A-Za-z0-9-]{4,32}"
-                  required
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="inbound-expiry">{t("inboundSignupExpiresAt")}</Label>
-                <Input
-                  id="inbound-expiry"
-                  type="datetime-local"
-                  value={expiresAt}
-                  onChange={(event) => setExpiresAt(event.target.value)}
-                  required
-                />
-              </div>
-            </>
+            <div className="space-y-1">
+              <Label htmlFor="inbound-expiry">{t("inboundSignupExpiresAt")}</Label>
+              <Input
+                id="inbound-expiry"
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+                required
+              />
+            </div>
           )}
 
           <Button type="submit" disabled={saving || (enabled && !config.configured)}>

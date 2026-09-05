@@ -19,7 +19,7 @@ model VerificationToken {
 
 // Pending browser-bound signup attempts completed by an inbound email.
 // The browser token is stored only as a hash; setupToken is issued only
-// after the sender address and event code have both been verified.
+// after the Worker has matched the authenticated sender to this attempt.
 model InboundSignupAttempt {
   id               String    @id @default(uuid())
   requestCode      String    @unique @map("request_code")

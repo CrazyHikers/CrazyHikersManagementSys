@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const attempt = await createInboundSignupAttempt(email, locale);
+      const attempt = await createInboundSignupAttempt(email, locale, inboundConfig);
       return NextResponse.json({
         ok: true,
         method: "inbound",

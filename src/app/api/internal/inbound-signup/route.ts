@@ -45,11 +45,6 @@ export async function POST(request: Request) {
     if (
       !body ||
       typeof body !== "object" ||
-      !("sender" in body) || typeof body.sender !== "string" ||
-      ("authenticatedHeaderSender" in body &&
-        body.authenticatedHeaderSender !== null &&
-        typeof body.authenticatedHeaderSender !== "string") ||
-      !("eventCode" in body) || typeof body.eventCode !== "string" ||
       !("requestCode" in body) || typeof body.requestCode !== "string" ||
       !("messageId" in body) || typeof body.messageId !== "string"
     ) {
@@ -57,12 +52,6 @@ export async function POST(request: Request) {
     }
 
     const result = await verifyInboundSignupEmail({
-      sender: body.sender,
-      authenticatedHeaderSender:
-        "authenticatedHeaderSender" in body && typeof body.authenticatedHeaderSender === "string"
-          ? body.authenticatedHeaderSender
-          : null,
-      eventCode: body.eventCode,
       requestCode: body.requestCode,
       messageId: body.messageId,
     });

@@ -7,8 +7,8 @@ const SETUP_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export const INBOUND_SIGNUP_SETTING_KEYS = {
   enabled: "inbound_signup_enabled",
-  codeHash: "inbound_signup_code_hash",
   expiresAt: "inbound_signup_expires_at",
+  generation: "inbound_signup_generation",
 } as const;
 
 export type InboundSignupConfig = {
@@ -17,6 +17,7 @@ export type InboundSignupConfig = {
   expiresAt: Date | null;
   address: string;
   configured: boolean;
+  generation: string | null;
 };
 
 function hash(value: string) {
@@ -34,14 +35,6 @@ export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-export function normalizeEventCode(code: string) {
-  return code.trim().toUpperCase();
-}
-
-export function hashInboundEventCode(code: string) {
-  return hash(normalizeEventCode(code));
-}
-
 export async function getInboundSignupConfig(): Promise<InboundSignupConfig> {
   const keys = Object.values(INBOUND_SIGNUP_SETTING_KEYS);
   const rows = await db.appSettings.findMany({ where: { key: { in: keys } } });
@@ -51,23 +44,82 @@ export async function getInboundSignupConfig(): Promise<InboundSignupConfig> {
   const parsedExpiry = expiresAtValue ? new Date(expiresAtValue) : null;
   const expiresAt = parsedExpiry && !Number.isNaN(parsedExpiry.getTime()) ? parsedExpiry : null;
   const address = normalizeEmail(process.env.INBOUND_SIGNUP_ADDRESS || "");
-  const configured = Boolean(address && process.env.INBOUND_SIGNUP_WEBHOOK_SECRET);
+  const generation = values.get(INBOUND_SIGNUP_SETTING_KEYS.generation) || null;
+  const configured = Boolean(
+    address &&
+    process.env.INBOUND_SIGNUP_WEBHOOK_SECRET &&
+    process.env.INBOUND_SIGNUP_WORKER_URL,
+  );
 
   return {
     enabled,
-    active: enabled && configured && Boolean(expiresAt && expiresAt > new Date()),
+    active: enabled && configured && Boolean(generation && expiresAt && expiresAt > new Date()),
     expiresAt,
     address,
     configured,
+    generation,
   };
 }
 
-export async function createInboundSignupAttempt(email: string, locale: string) {
+async function callInboundSignupWorker(path: string, data: object) {
+  const baseUrl = process.env.INBOUND_SIGNUP_WORKER_URL;
+  const secret = process.env.INBOUND_SIGNUP_WEBHOOK_SECRET;
+  if (!baseUrl || !secret) throw new Error("Inbound signup Worker is not configured");
+
+  const payload = JSON.stringify(data);
+  const timestamp = Date.now().toString();
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(`${timestamp}.${payload}`)
+    .digest("hex");
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Inbound-Signup-Timestamp": timestamp,
+      "X-Inbound-Signup-Signature": signature,
+    },
+    body: payload,
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Inbound signup Worker returned ${response.status}`);
+  }
+}
+
+function hashInboundSender(email: string) {
+  const secret = process.env.INBOUND_SIGNUP_WEBHOOK_SECRET;
+  if (!secret) throw new Error("Inbound signup secret is not configured");
+  return crypto.createHmac("sha256", secret).update(normalizeEmail(email)).digest("hex");
+}
+
+export async function openInboundSignupSession(generation: string, expiresAt: Date) {
+  await callInboundSignupWorker("/internal/session/open", {
+    generation,
+    expiresAt: expiresAt.getTime(),
+  });
+}
+
+export async function closeInboundSignupSession(generation: string) {
+  await callInboundSignupWorker("/internal/session/close", { generation });
+}
+
+export async function createInboundSignupAttempt(
+  email: string,
+  locale: string,
+  config: InboundSignupConfig,
+) {
+  if (!config.active || !config.generation) {
+    throw new Error("Inbound signup session is not active");
+  }
   const requestCode = crypto.randomBytes(5).toString("hex").toUpperCase();
   const browserToken = crypto.randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + ATTEMPT_TTL_MS);
+  const expiresAt = new Date(Math.min(
+    Date.now() + ATTEMPT_TTL_MS,
+    config.expiresAt!.getTime(),
+  ));
 
-  await db.inboundSignupAttempt.create({
+  const attempt = await db.inboundSignupAttempt.create({
     data: {
       requestCode,
       email: normalizeEmail(email),
@@ -76,6 +128,18 @@ export async function createInboundSignupAttempt(email: string, locale: string) 
       expiresAt,
     },
   });
+
+  try {
+    await callInboundSignupWorker("/internal/attempts", {
+      generation: config.generation,
+      requestCode,
+      senderHash: hashInboundSender(email),
+      expiresAt: expiresAt.getTime(),
+    });
+  } catch (error) {
+    await db.inboundSignupAttempt.delete({ where: { id: attempt.id } }).catch(() => undefined);
+    throw error;
+  }
 
   return { requestCode, browserToken, expiresAt };
 }
@@ -100,9 +164,6 @@ export async function getInboundSignupStatus(requestCode: string, browserToken: 
 }
 
 export type VerifyInboundSignupInput = {
-  sender: string;
-  authenticatedHeaderSender?: string | null;
-  eventCode: string;
   requestCode: string;
   messageId: string;
 };
@@ -111,23 +172,10 @@ export async function verifyInboundSignupEmail(input: VerifyInboundSignupInput) 
   const config = await getInboundSignupConfig();
   if (!config.active) return { outcome: "disabled" as const };
 
-  const storedCode = await db.appSettings.findUnique({
-    where: { key: INBOUND_SIGNUP_SETTING_KEYS.codeHash },
-  });
-  if (!storedCode || !constantTimeHexEqual(storedCode.value, hashInboundEventCode(input.eventCode))) {
-    return { outcome: "invalid_code" as const };
-  }
-
   const requestCode = input.requestCode.trim().toUpperCase();
   const attempt = await db.inboundSignupAttempt.findUnique({ where: { requestCode } });
   if (!attempt) return { outcome: "not_found" as const };
   if (attempt.expiresAt <= new Date()) return { outcome: "expired" as const };
-  const authenticatedSenders = [input.sender, input.authenticatedHeaderSender]
-    .filter((sender): sender is string => Boolean(sender))
-    .map(normalizeEmail);
-  if (!authenticatedSenders.includes(attempt.email)) {
-    return { outcome: "sender_mismatch" as const };
-  }
   if (attempt.setupToken) return { outcome: "verified" as const };
 
   const setupToken = crypto.randomBytes(32).toString("base64url");

@@ -14,5 +14,13 @@
     "logs": {
       "head_sampling_rate": 1
     }
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SIGNUP_SESSION", "class_name": "SignupSession" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["SignupSession"] }
+  ]
 }
