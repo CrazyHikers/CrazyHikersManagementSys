@@ -35,14 +35,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Bot verification failed" }, { status: 400 });
     }
 
-    const { allowed } = await rateLimit(`signup:${email}`, {
-      maxAttempts: 3,
-      windowMs: 15 * 60 * 1000,
-    });
-    if (!allowed) {
-      return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
-    }
-
     const inboundConfig = await getInboundSignupConfig();
     if (inboundConfig.enabled) {
       // Fail closed while event mode is enabled. Silently falling back to
@@ -63,6 +55,17 @@ export async function POST(req: NextRequest) {
         browserToken: attempt.browserToken,
         expiresAt: attempt.expiresAt.toISOString(),
       });
+    }
+
+    // Inbound event mode is already protected by Turnstile and the Worker's
+    // pending-attempt gate. Keep this limiter only for the normal Resend flow,
+    // where repeated requests can consume outbound email quota.
+    const { allowed } = await rateLimit(`signup:${email}`, {
+      maxAttempts: 3,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!allowed) {
+      return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
     }
 
     // Always return 200. If an account already exists with a password, we
