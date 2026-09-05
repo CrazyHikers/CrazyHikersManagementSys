@@ -101,6 +101,7 @@ export async function getInboundSignupStatus(requestCode: string, browserToken: 
 
 export type VerifyInboundSignupInput = {
   sender: string;
+  authenticatedHeaderSender?: string | null;
   eventCode: string;
   requestCode: string;
   messageId: string;
@@ -121,7 +122,10 @@ export async function verifyInboundSignupEmail(input: VerifyInboundSignupInput) 
   const attempt = await db.inboundSignupAttempt.findUnique({ where: { requestCode } });
   if (!attempt) return { outcome: "not_found" as const };
   if (attempt.expiresAt <= new Date()) return { outcome: "expired" as const };
-  if (attempt.email !== normalizeEmail(input.sender)) {
+  const authenticatedSenders = [input.sender, input.authenticatedHeaderSender]
+    .filter((sender): sender is string => Boolean(sender))
+    .map(normalizeEmail);
+  if (!authenticatedSenders.includes(attempt.email)) {
     return { outcome: "sender_mismatch" as const };
   }
   if (attempt.setupToken) return { outcome: "verified" as const };
