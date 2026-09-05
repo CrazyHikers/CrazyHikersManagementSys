@@ -74,7 +74,8 @@ export default {
     const subject = message.headers.get("subject")?.trim() || "";
     const match = SUBJECT_PATTERN.exec(subject);
     if (!match) {
-      message.setReject("Subject must be: JOIN <event-code> <request-code>");
+      // Accept and discard malformed mail so alias providers do not turn an
+      // input mistake into a generic, alarming delivery-failure notification.
       return;
     }
 
