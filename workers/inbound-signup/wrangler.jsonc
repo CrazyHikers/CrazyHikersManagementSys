@@ -7,7 +7,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "SITE_CALLBACK_URL": "https://crazyhikers.ch/api/internal/inbound-signup",
-    "SIGNUP_ADDRESS": "join@crazyhikers.ch"
+    "SIGNUP_ADDRESS": "join@signup.crazyhikers.ch"
   },
   "observability": {
     "enabled": true,
