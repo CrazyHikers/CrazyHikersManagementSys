@@ -1,0 +1,89 @@
+import { revalidateTag } from "next/cache";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import {
+  getInboundSignupConfig,
+  hashInboundEventCode,
+  INBOUND_SIGNUP_SETTING_KEYS,
+  normalizeEventCode,
+} from "@/lib/inbound-signup";
+
+async function isDev() {
+  const session = await auth();
+  return (session?.user as { role?: string } | undefined)?.role === "dev";
+}
+
+export async function GET() {
+  if (!(await isDev())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const config = await getInboundSignupConfig();
+  return NextResponse.json({
+    enabled: config.enabled,
+    active: config.active,
+    configured: config.configured,
+    address: config.address,
+    expiresAt: config.expiresAt?.toISOString() || null,
+  });
+}
+
+export async function PUT(request: Request) {
+  if (!(await isDev())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  if (!body || typeof body.enabled !== "boolean") {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  if (!body.enabled) {
+    await db.appSettings.upsert({
+      where: { key: INBOUND_SIGNUP_SETTING_KEYS.enabled },
+      update: { value: "0" },
+      create: { key: INBOUND_SIGNUP_SETTING_KEYS.enabled, value: "0" },
+    });
+    revalidateTag("app-settings", { expire: 0 });
+    return NextResponse.json({ success: true });
+  }
+
+  const eventCode = typeof body.eventCode === "string" ? normalizeEventCode(body.eventCode) : "";
+  const expiresAt = typeof body.expiresAt === "string" ? new Date(body.expiresAt) : null;
+  if (!/^[A-Z0-9-]{4,32}$/.test(eventCode)) {
+    return NextResponse.json(
+      { error: "Event code must be 4-32 letters, numbers, or hyphens." },
+      { status: 400 },
+    );
+  }
+  if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) {
+    return NextResponse.json({ error: "Expiry must be in the future." }, { status: 400 });
+  }
+  if (!process.env.INBOUND_SIGNUP_ADDRESS || !process.env.INBOUND_SIGNUP_WEBHOOK_SECRET) {
+    return NextResponse.json(
+      { error: "Inbound signup environment variables are not configured." },
+      { status: 503 },
+    );
+  }
+
+  await db.$transaction([
+    db.appSettings.upsert({
+      where: { key: INBOUND_SIGNUP_SETTING_KEYS.enabled },
+      update: { value: "1" },
+      create: { key: INBOUND_SIGNUP_SETTING_KEYS.enabled, value: "1" },
+    }),
+    db.appSettings.upsert({
+      where: { key: INBOUND_SIGNUP_SETTING_KEYS.codeHash },
+      update: { value: hashInboundEventCode(eventCode) },
+      create: { key: INBOUND_SIGNUP_SETTING_KEYS.codeHash, value: hashInboundEventCode(eventCode) },
+    }),
+    db.appSettings.upsert({
+      where: { key: INBOUND_SIGNUP_SETTING_KEYS.expiresAt },
+      update: { value: expiresAt.toISOString() },
+      create: { key: INBOUND_SIGNUP_SETTING_KEYS.expiresAt, value: expiresAt.toISOString() },
+    }),
+  ]);
+  revalidateTag("app-settings", { expire: 0 });
+  return NextResponse.json({ success: true });
+}

@@ -5,6 +5,11 @@ import { sendWelcomeSignupEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { getBaseUrl } from "@/lib/url";
+import {
+  createInboundSignupAttempt,
+  getInboundSignupConfig,
+  normalizeEmail,
+} from "@/lib/inbound-signup";
 
 // Signup tokens share the verification_tokens table with password resets.
 // Same prefix as reset because the downstream /api/auth/reset-password
@@ -15,11 +20,12 @@ const TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, turnstileToken, locale } = await req.json();
+    const { email: rawEmail, turnstileToken, locale } = await req.json();
 
-    if (!email || typeof email !== "string") {
+    if (!rawEmail || typeof rawEmail !== "string") {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
+    const email = normalizeEmail(rawEmail);
     if (!turnstileToken || typeof turnstileToken !== "string") {
       return NextResponse.json({ error: "Bot verification required" }, { status: 400 });
     }
@@ -37,13 +43,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
     }
 
+    const inboundConfig = await getInboundSignupConfig();
+    if (inboundConfig.enabled) {
+      // Fail closed while event mode is enabled. Silently falling back to
+      // Resend here could consume the quota this mode is meant to protect.
+      if (!inboundConfig.active) {
+        return NextResponse.json(
+          { error: "On-site email verification is not configured or has expired." },
+          { status: 503 },
+        );
+      }
+
+      const attempt = await createInboundSignupAttempt(email, locale);
+      return NextResponse.json({
+        ok: true,
+        method: "inbound",
+        address: inboundConfig.address,
+        requestCode: attempt.requestCode,
+        browserToken: attempt.browserToken,
+        expiresAt: attempt.expiresAt.toISOString(),
+      });
+    }
+
     // Always return 200. If an account already exists with a password, we
     // silently do nothing — sending a welcome email to an existing account
     // would confuse the real owner. The legitimate user who forgot they
     // already had an account can use the forgot-password flow.
     const existing = await db.user.findUnique({ where: { email } });
     if (existing?.passwordHash) {
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, method: "email" });
     }
 
     // Deliberately DO NOT create a users row here. The signup is "pending"
@@ -69,7 +97,7 @@ export async function POST(req: NextRequest) {
       console.error("[SIGNUP] email send failed:", err);
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, method: "email" });
   } catch (err) {
     console.error("[SIGNUP] error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

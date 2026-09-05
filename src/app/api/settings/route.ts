@@ -36,6 +36,17 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
+  if (
+    settings.some(
+      (setting) =>
+        !setting ||
+        typeof setting.key !== "string" ||
+        !Object.hasOwn(DEFAULTS, setting.key),
+    )
+  ) {
+    return NextResponse.json({ error: "Invalid setting key" }, { status: 400 });
+  }
+
   for (const setting of settings) {
     await db.appSettings.upsert({
       where: { key: setting.key },

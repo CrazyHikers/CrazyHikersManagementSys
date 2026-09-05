@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "crazy-hikers-inbound-signup",
+  "account_id": "80f5bb3ada28d800ba5e3f3748c6d443",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "SITE_CALLBACK_URL": "https://crazyhikers.ch/api/internal/inbound-signup",
+    "SIGNUP_ADDRESS": "join@crazyhikers.ch"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "crazy-hikers-inbound-signup-worker",
+  "private": true,
+  "scripts": {
+    "precheck": "wrangler types --env-file .dev.vars.example",
+    "check": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types --env-file .dev.vars.example"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "wrangler": "^4.0.0"
+  }
+}
