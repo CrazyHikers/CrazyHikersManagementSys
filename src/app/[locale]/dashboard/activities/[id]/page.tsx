@@ -17,7 +17,7 @@ import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activi
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
 import { ActivityRecapEditor } from "@/components/dashboard/activity-recap-editor";
 import { ActivityRecapSection } from "@/components/activity-recap";
-import { canEditActivityRecap, readActivityRecap } from "@/lib/activity-recap";
+import { canEditActivityRecap, readPublicActivityRecap } from "@/lib/activity-recap";
 
 export default async function ActivityDetailPage({
   params,
@@ -28,6 +28,7 @@ export default async function ActivityDetailPage({
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("dashboard.activities");
+  const recapT = await getTranslations("recap");
   const session = await auth();
   const canViewMemberDetail = session?.user ? can(session, "members.viewDetail") : false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,9 +72,9 @@ export default async function ActivityDetailPage({
   if (!activity) notFound();
 
   const isEditable = activity.status === "open";
-  const publicRecap = readActivityRecap(activity.metadata, id);
+  const publicRecap = readPublicActivityRecap({ description: activity.recapDescription, photoKeys: activity.recapPhotoKeys }, id);
   const canEditRecap = activity.status === "completed" && canEditActivityRecap(session?.user, activity.activityManagers);
-  const album = canEditRecap ? await db.activityAlbum.findUnique({ where: { activityId: id }, select: { url: true } }) : null;
+  const privateRecap = canEditRecap ? await db.activity.findUnique({ where: { id }, select: { recapAlbumUrl: true } }) : null;
   const openRecap = (await searchParams).recap === "1";
 
   // Prefer the memorable /events/<slug> URL for sharing when this
@@ -338,11 +339,16 @@ export default async function ActivityDetailPage({
       })()}
 
       {activity.status === "completed" && <ActivityRecapSection recap={publicRecap} />}
+      {canEditRecap && privateRecap?.recapAlbumUrl && (
+        <a className="inline-block mb-6 text-green-700 underline underline-offset-4" href={privateRecap.recapAlbumUrl} target="_blank" rel="noopener noreferrer">
+          {recapT("viewAlbum")}
+        </a>
+      )}
       {canEditRecap && (
         <ActivityRecapEditor
           key={activity.updatedAt.toISOString()}
           activityId={id}
-          initialRecap={{ description: publicRecap?.description ?? "", photoKeys: publicRecap?.photoKeys ?? [], albumUrl: album?.url ?? "" }}
+          initialRecap={{ description: publicRecap?.description ?? "", photoKeys: publicRecap?.photoKeys ?? [], albumUrl: privateRecap?.recapAlbumUrl ?? "" }}
           version={activity.updatedAt.toISOString()}
           publicUrlPrefix={getPublicUrl("").replace(/\/$/, "")}
           initialOpen={openRecap}

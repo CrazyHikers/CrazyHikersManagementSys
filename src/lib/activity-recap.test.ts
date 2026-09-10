@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canEditActivityRecap, parseActivityRecap, readActivityRecap } from "./activity-recap";
+import { canEditActivityRecap, parseActivityRecap, readPublicActivityRecap } from "./activity-recap";
 
 const recap = { description: "A good hike", albumUrl: "https://photos.example/album", photoKeys: ["activity-recaps/hike/12345678-1234-1234-1234-123456789012.jpg"] };
 
 describe("activity recap boundaries", () => {
   it("keeps the album URL out of public recap data", () => {
-    expect(readActivityRecap({ recap }, "hike")).toEqual({ description: recap.description, photoKeys: recap.photoKeys });
+    expect(readPublicActivityRecap(recap, "hike")).toEqual({ description: recap.description, photoKeys: recap.photoKeys });
   });
   it("accepts clearing all optional fields", () => {
     expect(parseActivityRecap({ description: "", albumUrl: "", photoKeys: [] }, "hike")).toBeTruthy();

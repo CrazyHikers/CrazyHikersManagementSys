@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const activity = await db.activity.findUnique({
     where: { id },
-    select: { metadata: true, status: true, updatedAt: true, activityManagers: { select: { userEmail: true, status: true, role: true } } },
+    select: { status: true, updatedAt: true, activityManagers: { select: { userEmail: true, status: true, role: true } } },
   });
   if (!activity) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!canEditActivityRecap(session.user, activity.activityManagers)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -25,22 +25,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (photos.some((photo) => !photo || !["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"].includes(photo.contentType))) {
     return NextResponse.json({ error: "Invalid photo" }, { status: 400 });
   }
-  const metadata = activity.metadata && typeof activity.metadata === "object" && !Array.isArray(activity.metadata) ? activity.metadata : {};
-  // Optimistic locking prevents simultaneous recap/general edits from losing metadata.
-  const saved = await db.$transaction(async (tx) => {
-    const result = await tx.activity.updateMany({
-      where: { id, status: "completed", updatedAt: activity.updatedAt },
-      data: { metadata: { ...metadata, recap: { description: recap.description, photoKeys: recap.photoKeys } } },
-    });
-    if (!result.count) return false;
-    if (recap.albumUrl) {
-      await tx.activityAlbum.upsert({ where: { activityId: id }, create: { activityId: id, url: recap.albumUrl }, update: { url: recap.albumUrl } });
-    } else {
-      await tx.activityAlbum.deleteMany({ where: { activityId: id } });
-    }
-    return true;
+  // One atomic update keeps the recap consistent and rejects concurrent edits.
+  const result = await db.activity.updateMany({
+    where: { id, status: "completed", updatedAt: activity.updatedAt },
+    data: {
+      recapDescription: recap.description,
+      recapPhotoKeys: recap.photoKeys,
+      recapAlbumUrl: recap.albumUrl,
+    },
   });
-  if (!saved) return NextResponse.json({ error: "Activity changed. Reload before editing." }, { status: 409 });
+  if (!result.count) return NextResponse.json({ error: "Activity changed. Reload before editing." }, { status: 409 });
   revalidateTag(cacheTags.activity(id), { expire: 0 });
   revalidateTag(cacheTags.activities, { expire: 0 });
   return NextResponse.json({ success: true });

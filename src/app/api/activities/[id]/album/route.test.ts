@@ -18,7 +18,7 @@ it("never queries album data for anonymous visitors", async () => {
 it.each(["absent", "registration_confirmed", "registered", "attended"])("only returns links for attendance, not %s alone", async (status) => {
   mocks.auth.mockResolvedValue({ user: { email: "member@example.com", role: "member" } });
   mocks.findFirst.mockImplementation(async ({ where }) =>
-    where.status === status ? { activity: { album: { url: "https://private.example/album" } } } : null);
+    where.status === status ? { activity: { recapAlbumUrl: "https://private.example/album" } } : null);
   const response = await GET(new Request("https://example.com"), context);
   expect(await response.json()).toEqual({ albumUrl: status === "attended" ? "https://private.example/album" : null });
   expect(mocks.findFirst.mock.calls[0][0].where).toEqual({ activityId: "hike", userEmail: "member@example.com", status: "attended", activity: { status: "completed" } });

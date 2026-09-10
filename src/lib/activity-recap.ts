@@ -27,9 +27,7 @@ export function parseActivityRecap(value: unknown, activityId: string): Activity
   return { albumUrl, description, photoKeys: v.photoKeys as string[] };
 }
 
-export function readActivityRecap(metadata: unknown, activityId: string): PublicActivityRecap | null {
-  if (!metadata || typeof metadata !== "object") return null;
-  const raw = (metadata as Record<string, unknown>).recap;
+export function readPublicActivityRecap(raw: unknown, activityId: string): PublicActivityRecap | null {
   if (!raw || typeof raw !== "object") return null;
   const parsed = parseActivityRecap({ ...raw, albumUrl: "" }, activityId);
   return parsed ? { description: parsed.description, photoKeys: parsed.photoKeys } : null;

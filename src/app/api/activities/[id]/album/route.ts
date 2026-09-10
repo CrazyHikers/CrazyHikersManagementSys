@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   // Attendance is checked on each request; neither role nor a confirmed signup grants access.
   const registration = await db.registration.findFirst({
     where: { activityId: id, userEmail: session.user.email, status: "attended", activity: { status: "completed" } },
-    select: { activity: { select: { album: { select: { url: true } } } } },
+    select: { activity: { select: { recapAlbumUrl: true } } },
   });
-  return NextResponse.json({ albumUrl: registration?.activity.album?.url ?? null }, { headers });
+  return NextResponse.json({ albumUrl: registration?.activity.recapAlbumUrl || null }, { headers });
 }

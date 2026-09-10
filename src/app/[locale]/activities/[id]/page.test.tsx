@@ -26,6 +26,7 @@ const activity = {
   maximumRegistration: 30, coverImgId: "cover.jpg", _count: { registrations: 12 },
   metadata: { route: "Public route", qrCodeUrl: "PRIVATE_QR", internalNotes: "PRIVATE_NOTE" },
   activityManagers: [{ role: "manager", user: { name: "Guide", email: "PRIVATE_EMAIL", managerProfile: { tag: "Public guide" } } }],
+  recapDescription: "Public recap", recapPhotoKeys: [], recapAlbumUrl: "PRIVATE_ALBUM",
   registrations: [{ userEmail: "PRIVATE_MEMBER", notes: "PRIVATE_REGISTRATION" }],
 };
 

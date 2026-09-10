@@ -50,10 +50,10 @@ export default async function MyActivitiesPage() {
     (r) => r.activity.date < now || ["completed", "cancelled"].includes(r.activity.status)
   );
   const attendedIds = past.filter((r) => r.status === "attended" && r.activity.status === "completed").map((r) => r.activityId);
-  const albums = attendedIds.length ? await db.activityAlbum.findMany({
-    where: { activityId: { in: attendedIds } }, select: { activityId: true, url: true },
+  const albums = attendedIds.length ? await db.activity.findMany({
+    where: { id: { in: attendedIds }, recapAlbumUrl: { not: "" } }, select: { id: true, recapAlbumUrl: true },
   }) : [];
-  const albumUrls = new Map(albums.map((album) => [album.activityId, album.url]));
+  const albumUrls = new Map(albums.map((album) => [album.id, album.recapAlbumUrl]));
   const recapT = await getTranslations("recap");
 
   function renderGroup(items: typeof registrations) {

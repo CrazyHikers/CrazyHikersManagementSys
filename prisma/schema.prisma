@@ -182,6 +182,9 @@ model Activity {
   capacity               Int
   maximumRegistration    Int?           @map("maximum_registration")
   metadata               Json?          @db.JsonB
+  recapDescription       String         @default("") @map("recap_description")
+  recapPhotoKeys         String[]       @default([]) @map("recap_photo_keys")
+  recapAlbumUrl          String         @default("") @map("recap_album_url")
   status                 ActivityStatus @default(open)
   createdAt              DateTime       @default(now()) @map("created_at")
   updatedAt              DateTime       @default(now()) @updatedAt @map("updated_at")
@@ -189,22 +192,12 @@ model Activity {
   activityManagers ActivityManager[]
   registrations    Registration[]
   updates          ActivityUpdate[]
-  album            ActivityAlbum?
   flags            UserFlag[]
 
   @@index([status])
   @@index([deadline])
   @@index([date])
   @@map("activities")
-}
-
-// Kept outside public activity metadata so generic activity responses cannot expose it.
-model ActivityAlbum {
-  activityId String @id @map("activity_id")
-  url        String
-  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@map("activity_albums")
 }
 
 // ============================================================================
