@@ -49,6 +49,12 @@ export default async function MyActivitiesPage() {
   const past = registrations.filter(
     (r) => r.activity.date < now || ["completed", "cancelled"].includes(r.activity.status)
   );
+  const attendedIds = past.filter((r) => r.status === "attended" && r.activity.status === "completed").map((r) => r.activityId);
+  const albums = attendedIds.length ? await db.activity.findMany({
+    where: { id: { in: attendedIds }, recapAlbumUrl: { not: "" } }, select: { id: true, recapAlbumUrl: true },
+  }) : [];
+  const albumUrls = new Map(albums.map((album) => [album.id, album.recapAlbumUrl]));
+  const recapT = await getTranslations("recap");
 
   function renderGroup(items: typeof registrations) {
     if (items.length === 0) {
@@ -62,7 +68,8 @@ export default async function MyActivitiesPage() {
     return (
       <div className="space-y-3">
         {items.map((r) => (
-          <Link key={r.activityId} href={`/activities/${r.activityId}`} prefetch={false}>
+          <div key={r.activityId}>
+          <Link className="block" href={`/activities/${r.activityId}`} prefetch={false}>
             <Card className="hover:shadow-sm transition-shadow">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
@@ -96,6 +103,8 @@ export default async function MyActivitiesPage() {
               </CardContent>
             </Card>
           </Link>
+          {albumUrls.has(r.activityId) && <a className="inline-block mt-2 text-sm text-green-700 underline underline-offset-4" href={albumUrls.get(r.activityId)} target="_blank" rel="noopener noreferrer">{recapT("viewAlbum")}</a>}
+          </div>
         ))}
       </div>
     );

@@ -4,6 +4,8 @@ import { uploadFile } from "@/lib/r2";
 import { randomUUID } from "crypto";
 import { getSetting } from "@/lib/settings";
 import { rateLimit } from "@/lib/rate-limit";
+import { db } from "@/lib/db";
+import { canEditActivityRecap } from "@/lib/activity-recap";
 
 // MIME allowlist. Every caller of this route uploads images: activity
 // cover/hero/thumbnail, QR codes, and matchmaking_520 photos. PDFs and
@@ -54,6 +56,19 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const folder = (formData.get("folder") as string) || "uploads";
+
+    if (folder.startsWith("activity-recaps")) {
+      const match = /^activity-recaps\/([a-f0-9-]{36})$/.exec(folder);
+      if (!match) return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+      const activity = await db.activity.findUnique({
+        where: { id: match[1] },
+        select: { status: true, activityManagers: { select: { userEmail: true, status: true, role: true } } },
+      });
+      if (!activity || !canEditActivityRecap(session.user, activity.activityManagers)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (activity.status !== "completed") return NextResponse.json({ error: "Activity must be completed" }, { status: 409 });
+    }
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });

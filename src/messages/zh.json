@@ -1,4 +1,25 @@
 {
+  "recap": {
+    "title": "活动回顾",
+    "publicHelp": "选填：保存后，照片和文字描述会公开展示。相册链接仅对标记为已出席的会员展示。之后可随时返回修改或清空。",
+    "edit": "编辑活动回顾",
+    "add": "填写活动回顾",
+    "albumLabel": "相册链接（仅已出席会员可见，HTTPS）",
+    "descriptionLabel": "这次活动有哪些想分享的内容？（公开，选填）",
+    "photosLabel": "可对外展示的照片（选填）",
+    "photoLimit": "最多上传 {count} 张照片。",
+    "photoAlt": "活动照片 {number}",
+    "removePhoto": "移除第 {number} 张照片",
+    "remove": "移除",
+    "working": "处理中…",
+    "save": "保存回顾",
+    "later": "稍后填写 / 关闭",
+    "saved": "活动回顾已保存",
+    "saveFailed": "保存失败，请检查相册链接和照片后重试。",
+    "uploadFailed": "照片上传失败，已上传的照片会保留。请尝试较小的 JPEG、PNG、WebP、GIF 或 AVIF 文件。",
+    "conflict": "活动内容已更新，请刷新页面后重新编辑。",
+    "viewAlbum": "查看会员相册"
+  },
   "common": {
     "appName": "Crazy Hikers",
     "loading": "加载中...",

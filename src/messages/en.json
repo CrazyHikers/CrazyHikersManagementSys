@@ -1,4 +1,25 @@
 {
+  "recap": {
+    "title": "Activity recap",
+    "publicHelp": "Optional: the photos and description will be public after saving. The album link is only shown to members marked as attended. You can return here to edit or clear these fields.",
+    "edit": "Edit recap",
+    "add": "Add recap",
+    "albumLabel": "Album link (attended members only, HTTPS)",
+    "descriptionLabel": "What would you like to share about this activity? (public, optional)",
+    "photosLabel": "Photos to share publicly (optional)",
+    "photoLimit": "Up to {count} photos.",
+    "photoAlt": "Activity photo {number}",
+    "removePhoto": "Remove photo {number}",
+    "remove": "Remove",
+    "working": "Working…",
+    "save": "Save recap",
+    "later": "Later / close",
+    "saved": "Recap saved",
+    "saveFailed": "Could not save. Check the link and photos, then try again.",
+    "uploadFailed": "Photo upload failed. Uploaded photos are kept; try a smaller JPEG, PNG, WebP, GIF or AVIF file.",
+    "conflict": "This activity has changed. Reload the page before editing again.",
+    "viewAlbum": "View members’ album"
+  },
   "common": {
     "appName": "Crazy Hikers",
     "loading": "Loading...",

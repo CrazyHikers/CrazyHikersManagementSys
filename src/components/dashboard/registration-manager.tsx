@@ -520,6 +520,9 @@ export function RegistrationManager({
         toast.success(
           newStatus === "completed" ? t("activityFinished") : t("activityCancelled")
         );
+        if (newStatus === "completed") {
+          router.push(`/${locale}/dashboard/activities/${activityId}?recap=1#activity-recap-editor`);
+        }
         router.refresh();
       } catch {
         toast.error("Failed");
@@ -529,7 +532,7 @@ export function RegistrationManager({
         setCancelOpen(false);
       }
     },
-    [activityId, flushPendingSaves, router, t]
+    [activityId, flushPendingSaves, router, t, locale]
   );
 
   const removeAllUnconfirmed = useCallback(async () => {

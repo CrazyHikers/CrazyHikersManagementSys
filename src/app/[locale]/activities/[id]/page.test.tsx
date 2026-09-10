@@ -11,6 +11,8 @@ vi.mock("@/lib/events/templates", () => ({ getTemplate: (tag: string) => tag ? {
 vi.mock("@/components/site-header", () => ({ SiteHeader: () => null }));
 vi.mock("@/components/site-footer", () => ({ SiteFooter: () => null }));
 vi.mock("@/components/share-button", () => ({ ShareButton: () => null }));
+vi.mock("@/components/activity-recap", () => ({ ActivityRecapSection: (props: unknown) => <div>{JSON.stringify(props)}</div> }));
+vi.mock("@/components/attendee-album-link", () => ({ AttendeeAlbumLink: (props: unknown) => <div>{JSON.stringify(props)}</div> }));
 vi.mock("@/components/activity-notification-card", () => ({ ActivityNotificationCard: () => null }));
 vi.mock("@/components/activity-registration-panel", () => ({
   ActivityRegistrationPanel: (props: unknown) => <div>REGISTRATION_PANEL{JSON.stringify(props)}</div>,
@@ -24,6 +26,7 @@ const activity = {
   maximumRegistration: 30, coverImgId: "cover.jpg", _count: { registrations: 12 },
   metadata: { route: "Public route", qrCodeUrl: "PRIVATE_QR", internalNotes: "PRIVATE_NOTE" },
   activityManagers: [{ role: "manager", user: { name: "Guide", email: "PRIVATE_EMAIL", managerProfile: { tag: "Public guide" } } }],
+  recapDescription: "Public recap", recapPhotoKeys: [], recapAlbumUrl: "PRIVATE_ALBUM",
   registrations: [{ userEmail: "PRIVATE_MEMBER", notes: "PRIVATE_REGISTRATION" }],
 };
 
