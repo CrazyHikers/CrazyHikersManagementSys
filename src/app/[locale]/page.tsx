@@ -3,7 +3,8 @@ import { getPublicUrl } from "@/lib/r2";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ActivityList } from "@/components/activity-list";
-import { getRegisterableOpenActivities } from "@/lib/activity";
+import { getCompletedActivities, getRegisterableOpenActivities } from "@/lib/activity";
+import { ActivityCard } from "@/components/activity-card";
 
 // Hourly revalidate keeps registration counts at most ~1h stale. Activity
 // content edits (create/edit, slug/template, manager accept) still call
@@ -14,7 +15,10 @@ export const revalidate = 3600;
 
 export default async function HomePage() {
   const t = await getTranslations("home");
-  const activities = await getRegisterableOpenActivities();
+  const [activities, completedActivities] = await Promise.all([
+    getRegisterableOpenActivities(),
+    getCompletedActivities(),
+  ]);
 
   const activityData = activities.map((activity) => {
     const managerNames = activity.activityManagers
@@ -72,6 +76,38 @@ export default async function HomePage() {
             </div>
           ) : (
             <ActivityList activities={activityData} />
+          )}
+
+          {completedActivities.length > 0 && (
+            <section aria-labelledby="past-activities-title" className="mt-12 border-t pt-8">
+              <h2 id="past-activities-title" className="text-2xl font-bold text-gray-900 mb-6">
+                {t("pastActivities")}
+              </h2>
+              <div className="flex flex-col gap-4">
+                {completedActivities.map((activity) => {
+                  const thumbnailKey = activity.homepageThumbnailImgId || activity.coverImgId;
+                  const metadata = activity.metadata as Record<string, unknown> | null;
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      id={activity.id}
+                      title={activity.title}
+                      description={activity.description}
+                      coverImgUrl={thumbnailKey ? getPublicUrl(thumbnailKey) : null}
+                      date={new Date(activity.date).toISOString()}
+                      deadline={new Date(activity.deadline).toISOString()}
+                      capacity={activity.capacity}
+                      currentRegistrations={activity._count.registrations}
+                      maximumRegistration={activity.maximumRegistration}
+                      submissionCount={0}
+                      managerNames={activity.activityManagers.map((am) => am.user.managerProfile?.tag || am.user.name).join(", ")}
+                      template={typeof metadata?.template === "string" ? metadata.template : null}
+                      completed
+                    />
+                  );
+                })}
+              </div>
+            </section>
           )}
         </div>
       </main>

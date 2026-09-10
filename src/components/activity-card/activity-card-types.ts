@@ -14,6 +14,7 @@ export type ActivityCardProps = {
   maximumRegistration: number | null;
   submissionCount: number;
   managerNames: string;
+  completed?: boolean;
   registered?: boolean;
   managing?: boolean;
   pendingInvitation?: boolean;

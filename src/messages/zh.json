@@ -63,6 +63,9 @@
     "signUp": "注册"
   },
   "home": {
+    "pastActivities": "过往活动",
+    "completed": "已结束",
+    "viewDetails": "查看详情",
     "title": "即将开始的活动",
     "subtitle": "加入我们的下一次冒险！",
     "noActivities": "暂时没有可报名的活动，请稍后再来看看！",

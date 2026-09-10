@@ -63,6 +63,9 @@
     "signUp": "Sign Up"
   },
   "home": {
+    "pastActivities": "Past Activities",
+    "completed": "Completed",
+    "viewDetails": "View details",
     "title": "Upcoming Activities",
     "subtitle": "Join us on our next adventure!",
     "noActivities": "No activities available at the moment. Check back soon!",

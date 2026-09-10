@@ -69,6 +69,7 @@ export function Audience520Card(props: ActivityCardProps) {
     managing,
     pendingInvitation,
     sameDayConflict,
+    completed,
   } = props;
 
   return (
@@ -119,6 +120,7 @@ export function Audience520Card(props: ActivityCardProps) {
                   {title}
                 </CardTitle>
                 <CardSpotsLeftBadge
+                  completed={completed}
                   capacity={capacity}
                   currentRegistrations={currentRegistrations}
                   spotsLeftClassName="bg-[#e6efe1] text-[#3f6a52] hover:bg-[#e6efe1]"
@@ -130,6 +132,7 @@ export function Audience520Card(props: ActivityCardProps) {
             </CardHeader>
             <CardContent className="pt-0">
               <CardMetaLines
+                completed={completed}
                 date={date}
                 deadline={deadline}
                 managerNames={managerNames}
@@ -140,7 +143,7 @@ export function Audience520Card(props: ActivityCardProps) {
                 className="text-[#5a6a5e] dark:text-[#c8d4c4]"
               />
               <CardActionButton
-                state={{ managing, pendingInvitation, registered, sameDayConflict }}
+                state={{ completed, managing, pendingInvitation, registered, sameDayConflict }}
                 registeredOutlineClassName="text-[#5a8a6e] border-[#5a8a6e]"
                 registerClassName={aud520Theme.gradientCta}
               />

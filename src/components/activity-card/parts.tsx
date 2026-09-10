@@ -2,7 +2,7 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 // Subcomponents shared across activity-card variants. Each template's
 // card composes from these so feature changes (new badge, new meta row)
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 // the underlying logic.
 
 export type CardActionState = {
+  completed?: boolean;
   managing?: boolean;
   pendingInvitation?: boolean;
   registered?: boolean;
@@ -34,6 +35,10 @@ export function CardActionButton({
   const { managing, pendingInvitation, registered, sameDayConflict } = state;
   const showConflict =
     !!sameDayConflict && !managing && !pendingInvitation && !registered;
+
+  if (state.completed) {
+    return <span className={buttonVariants({ size: "sm", variant: "outline" })}>{t("viewDetails")}</span>;
+  }
 
   if (managing) {
     return (
@@ -94,15 +99,18 @@ export function CardActionButton({
 }
 
 export function CardSpotsLeftBadge({
+  completed,
   capacity,
   currentRegistrations,
   spotsLeftClassName,
 }: {
+  completed?: boolean;
   capacity: number;
   currentRegistrations: number;
   spotsLeftClassName?: string;
 }) {
   const t = useTranslations("home");
+  if (completed) return <Badge variant="secondary">{t("completed")}</Badge>;
   const spotsLeft = capacity > 0 ? capacity - currentRegistrations : null;
   if (spotsLeft === null) return null;
   return (
@@ -118,6 +126,7 @@ export function CardSpotsLeftBadge({
 }
 
 export function CardMetaLines({
+  completed,
   date,
   deadline,
   managerNames,
@@ -127,6 +136,7 @@ export function CardMetaLines({
   submissionCount,
   className,
 }: {
+  completed?: boolean;
   date: string;
   deadline: string;
   managerNames: string;
@@ -159,7 +169,7 @@ export function CardMetaLines({
           {t("placesTaken", { current: currentRegistrations, max: capacity })}
         </div>
       )}
-      {showSubmissions && (
+      {showSubmissions && !completed && (
         <div>
           {t("formsSubmitted", {
             current: submissionCount,

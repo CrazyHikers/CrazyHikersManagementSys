@@ -5,6 +5,31 @@ import { cacheTags } from "./cache-tags";
 
 export type ActivityDisplayStatus = ActivityStatus | "closed";
 
+// Public archive: completed activities only, with no participant records.
+export const getCompletedActivities = unstable_cache(
+  () => db.activity.findMany({
+    where: { status: "completed" },
+    select: {
+      id: true, title: true, description: true, date: true, deadline: true,
+      coverImgId: true, homepageThumbnailImgId: true, capacity: true,
+      maximumRegistration: true, metadata: true,
+      activityManagers: {
+        where: { status: "confirmed" },
+        select: {
+          role: true,
+          user: { select: { name: true, managerProfile: { select: { tag: true } } } },
+        },
+      },
+      _count: {
+        select: { registrations: { where: { status: { in: ["registration_confirmed", "attended"] } } } },
+      },
+    },
+    orderBy: [{ date: "desc" }, { id: "asc" }],
+  }),
+  ["completed-activities"],
+  { tags: [cacheTags.activities], revalidate: 3600 }
+);
+
 /**
  * Returns the status to display for an activity. An `open` activity is
  * shown as `closed` once it is no longer registerable — either the

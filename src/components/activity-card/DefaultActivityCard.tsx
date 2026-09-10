@@ -32,6 +32,7 @@ export function DefaultActivityCard(props: ActivityCardProps) {
     managing,
     pendingInvitation,
     sameDayConflict,
+    completed,
   } = props;
 
   return (
@@ -54,6 +55,7 @@ export function DefaultActivityCard(props: ActivityCardProps) {
               <div className="flex items-start justify-between gap-2">
                 <CardTitle className="text-lg leading-tight">{title}</CardTitle>
                 <CardSpotsLeftBadge
+                  completed={completed}
                   capacity={capacity}
                   currentRegistrations={currentRegistrations}
                 />
@@ -64,6 +66,7 @@ export function DefaultActivityCard(props: ActivityCardProps) {
             </CardHeader>
             <CardContent className="pt-0">
               <CardMetaLines
+                completed={completed}
                 date={date}
                 deadline={deadline}
                 managerNames={managerNames}
@@ -73,7 +76,7 @@ export function DefaultActivityCard(props: ActivityCardProps) {
                 submissionCount={submissionCount}
               />
               <CardActionButton
-                state={{ managing, pendingInvitation, registered, sameDayConflict }}
+                state={{ completed, managing, pendingInvitation, registered, sameDayConflict }}
               />
             </CardContent>
           </div>
