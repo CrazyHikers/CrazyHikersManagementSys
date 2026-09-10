@@ -1,3 +1,4 @@
+import { formatActivityDeadline } from "@/lib/activity-time";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -199,7 +200,7 @@ export default async function ActivityDetailPage({
         {isEditable && (
         <div className="flex gap-2 flex-wrap items-center">
           {displayStatus === "open" && (
-            <ShareButton path={sharePath} />
+            <ShareButton path={sharePath} title={activity.title} activityKind="registration" />
           )}
             <EditButton
               activity={{
@@ -244,7 +245,7 @@ export default async function ActivityDetailPage({
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("deadline")}</div>
-            <div className="font-medium">{activity.deadline.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</div>
+            <div className="font-medium">{formatActivityDeadline(activity.deadline, locale)}</div>
           </CardContent>
         </Card>
         <Card>

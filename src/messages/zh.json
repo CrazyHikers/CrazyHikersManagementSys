@@ -21,6 +21,9 @@
     "viewAlbum": "查看会员相册"
   },
   "common": {
+    "recapShareTitle": "活动回顾 | {title}",
+    "registrationShareTitle": "活动报名 | {title}",
+    "recapShareText": "点击链接查看活动回顾",
     "appName": "Crazy Hikers",
     "loading": "加载中...",
     "save": "保存",
@@ -371,6 +374,7 @@
     "totalMembers": "总成员数",
     "totalManagers": "总领队数",
     "activities": {
+      "deadlineTimezoneHelp": "按设备本地时间填写；活动页面统一显示瑞士时间。",
       "title": "活动管理",
       "create": "创建活动",
       "activityTitle": "活动标题",

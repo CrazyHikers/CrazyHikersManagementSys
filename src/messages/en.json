@@ -21,6 +21,9 @@
     "viewAlbum": "View members’ album"
   },
   "common": {
+    "recapShareTitle": "Activity Recap | {title}",
+    "registrationShareTitle": "Activity Registration | {title}",
+    "recapShareText": "View the activity recap using the link below",
     "appName": "Crazy Hikers",
     "loading": "Loading...",
     "save": "Save",
@@ -371,6 +374,7 @@
     "totalMembers": "Total Members",
     "totalManagers": "Total Managers",
     "activities": {
+      "deadlineTimezoneHelp": "Enter your device’s local time. Activity pages display Swiss time.",
       "title": "Activities",
       "create": "Create Activity",
       "activityTitle": "Title",

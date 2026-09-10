@@ -1,3 +1,4 @@
+import { formatActivityDeadline } from "@/lib/activity-time";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicUrl } from "@/lib/r2";
@@ -174,6 +175,7 @@ export async function Matchmaking520Landing({
               <ShareButton
                 path={sharePath}
                 title={activity.title}
+                activityKind="registration"
                 text={activity.description}
               />
             </div>
@@ -186,10 +188,7 @@ export async function Matchmaking520Landing({
             { label: ta("date"), value: activityDate.toLocaleDateString(locale) },
             {
               label: ta("deadline"),
-              value: activityDeadline.toLocaleString(locale, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }),
+              value: formatActivityDeadline(activityDeadline, locale),
             },
             {
               label: ta("capacity"),

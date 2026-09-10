@@ -1,3 +1,4 @@
+import { formatActivityDeadline } from "@/lib/activity-time";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { db } from "@/lib/db";
@@ -38,7 +39,7 @@ export default async function ActivityViewPage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const t = await getTranslations("activity");
   const td = await getTranslations("dashboard.activities");
   const tc = await getTranslations("common");
@@ -137,7 +138,7 @@ export default async function ActivityViewPage({
         <Card>
           <CardContent className="pt-4">
             <div className="text-sm text-muted-foreground">{t("deadline")}</div>
-            <div className="font-medium">{activity.deadline.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</div>
+            <div className="font-medium">{formatActivityDeadline(activity.deadline, locale)}</div>
           </CardContent>
         </Card>
         <Card>
