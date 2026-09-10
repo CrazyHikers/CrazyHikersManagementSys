@@ -189,12 +189,22 @@ model Activity {
   activityManagers ActivityManager[]
   registrations    Registration[]
   updates          ActivityUpdate[]
+  album            ActivityAlbum?
   flags            UserFlag[]
 
   @@index([status])
   @@index([deadline])
   @@index([date])
   @@map("activities")
+}
+
+// Kept outside public activity metadata so generic activity responses cannot expose it.
+model ActivityAlbum {
+  activityId String @id @map("activity_id")
+  url        String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("activity_albums")
 }
 
 // ============================================================================

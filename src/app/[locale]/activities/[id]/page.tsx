@@ -13,6 +13,9 @@ import { ActivityRegistrationPanel } from "@/components/activity-registration-pa
 import { ShareButton } from "@/components/share-button";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
 import { getTemplate } from "@/lib/events/templates";
+import { ActivityRecapSection } from "@/components/activity-recap";
+import { AttendeeAlbumLink } from "@/components/attendee-album-link";
+import { readActivityRecap } from "@/lib/activity-recap";
 
 // Hourly ISR so the rendered page itself is cached, not just the DB
 // query. Registration counts are at most ~1h stale; the per-user
@@ -291,6 +294,8 @@ export default async function ActivityDetailPage({
             );
           })()}
 
+          {isCompleted && <ActivityRecapSection recap={readActivityRecap(activity.metadata, id)} />}
+          {isCompleted && <AttendeeAlbumLink activityId={id} />}
           {!isCompleted && <ActivityNotificationCard />}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">

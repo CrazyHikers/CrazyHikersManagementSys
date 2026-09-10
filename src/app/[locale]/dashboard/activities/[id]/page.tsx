@@ -15,11 +15,16 @@ import { RegistrationsStore } from "@/components/dashboard/registrations-store";
 import { RegistrationCountDisplay } from "@/components/dashboard/registration-count-display";
 import { getDisplayStatus, computeEffectiveSubmissionCounts } from "@/lib/activity";
 import { ActivityNotificationCard } from "@/components/activity-notification-card";
+import { ActivityRecapEditor } from "@/components/dashboard/activity-recap-editor";
+import { ActivityRecapSection } from "@/components/activity-recap";
+import { canEditActivityRecap, readActivityRecap } from "@/lib/activity-recap";
 
 export default async function ActivityDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; locale: string }>;
+  searchParams: Promise<{ recap?: string }>;
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("dashboard.activities");
@@ -66,6 +71,10 @@ export default async function ActivityDetailPage({
   if (!activity) notFound();
 
   const isEditable = activity.status === "open";
+  const publicRecap = readActivityRecap(activity.metadata, id);
+  const canEditRecap = activity.status === "completed" && canEditActivityRecap(session?.user, activity.activityManagers);
+  const album = canEditRecap ? await db.activityAlbum.findUnique({ where: { activityId: id }, select: { url: true } }) : null;
+  const openRecap = (await searchParams).recap === "1";
 
   // Prefer the memorable /events/<slug> URL for sharing when this
   // activity has a slug. Falls back to /activities/<id> otherwise.
@@ -328,6 +337,17 @@ export default async function ActivityDetailPage({
         );
       })()}
 
+      {activity.status === "completed" && <ActivityRecapSection recap={publicRecap} />}
+      {canEditRecap && (
+        <ActivityRecapEditor
+          key={activity.updatedAt.toISOString()}
+          activityId={id}
+          initialRecap={{ description: publicRecap?.description ?? "", photoKeys: publicRecap?.photoKeys ?? [], albumUrl: album?.url ?? "" }}
+          version={activity.updatedAt.toISOString()}
+          publicUrlPrefix={getPublicUrl("").replace(/\/$/, "")}
+          initialOpen={openRecap}
+        />
+      )}
       <ActivityNotificationCard />
 
       <Card className="mb-6">
