@@ -1,3 +1,4 @@
+import { formatActivityDeadline } from "@/lib/activity-time";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPublicUrl } from "@/lib/r2";
@@ -176,10 +177,7 @@ export async function Audience520Landing({
             },
             {
               label: ta("deadline"),
-              value: activityDeadline.toLocaleString(locale, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }),
+              value: formatActivityDeadline(activityDeadline, locale),
             },
             {
               label: ta("capacity"),

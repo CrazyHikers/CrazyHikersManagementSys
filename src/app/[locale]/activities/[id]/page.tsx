@@ -1,3 +1,4 @@
+import { formatActivityDeadline } from "@/lib/activity-time";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
@@ -62,7 +63,7 @@ function getActivityMetadata(id: string) {
     async () => {
       return db.activity.findUnique({
         where: { id },
-        select: { title: true, description: true, coverImgId: true, date: true },
+        select: { title: true, description: true, coverImgId: true, date: true, status: true, recapDescription: true },
       });
     },
     ["activity-metadata", id],
@@ -77,34 +78,39 @@ function getActivityMetadata(id: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id, locale } = await params;
   const activity = await getActivityMetadata(id);
 
   if (!activity) return {};
+  const t = await getTranslations({ locale, namespace: "common" });
+  const isCompleted = activity.status === "completed";
+  const title = activity.status === "cancelled"
+    ? activity.title
+    : t(isCompleted ? "recapShareTitle" : "registrationShareTitle", { title: activity.title });
 
   // Truncate long descriptions so they fit inside card previews.
-  const rawDescription = activity.description?.trim() ?? "";
+  const rawDescription = (isCompleted ? activity.recapDescription?.trim() : "") || activity.description?.trim() || "";
   const description =
     rawDescription.length > 200
       ? `${rawDescription.slice(0, 197)}…`
-      : rawDescription || `Join us for ${activity.title} on ${new Date(activity.date).toLocaleDateString()}.`;
+      : rawDescription || t(isCompleted ? "recapShareText" : "shareText");
 
   const imageUrl = activity.coverImgId ? getPublicUrl(activity.coverImgId) : undefined;
 
   return {
-    title: activity.title,
+    title,
     description,
     openGraph: {
-      title: activity.title,
+      title,
       description,
       type: "article",
       ...(imageUrl ? { images: [imageUrl] } : {}),
     },
     twitter: {
       card: imageUrl ? "summary_large_image" : "summary",
-      title: activity.title,
+      title,
       description,
       ...(imageUrl ? { images: [imageUrl] } : {}),
     },
@@ -179,7 +185,7 @@ export default async function ActivityDetailPage({
   // every share still works.
   const slug = (activity.metadata as Record<string, unknown> | null)?.slug;
   const sharePath =
-    typeof slug === "string" && slug.trim() !== ""
+    !isCompleted && typeof slug === "string" && slug.trim() !== ""
       ? `/${locale}/events/${slug}`
       : `/${locale}/activities/${activity.id}`;
 
@@ -215,11 +221,12 @@ export default async function ActivityDetailPage({
                   {isCompleted ? homeT("completed") : activity.status}
                 </Badge>
               </div>
-              {activity.status === "open" && activityDeadline > new Date() && (
+              {(isCompleted || (activity.status === "open" && activityDeadline > new Date())) && (
                 <ShareButton
                   path={sharePath}
                   title={activity.title}
-                  text={activity.description}
+                  activityKind={isCompleted ? "recap" : "registration"}
+                  text={isCompleted ? activity.recapDescription : activity.description}
                 />
               )}
             </div>
@@ -315,7 +322,7 @@ export default async function ActivityDetailPage({
                   {t("deadline")}
                 </div>
                 <div className="font-medium">
-                  {activityDeadline.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
+                  {formatActivityDeadline(activityDeadline, locale)}
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatActivityDeadline } from "@/lib/activity-time";
 import { useTranslations, useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -159,7 +160,7 @@ export function CardMetaLines({
         {t("activityDate")}: {new Date(date).toLocaleDateString(locale)}
       </div>
       <div>
-        {t("deadline")}: {new Date(deadline).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
+        {t("deadline")}: {formatActivityDeadline(deadline, locale)}
       </div>
       <div>
         {t("managers")}: {managerNames}

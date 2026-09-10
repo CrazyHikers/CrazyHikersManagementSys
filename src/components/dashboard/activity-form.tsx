@@ -212,6 +212,7 @@ export function ActivityForm({ managers, currentUserEmail }: { managers: Manager
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="deadline">{t("deadline")}</Label>
+              <p className="text-xs text-muted-foreground">{t("deadlineTimezoneHelp")}</p>
               <Input id="deadline" name="deadline" type="datetime-local" required />
             </div>
             <div className="space-y-2">

@@ -8,24 +8,30 @@ export function ShareButton({
   path,
   title,
   text,
+  activityKind,
   variant = "outline",
   size = "sm",
 }: {
   path: string;
   title?: string;
   text?: string;
+  activityKind?: "registration" | "recap";
   variant?: "outline" | "default" | "ghost";
   size?: "sm" | "default";
 }) {
   const t = useTranslations("common");
+  const shareTitle = title && activityKind
+    ? t(activityKind === "recap" ? "recapShareTitle" : "registrationShareTitle", { title })
+    : title;
 
   async function handleShare() {
     const url = `${window.location.origin}${path}`;
 
     if (navigator.share) {
       try {
-        const shareText = title ? `${title}\n${t("shareText")}` : t("shareText");
-        await navigator.share({ url, title, text: shareText });
+        const message = text || t(activityKind === "recap" ? "recapShareText" : "shareText");
+        const shareText = shareTitle ? `${shareTitle}\n${message}` : message;
+        await navigator.share({ url, title: shareTitle, text: shareText });
         return;
       } catch {
         // User cancelled or share failed — fall through to clipboard
