@@ -32,7 +32,10 @@ function getActivity(id: string) {
         include: {
           activityManagers: {
             where: { status: "confirmed" },
-            include: { user: { include: { managerProfile: true } } },
+            select: {
+              role: true,
+              user: { select: { name: true, managerProfile: { select: { tag: true } } } },
+            },
           },
           _count: {
             select: {
@@ -112,9 +115,11 @@ export default async function ActivityDetailPage({
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("activity");
+  const homeT = await getTranslations("home");
   const activity = await getActivity(id);
 
   if (!activity) notFound();
+  const isCompleted = activity.status === "completed";
 
   // unstable_cache serializes Dates to ISO strings, so revive them here.
   const activityDate = new Date(activity.date);
@@ -138,7 +143,7 @@ export default async function ActivityDetailPage({
           | undefined)
       : undefined;
   const templateDef = getTemplate(template);
-  if (templateDef?.loadLanding) {
+  if (!isCompleted && templateDef?.loadLanding) {
     const Landing = await templateDef.loadLanding();
     return (
       <>
@@ -204,7 +209,7 @@ export default async function ActivityDetailPage({
                     isOpen && !isFull ? "bg-green-600" : ""
                   }
                 >
-                  {activity.status}
+                  {isCompleted ? homeT("completed") : activity.status}
                 </Badge>
               </div>
               {activity.status === "open" && activityDeadline > new Date() && (
@@ -286,7 +291,7 @@ export default async function ActivityDetailPage({
             );
           })()}
 
-          <ActivityNotificationCard />
+          {!isCompleted && <ActivityNotificationCard />}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <Card>
@@ -338,12 +343,12 @@ export default async function ActivityDetailPage({
             </Card>
           </div>
 
-          <ActivityRegistrationPanel
+          {!isCompleted && <ActivityRegistrationPanel
             activityId={activity.id}
             qrCodeUrl={qrCodeUrl}
             isOpen={isOpen}
             isFull={isFull}
-          />
+          />}
         </div>
       </main>
       <SiteFooter />

@@ -63,6 +63,7 @@ export function Matchmaking520Card(props: ActivityCardProps) {
     managing,
     pendingInvitation,
     sameDayConflict,
+    completed,
   } = props;
 
   return (
@@ -110,6 +111,7 @@ export function Matchmaking520Card(props: ActivityCardProps) {
                   {title}
                 </CardTitle>
                 <CardSpotsLeftBadge
+                  completed={completed}
                   capacity={capacity}
                   currentRegistrations={currentRegistrations}
                   spotsLeftClassName="bg-[#fde4d3] text-[#d4685e] hover:bg-[#fde4d3]"
@@ -121,6 +123,7 @@ export function Matchmaking520Card(props: ActivityCardProps) {
             </CardHeader>
             <CardContent className="pt-0">
               <CardMetaLines
+                completed={completed}
                 date={date}
                 deadline={deadline}
                 managerNames={managerNames}
@@ -131,7 +134,7 @@ export function Matchmaking520Card(props: ActivityCardProps) {
                 className="text-[#6a5447] dark:text-[#d4c4b8]"
               />
               <CardActionButton
-                state={{ managing, pendingInvitation, registered, sameDayConflict }}
+                state={{ completed, managing, pendingInvitation, registered, sameDayConflict }}
                 registeredOutlineClassName="text-[#d4685e] border-[#d4685e]"
                 registerClassName={m520Theme.gradientCta}
               />
