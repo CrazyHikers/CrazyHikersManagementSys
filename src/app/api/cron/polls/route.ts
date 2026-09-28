@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { settlePoll } from "@/lib/polls/settlement";
 import { notifyPromotionSettlement } from "@/lib/promotions/settlement-notification";
 
-export async function POST(request: NextRequest) {
+async function handlePollSettlementCron(request: NextRequest) {
   if (request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -44,3 +44,8 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Vercel Cron invokes configured paths with GET. Keep POST available for
+// authenticated manual invocations and backwards compatibility.
+export const GET = handlePollSettlementCron;
+export const POST = handlePollSettlementCron;
