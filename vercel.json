@@ -6,7 +6,7 @@
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/cron/promotions",
+      "path": "/api/cron/polls",
       "schedule": "0 2 * * *"
     },
     {
