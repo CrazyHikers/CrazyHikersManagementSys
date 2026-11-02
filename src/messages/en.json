@@ -684,6 +684,7 @@
       "reason": "Reason"
     },
     "polls": {
+      "shareText": "View this Crazy Hikers poll. Sign in with an eligible account to participate.",
       "eyebrow": "Collective decisions",
       "title": "Polls",
       "subtitle": "Take part in club decisions and share structured feedback. Each poll clearly states whether ballots are anonymous or named.",
