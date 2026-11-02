@@ -7,6 +7,7 @@ import { getPollDetail, prismaPollDatabase } from "@/lib/polls/service";
 import type { UserRole } from "@/lib/polls/types";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/share-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PollResults } from "@/components/dashboard/polls/poll-results";
 import { PollStatusBadge } from "@/components/dashboard/polls/poll-status-badge";
@@ -49,7 +50,7 @@ export default async function PollDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/dashboard/polls"
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-800"
@@ -57,12 +58,21 @@ export default async function PollDetailPage({
           <ArrowLeft className="size-4" />
           {t("back")}
         </Link>
-        {isAdmin && (
-          <Button variant="outline" size="sm" render={<Link href={`/dashboard/polls/${id}/manage`} />}>
-            <Settings2 className="size-4" />
-            {t("manage")}
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {poll.status !== "draft" && (
+            <ShareButton
+              path={`/${locale}/dashboard/polls/${id}`}
+              title={poll.title}
+              text={t("shareText")}
+            />
+          )}
+          {isAdmin && (
+            <Button variant="outline" size="sm" render={<Link href={`/dashboard/polls/${id}/manage`} />}>
+              <Settings2 className="size-4" />
+              {t("manage")}
+            </Button>
+          )}
+        </div>
       </div>
 
       <article className="overflow-hidden rounded-3xl border border-emerald-950/10 bg-white shadow-sm">

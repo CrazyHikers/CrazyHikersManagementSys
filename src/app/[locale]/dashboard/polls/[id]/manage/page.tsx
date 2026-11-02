@@ -11,6 +11,7 @@ import {
 } from "@/lib/polls/service";
 import type { PollNamedBallotDTO, UserRole } from "@/lib/polls/types";
 import { Link } from "@/i18n/navigation";
+import { ShareButton } from "@/components/share-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PollAdminActions } from "@/components/dashboard/polls/poll-admin-actions";
 import { PollEditor } from "@/components/dashboard/polls/poll-editor";
@@ -110,13 +111,22 @@ export default async function ManagePollPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <Link
-          href={`/dashboard/polls/${id}`}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-800"
-        >
-          <ArrowLeft className="size-4" />
-          {t("viewPoll")}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href={`/dashboard/polls/${id}`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-emerald-800"
+          >
+            <ArrowLeft className="size-4" />
+            {t("viewPoll")}
+          </Link>
+          {poll.status !== "draft" && (
+            <ShareButton
+              path={`/${locale}/dashboard/polls/${id}`}
+              title={poll.title}
+              text={publicT("shareText")}
+            />
+          )}
+        </div>
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-2 flex items-center gap-2">
