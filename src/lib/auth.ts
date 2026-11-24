@@ -166,43 +166,42 @@ export const authConfig: NextAuthConfig = {
       // Allow both existing users and new signups (user will be created by adapter)
       return true;
     },
-    async jwt({ token, user, trigger }) {
-      // Hit DB only on sign-in (user present) or when the client calls
-      // session.update() (trigger === "update"). Every other request
-      // reuses what's already in the signed JWT cookie — no DB work.
-      //
-      // Role/name changes require the user to sign out and back in, or
-      // the client to explicitly call useSession().update() after an
-      // action that should refresh their claims (e.g. after accepting
-      // a promotion).
-      const shouldRefresh = !!user?.email || trigger === "update";
-      if (!shouldRefresh) return token;
-
+    async jwt({ token, user }) {
+      // The cookie proves identity, but its role/intern claims can be stale
+      // after an admin changes this account. Refresh from the database on
+      // every session read so promotions and revocations apply immediately,
+      // including to existing cookies. Never trust client update payloads.
       const email = user?.email || (token.email as string) || (token.sub as string);
-      if (!email) return token;
+      if (!email) return null;
 
       try {
         const dbUser = await db.user.findUnique({
           where: { email },
-          include: { managerProfile: true },
+          select: {
+            email: true,
+            name: true,
+            role: true,
+            passwordHash: true,
+            managerProfile: { select: { tag: true, intern: true } },
+          },
         });
-        if (dbUser) {
-          token.email = dbUser.email;
-          token.name = dbUser.name;
-          token.role = dbUser.role;
-          token.tag = dbUser.managerProfile?.tag;
-          token.isIntern = dbUser.managerProfile?.intern;
-          token.hasPassword = !!dbUser.passwordHash;
-        }
+        if (!dbUser) return null;
+        token.email = dbUser.email;
+        token.name = dbUser.name;
+        token.role = dbUser.role;
+        token.tag = dbUser.managerProfile?.tag;
+        // A manager with a missing profile has no verified qualification.
+        token.isIntern = dbUser.role === "manager" && (dbUser.managerProfile?.intern ?? true);
+        token.hasPassword = !!dbUser.passwordHash;
       } catch (err) {
         console.error("[AUTH] jwt db error:", err);
+        // Do not authorize using old privileges when they cannot be verified.
+        return null;
       }
       return token;
     },
     async session({ session, token }) {
-      // Read from the JWT only — no DB hit. Previously this did a
-      // findUnique on every auth() call, which fires from middleware
-      // AND the page on every request.
+      // The JWT callback has refreshed these claims for this session read.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = session.user as any;
       if (token) {
